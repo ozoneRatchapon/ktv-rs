@@ -7,6 +7,8 @@ pub struct Song {
     pub title: String,
     pub artist: String,
     pub youtube_id: String,
+    #[serde(default)]
+    pub guide_video_id: Option<String>,
     pub duration_secs: u32,
     pub intro_skip_secs: u32,
     pub category: String,

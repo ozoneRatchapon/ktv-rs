@@ -10,6 +10,7 @@ fn sample_song(id: &str, category: &str, artist: &str) -> Song {
         title: format!("Test Song {id}"),
         artist: artist.to_string(),
         youtube_id: "test1234567".to_string(),
+        guide_video_id: None,
         duration_secs: 200,
         intro_skip_secs: 13,
         category: category.to_string(),

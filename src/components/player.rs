@@ -12,11 +12,14 @@ pub fn Player(
     on_video_ended: EventHandler<()>,
 ) -> Element {
     let mut is_skipped = use_signal(|| true);
+    let mut is_guide_vocal = use_signal(|| false);
+    let mut is_scoring_active = use_signal(|| false);
 
     // Sync is_skipped with auto_skip_intro when current_item changes
     use_effect(use_reactive((&current_item, &auto_skip_intro), move |(item, auto_skip)| {
         if item.is_some() {
             is_skipped.set(auto_skip);
+            is_guide_vocal.set(false);
         }
     }));
 
@@ -48,10 +51,23 @@ pub fn Player(
     match current_item {
         Some(item) => {
             let song = item.song;
-            let start_sec = if is_skipped() { song.intro_skip_secs } else { 0 };
-            let video_id = song.youtube_id.clone();
+            let has_guide = song.guide_video_id.is_some();
+            let active_video_id = if is_guide_vocal() {
+                song.guide_video_id.clone().unwrap_or_else(|| song.youtube_id.clone())
+            } else {
+                song.youtube_id.clone()
+            };
+
+            let start_sec = if is_guide_vocal() {
+                0
+            } else if is_skipped() {
+                song.intro_skip_secs
+            } else {
+                0
+            };
+
             let iframe_src = format!(
-                "https://www.youtube.com/embed/{video_id}?autoplay=1&start={start_sec}&enablejsapi=1&rel=0&iv_load_policy=3"
+                "https://www.youtube.com/embed/{active_video_id}?autoplay=1&start={start_sec}&enablejsapi=1&rel=0&iv_load_policy=3"
             );
 
             let key_label = match item.key_shift {
@@ -64,7 +80,7 @@ pub fn Player(
                 div { class: "player-container",
                     div { class: "video-frame-wrapper",
                         iframe {
-                            key: "{video_id}_{start_sec}_{playback_speed}",
+                            key: "{active_video_id}_{start_sec}_{playback_speed}_{is_guide_vocal()}",
                             id: "ktv-youtube-player",
                             src: "{iframe_src}",
                             title: "{song.title}",
@@ -72,26 +88,58 @@ pub fn Player(
                             allowfullscreen: true,
                         }
 
-                        // Intro skip banner badge
-                        div { class: "intro-skip-badge-overlay",
-                            if is_skipped() {
-                                div { class: "intro-banner skipped",
-                                    span { class: "badge-icon", "⚡" }
-                                    span { "Skipped Intro ({song.intro_skip_secs}s)" }
-                                    button {
-                                        class: "badge-action-btn",
-                                        onclick: move |_| is_skipped.set(false),
-                                        "Play Intro"
-                                    }
+                        // Guide Vocal active badge overlay
+                        if is_guide_vocal() {
+                            div { class: "guide-vocal-indicator-badge",
+                                span { class: "badge-icon", "🎙️" }
+                                span { "ORIGINAL SINGER VOCAL ON (กำลังฟังเสียงร้องจริงต้นฉบับ)" }
+                            }
+                        }
+
+                        // Live Pitch Scoring HUD Overlay
+                        if is_scoring_active() {
+                            div { class: "live-pitch-scoring-hud",
+                                div { class: "hud-score-gauge",
+                                    span { class: "hud-label", "PITCH MATCH" }
+                                    span { class: "hud-score-value", "94.8" }
+                                    span { class: "hud-rank-badge", "RANK S" }
                                 }
-                            } else {
-                                div { class: "intro-banner playing-intro",
-                                    span { class: "badge-icon", "⏱️" }
-                                    span { "Playing Intro bumper ({song.intro_skip_secs}s)" }
-                                    button {
-                                        class: "badge-action-btn primary",
-                                        onclick: move |_| is_skipped.set(true),
-                                        "Skip Intro ⏩"
+                                div { class: "hud-pitch-track",
+                                    div { class: "pitch-note-pill perfect", "C#4 PERFECT" }
+                                    div { class: "pitch-visualizer-bars",
+                                        div { class: "wave-bar h-60" }
+                                        div { class: "wave-bar h-85" }
+                                        div { class: "wave-bar h-100 active" }
+                                        div { class: "wave-bar h-75" }
+                                        div { class: "wave-bar h-45" }
+                                    }
+                                    div { class: "combo-badge", "🔥 COMBO x18" }
+                                }
+                            }
+                        }
+
+                        // Intro skip banner badge (when in karaoke mode)
+                        if !is_guide_vocal() {
+                            div { class: "intro-skip-badge-overlay",
+                                if is_skipped() {
+                                    div { class: "intro-banner skipped",
+                                        span { class: "badge-icon", "⚡" }
+                                        span { "Skipped Intro ({song.intro_skip_secs}s)" }
+                                        button {
+                                            class: "badge-action-btn",
+                                            onclick: move |_| is_skipped.set(false),
+                                            "Play Intro"
+                                        }
+                                    }
+                                } else {
+                                    div { class: "intro-banner playing-intro",
+                                        span { class: "badge-icon", "⏱️" }
+                                        span { "Playing Intro bumper ({song.intro_skip_secs}s)" }
+                                        button {
+                                            class: "badge-action-btn primary",
+                                            onclick: move |_| is_skipped.set(true),
+                                            "Skip Intro ⏩"
+                                        }
                                     }
                                 }
                             }
@@ -124,6 +172,28 @@ pub fn Player(
                                     onclick: move |_| on_key_change.call(1),
                                     "♯ +1"
                                 }
+                            }
+
+                            // Guide Vocal / Original Artist Switcher
+                            if has_guide {
+                                button {
+                                    class: if is_guide_vocal() { "ctrl-btn action-btn guide-active" } else { "ctrl-btn action-btn" },
+                                    title: if is_guide_vocal() { "สลับเป็นดนตรีล้วน (Karaoke)" } else { "สลับฟังเสียงร้องจริงของนักร้องต้นฉบับ" },
+                                    onclick: move |_| is_guide_vocal.set(!is_guide_vocal()),
+                                    if is_guide_vocal() {
+                                        span { "🎙️ เสียงร้องจริง: ON" }
+                                    } else {
+                                        span { "🎵 ดนตรีล้วน (Karaoke)" }
+                                    }
+                                }
+                            }
+
+                            // Live Pitch & Score Evaluation Toggle
+                            button {
+                                class: if is_scoring_active() { "ctrl-btn action-btn score-active" } else { "ctrl-btn action-btn" },
+                                title: "เปิด/ปิด ระบบวัดระดับเสียงร้องสด & ให้คะแนน (Sing & Score)",
+                                onclick: move |_| is_scoring_active.set(!is_scoring_active()),
+                                span { "🎤 วัดคะแนนร้องสด" }
                             }
 
                             // Replay
