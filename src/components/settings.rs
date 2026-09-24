@@ -77,6 +77,49 @@ pub fn Settings(
                     }
                 }
             }
+
+            // Developer Portfolio & Legal Transparency Notice
+            div { class: "settings-card legal-transparency-card",
+                div { class: "settings-header",
+                    div {
+                        h3 { "Developer Showcase & Transparency" }
+                        p { "Architecture overview, privacy disclosure, and copyright attribution" }
+                    }
+                }
+
+                div { class: "legal-info-content",
+                    div { class: "legal-metric-row",
+                        div { class: "metric-item",
+                            span { class: "metric-num", "100%" }
+                            span { class: "metric-desc", "Client-Side Rust WASM" }
+                        }
+                        div { class: "metric-item",
+                            span { class: "metric-num", "0" }
+                            span { class: "metric-desc", "Cookies / Trackers (PDPA Ready)" }
+                        }
+                        div { class: "metric-item",
+                            span { class: "metric-num", "Direct" }
+                            span { class: "metric-desc", "Official YouTube Embeds" }
+                        }
+                    }
+
+                    div { class: "legal-text-block",
+                        p {
+                            strong { "Legal & Copyright Attribution: " }
+                            "This application is a non-commercial educational showcase and technical portfolio demonstrating high-performance web engineering with Dioxus 0.7 and WebAssembly. No audio or video files are hosted on our servers. All media playback is streamed directly via the official YouTube Embed API in compliance with YouTube Terms of Service. All rights, trademarks, and royalties remain with the respective artists and record labels (GMM Grammy, Genie Records, What The Duck)."
+                        }
+                        p {
+                            strong { "Open Source Repository: " }
+                            a {
+                                href: "https://github.com/ozoneRatchapon/ktv-rs",
+                                target: "_blank",
+                                class: "repo-link",
+                                "github.com/ozoneRatchapon/ktv-rs"
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

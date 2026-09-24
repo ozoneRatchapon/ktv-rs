@@ -14,16 +14,18 @@ pub fn Player(
     let mut is_skipped = use_signal(|| true);
     let mut is_guide_vocal = use_signal(|| false);
     let mut is_scoring_active = use_signal(|| false);
+    let mut preserved_switch_sec = use_signal(|| 0u64);
 
     // Sync is_skipped with auto_skip_intro when current_item changes
     use_effect(use_reactive((&current_item, &auto_skip_intro), move |(item, auto_skip)| {
         if item.is_some() {
             is_skipped.set(auto_skip);
             is_guide_vocal.set(false);
+            preserved_switch_sec.set(0);
         }
     }));
 
-    // Listen to YouTube Iframe onStateChange: 0 (ENDED)
+    // Listen to YouTube Iframe onStateChange: 0 (ENDED) and infoDelivery currentTime
     use_effect(move || {
         let mut eval = document::eval(r#"
             if (!window._ktv_youtube_listener_active) {
@@ -31,6 +33,9 @@ pub fn Player(
                 window.addEventListener('message', (event) => {
                     try {
                         let data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+                        if (data && data.info && typeof data.info.currentTime === 'number') {
+                            window._ktv_video_current_time = data.info.currentTime;
+                        }
                         if (data && (data.event === 'onStateChange' && data.info === 0 || data.info === 0)) {
                             dioxus.send('ended');
                         }
@@ -58,13 +63,25 @@ pub fn Player(
                 song.youtube_id.clone()
             };
 
-            let start_sec = if is_guide_vocal() {
+            let start_sec = if preserved_switch_sec() > 0 {
+                preserved_switch_sec()
+            } else if is_guide_vocal() {
                 0
             } else if is_skipped() {
-                song.intro_skip_secs
+                u64::from(song.intro_skip_secs)
             } else {
                 0
             };
+
+            // Keep JS mount timer in sync with current start_sec
+            use_effect(use_reactive((&active_video_id, &start_sec), move |(_, sec)| {
+                let js = format!(r#"
+                    window._ktv_video_mount_time = Date.now();
+                    window._ktv_current_start_sec = {sec};
+                    window._ktv_video_current_time = {sec};
+                "#);
+                let _ = document::eval(&js);
+            }));
 
             let iframe_src = format!(
                 "https://www.youtube.com/embed/{active_video_id}?autoplay=1&start={start_sec}&enablejsapi=1&rel=0&iv_load_policy=3"
@@ -74,6 +91,13 @@ pub fn Player(
                 k if k > 0 => format!("KEY: +{k} ♯"),
                 k if k < 0 => format!("KEY: {k} ♭"),
                 _ => "ORIGINAL KEY (±0)".to_string(),
+            };
+
+            let cue_text = if preserved_switch_sec() > 0 {
+                let s = preserved_switch_sec();
+                format!("Original Singer Vocal • Synced {:02}:{:02}", s / 60, s % 60)
+            } else {
+                "Original Singer Vocal".to_string()
             };
 
             rsx! {
@@ -103,10 +127,10 @@ pub fn Player(
                             },
                         }
 
-                        // Guide Vocal active badge overlay
+                        // Guide Vocal active badge overlay with preserved timestamp cue
                         if is_guide_vocal() {
                             div { class: "guide-vocal-indicator-badge",
-                                span { "Original Singer Vocal" }
+                                span { "{cue_text}" }
                             }
                         }
 
@@ -140,7 +164,10 @@ pub fn Player(
                                         span { "Intro Skipped ({song.intro_skip_secs}s)" }
                                         button {
                                             class: "badge-action-btn",
-                                            onclick: move |_| is_skipped.set(false),
+                                            onclick: move |_| {
+                                                preserved_switch_sec.set(0);
+                                                is_skipped.set(false);
+                                            },
                                             "Play Intro"
                                         }
                                     }
@@ -149,7 +176,10 @@ pub fn Player(
                                         span { "Playing Intro ({song.intro_skip_secs}s)" }
                                         button {
                                             class: "badge-action-btn primary",
-                                            onclick: move |_| is_skipped.set(true),
+                                            onclick: move |_| {
+                                                preserved_switch_sec.set(0);
+                                                is_skipped.set(true);
+                                            },
                                             "Skip Intro"
                                         }
                                     }
@@ -186,12 +216,28 @@ pub fn Player(
                                 }
                             }
 
-                            // Guide Vocal / Original Artist Switcher
+                            // Guide Vocal / Original Artist Switcher with Time-Preserved Switch
                             if has_guide {
                                 button {
                                     class: if is_guide_vocal() { "ctrl-btn action-btn guide-active" } else { "ctrl-btn action-btn" },
-                                    title: if is_guide_vocal() { "Switch to Instrumental Karaoke" } else { "Switch to Original Artist Vocal" },
-                                    onclick: move |_| is_guide_vocal.set(!is_guide_vocal()),
+                                    title: if is_guide_vocal() { "Switch back to Karaoke" } else { "Switch to Original Artist Vocal (in-sync)" },
+                                    onclick: move |_| {
+                                        let mut eval_time = document::eval(r#"
+                                            let cur = window._ktv_video_current_time;
+                                            if (!cur || cur <= 0) {
+                                                let elapsed = (Date.now() - (window._ktv_video_mount_time || Date.now())) / 1000;
+                                                cur = Math.max(0, elapsed + (window._ktv_current_start_sec || 0));
+                                            }
+                                            dioxus.send(Math.floor(cur).toString());
+                                        "#);
+                                        spawn(async move {
+                                            if let Ok(sec_str) = eval_time.recv::<String>().await {
+                                                let sec = sec_str.parse::<u64>().unwrap_or(0);
+                                                preserved_switch_sec.set(sec);
+                                                is_guide_vocal.set(!is_guide_vocal());
+                                            }
+                                        });
+                                    },
                                     if is_guide_vocal() {
                                         span { "Vocal: Original" }
                                     } else {
@@ -229,7 +275,10 @@ pub fn Player(
                             button {
                                 class: "ctrl-btn action-btn",
                                 title: "Restart Song",
-                                onclick: move |_| on_replay_song.call(()),
+                                onclick: move |_| {
+                                    preserved_switch_sec.set(0);
+                                    on_replay_song.call(());
+                                },
                                 span { "Replay" }
                             }
 
