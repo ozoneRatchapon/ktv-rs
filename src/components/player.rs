@@ -15,13 +15,15 @@ pub fn Player(
     let mut is_guide_vocal = use_signal(|| false);
     let mut is_scoring_active = use_signal(|| false);
     let mut preserved_switch_sec = use_signal(|| 0u64);
+    let mut current_playback_sec = use_signal(|| 0u64);
 
     // Sync is_skipped with auto_skip_intro when current_item changes
     use_effect(use_reactive((&current_item, &auto_skip_intro), move |(item, auto_skip)| {
-        if item.is_some() {
+        if let Some(it) = item {
             is_skipped.set(auto_skip);
             is_guide_vocal.set(false);
             preserved_switch_sec.set(0);
+            current_playback_sec.set(if auto_skip { u64::from(it.song.intro_skip_secs) } else { 0 });
         }
     }));
 
@@ -42,12 +44,33 @@ pub fn Player(
                     } catch(e) {}
                 });
             }
+            if (window._ktv_progress_ticker) {
+                clearInterval(window._ktv_progress_ticker);
+            }
+            window._ktv_progress_ticker = setInterval(() => {
+                let iframe = document.getElementById('ktv-youtube-player');
+                if (iframe && iframe.contentWindow) {
+                    try {
+                        iframe.contentWindow.postMessage('{"event":"listening"}', '*');
+                    } catch(e) {}
+                }
+                let cur = window._ktv_video_current_time;
+                if (!cur || cur <= 0) {
+                    let elapsed = (Date.now() - (window._ktv_video_mount_time || Date.now())) / 1000;
+                    cur = Math.max(0, elapsed + (window._ktv_current_start_sec || 0));
+                }
+                dioxus.send('TIME:' + Math.floor(cur));
+            }, 1000);
         "#);
 
         spawn(async move {
             while let Ok(msg) = eval.recv::<String>().await {
                 if msg == "ended" {
                     on_video_ended.call(());
+                } else if let Some(time_str) = msg.strip_prefix("TIME:") {
+                    if let Ok(sec) = time_str.parse::<u64>() {
+                        current_playback_sec.set(sec);
+                    }
                 }
             }
         });
@@ -190,97 +213,162 @@ pub fn Player(
 
                     // Bottom Player Bar
                     div { class: "player-bottom-bar",
-                        div { class: "song-info",
-                            div { class: "song-code-pill", "#{song.code}" }
-                            div { class: "song-titles",
-                                h2 { class: "now-title", "{song.title}" }
-                                p { class: "now-artist", "{song.artist} • {song.channel}" }
+                        // KTV Interactive Timeline Scrubber Row
+                        div { class: "ktv-scrubber-container",
+                            span { class: "time-text current-time", "{format_time(current_playback_sec())}" }
+                            div { class: "slider-wrapper",
+                                input {
+                                    class: "ktv-scrubber-slider",
+                                    r#type: "range",
+                                    min: "0",
+                                    max: "{u64::from(song.duration_secs)}",
+                                    value: "{current_playback_sec()}",
+                                    oninput: move |evt| {
+                                        if let Ok(target) = evt.value().parse::<u64>() {
+                                            current_playback_sec.set(target);
+                                            preserved_switch_sec.set(target);
+                                            seek_video_to(target);
+                                        }
+                                    },
+                                }
                             }
+                            span { class: "time-text total-time", "{format_time(u64::from(song.duration_secs))}" }
                         }
 
-                        div { class: "player-quick-controls",
-                            // Key Transpose Buttons
-                            div { class: "key-control-group",
-                                button {
-                                    class: "ctrl-btn key-btn",
-                                    title: "Pitch Down (-1 semitone)",
-                                    onclick: move |_| on_key_change.call(-1),
-                                    "-1"
-                                }
-                                span { class: "key-pill", "{key_label}" }
-                                button {
-                                    class: "ctrl-btn key-btn",
-                                    title: "Pitch Up (+1 semitone)",
-                                    onclick: move |_| on_key_change.call(1),
-                                    "+1"
+                        div { class: "player-main-controls-row",
+                            div { class: "song-info",
+                                div { class: "song-code-pill", "#{song.code}" }
+                                div { class: "song-titles",
+                                    h2 { class: "now-title", "{song.title}" }
+                                    p { class: "now-artist", "{song.artist} • {song.channel}" }
                                 }
                             }
 
-                            // Guide Vocal / Original Artist Switcher with Time-Preserved Switch
-                            if has_guide {
+                            div { class: "player-quick-controls",
+                                // Rewind -10s
                                 button {
-                                    class: if is_guide_vocal() { "ctrl-btn action-btn guide-active" } else { "ctrl-btn action-btn" },
-                                    title: if is_guide_vocal() { "Switch back to Karaoke" } else { "Switch to Original Artist Vocal (in-sync)" },
+                                    class: "ctrl-btn jump-btn",
+                                    title: "Rewind 10 seconds",
                                     onclick: move |_| {
-                                        let mut eval_time = document::eval(r#"
-                                            let cur = window._ktv_video_current_time;
-                                            if (!cur || cur <= 0) {
-                                                let elapsed = (Date.now() - (window._ktv_video_mount_time || Date.now())) / 1000;
-                                                cur = Math.max(0, elapsed + (window._ktv_current_start_sec || 0));
-                                            }
-                                            dioxus.send(Math.floor(cur).toString());
-                                        "#);
-                                        spawn(async move {
-                                            if let Ok(sec_str) = eval_time.recv::<String>().await {
-                                                let sec = sec_str.parse::<u64>().unwrap_or(0);
-                                                preserved_switch_sec.set(sec);
-                                                is_guide_vocal.set(!is_guide_vocal());
-                                            }
-                                        });
+                                        let curr = current_playback_sec();
+                                        let target = curr.saturating_sub(10);
+                                        current_playback_sec.set(target);
+                                        preserved_switch_sec.set(target);
+                                        seek_video_to(target);
                                     },
-                                    if is_guide_vocal() {
-                                        span { "Vocal: Original" }
-                                    } else {
-                                        span { "Vocal: Karaoke" }
+                                    "-10s"
+                                }
+
+                                // Forward +10s
+                                button {
+                                    class: "ctrl-btn jump-btn",
+                                    title: "Forward 10 seconds",
+                                    onclick: move |_| {
+                                        let curr = current_playback_sec();
+                                        let target = (curr + 10).min(u64::from(song.duration_secs));
+                                        current_playback_sec.set(target);
+                                        preserved_switch_sec.set(target);
+                                        seek_video_to(target);
+                                    },
+                                    "+10s"
+                                }
+
+                                // Key Transpose Buttons
+                                div { class: "key-control-group",
+                                    button {
+                                        class: "ctrl-btn key-btn",
+                                        title: "Pitch Down (-1 semitone)",
+                                        onclick: move |_| on_key_change.call(-1),
+                                        "-1"
+                                    }
+                                    span { class: "key-pill", "{key_label}" }
+                                    button {
+                                        class: "ctrl-btn key-btn",
+                                        title: "Pitch Up (+1 semitone)",
+                                        onclick: move |_| on_key_change.call(1),
+                                        "+1"
                                     }
                                 }
-                            }
 
-                            // Live Pitch & Score Evaluation Toggle
-                            button {
-                                class: if is_scoring_active() { "ctrl-btn action-btn score-active" } else { "ctrl-btn action-btn" },
-                                title: "Toggle live pitch evaluation",
-                                onclick: move |_| is_scoring_active.set(!is_scoring_active()),
-                                span { "Score HUD" }
-                            }
-
-                            // Fullscreen Cinema Mode
-                            button {
-                                class: "ctrl-btn action-btn",
-                                title: "Toggle Fullscreen Cinema Mode",
-                                onclick: move |_| {
-                                    let _ = document::eval(r#"
-                                        let elem = document.querySelector('.stage-player-side');
-                                        if (!document.fullscreenElement) {
-                                            if (elem && elem.requestFullscreen) elem.requestFullscreen();
+                                // Guide Vocal / Original Artist Switcher with Intro Offset Compensation
+                                if has_guide {
+                                    button {
+                                        class: if is_guide_vocal() { "ctrl-btn action-btn guide-active" } else { "ctrl-btn action-btn" },
+                                        title: if is_guide_vocal() { "Switch back to Karaoke" } else { "Switch to Original Artist Vocal (in-sync)" },
+                                        onclick: move |_| {
+                                            let mut eval_time = document::eval(r#"
+                                                let cur = window._ktv_video_current_time;
+                                                if (!cur || cur <= 0) {
+                                                    let elapsed = (Date.now() - (window._ktv_video_mount_time || Date.now())) / 1000;
+                                                    cur = Math.max(0, elapsed + (window._ktv_current_start_sec || 0));
+                                                }
+                                                dioxus.send(Math.floor(cur).toString());
+                                            "#);
+                                            let intro_skip = u64::from(song.intro_skip_secs);
+                                            let dur = u64::from(song.duration_secs);
+                                            spawn(async move {
+                                                if let Ok(sec_str) = eval_time.recv::<String>().await {
+                                                    let raw_sec = sec_str.parse::<u64>().unwrap_or_else(|_| current_playback_sec());
+                                                    if !is_guide_vocal() {
+                                                        // Karaoke -> Official MV: subtract intro skip bumper
+                                                        let mv_sec = raw_sec.saturating_sub(intro_skip).min(dur);
+                                                        preserved_switch_sec.set(mv_sec);
+                                                        current_playback_sec.set(mv_sec);
+                                                        is_guide_vocal.set(true);
+                                                    } else {
+                                                        // Official MV -> Karaoke: add intro skip bumper back
+                                                        let karaoke_sec = (raw_sec + intro_skip).min(dur);
+                                                        preserved_switch_sec.set(karaoke_sec);
+                                                        current_playback_sec.set(karaoke_sec);
+                                                        is_guide_vocal.set(false);
+                                                    }
+                                                }
+                                            });
+                                        },
+                                        if is_guide_vocal() {
+                                            span { "Vocal: Original" }
                                         } else {
-                                            if (document.exitFullscreen) document.exitFullscreen();
+                                            span { "Vocal: Karaoke" }
                                         }
-                                    "#);
-                                },
-                                span { "Fullscreen" }
-                            }
+                                    }
+                                }
 
-                            // Replay
-                            button {
-                                class: "ctrl-btn action-btn",
-                                title: "Restart Song",
-                                onclick: move |_| {
-                                    preserved_switch_sec.set(0);
-                                    on_replay_song.call(());
-                                },
-                                span { "Replay" }
-                            }
+                                // Live Pitch & Score Evaluation Toggle
+                                button {
+                                    class: if is_scoring_active() { "ctrl-btn action-btn score-active" } else { "ctrl-btn action-btn" },
+                                    title: "Toggle live pitch evaluation",
+                                    onclick: move |_| is_scoring_active.set(!is_scoring_active()),
+                                    span { "Score HUD" }
+                                }
+
+                                // Fullscreen Cinema Mode
+                                button {
+                                    class: "ctrl-btn action-btn",
+                                    title: "Toggle Fullscreen Cinema Mode",
+                                    onclick: move |_| {
+                                        let _ = document::eval(r#"
+                                            let elem = document.querySelector('.stage-player-side');
+                                            if (!document.fullscreenElement) {
+                                                if (elem && elem.requestFullscreen) elem.requestFullscreen();
+                                            } else {
+                                                if (document.exitFullscreen) document.exitFullscreen();
+                                            }
+                                        "#);
+                                    },
+                                    span { "Fullscreen" }
+                                }
+
+                                // Replay
+                                button {
+                                    class: "ctrl-btn action-btn",
+                                    title: "Restart Song",
+                                    onclick: move |_| {
+                                        preserved_switch_sec.set(0);
+                                        current_playback_sec.set(0);
+                                        on_replay_song.call(());
+                                    },
+                                    span { "Replay" }
+                                }
 
                             // Next Song / Skip
                             button {
@@ -293,6 +381,7 @@ pub fn Player(
                     }
                 }
             }
+        }
         }
         None => {
             rsx! {
@@ -322,3 +411,27 @@ pub fn Player(
         }
     }
 }
+
+fn format_time(total_secs: u64) -> String {
+    let m = total_secs / 60;
+    let s = total_secs % 60;
+    format!("{m:02}:{s:02}")
+}
+
+fn seek_video_to(target: u64) {
+    let js = format!(
+        "window._ktv_video_mount_time = Date.now(); \
+         window._ktv_current_start_sec = {target}; \
+         window._ktv_video_current_time = {target}; \
+         let iframe = document.getElementById('ktv-youtube-player'); \
+         if (iframe && iframe.contentWindow) {{ \
+             iframe.contentWindow.postMessage(JSON.stringify({{ \
+                 event: 'command', \
+                 func: 'seekTo', \
+                 args: [{target}, true] \
+             }}), '*'); \
+         }}"
+    );
+    let _ = document::eval(&js);
+}
+
