@@ -2,29 +2,43 @@
 
 > A high-performance, minimalist Web Karaoke player built 100% in **Rust** using **Dioxus 0.7.1 (Web / WASM)**. Designed for real-world party rooms and home setups with official Thai music feeds (`@gmmkaraoke`, `@whattheduckmusic`), automated intro bumper bypass, verified song catalog, dual-stream vocal toggles, and an intelligent Auto-DJ recommendation engine.
 
+[![Build & Test](https://img.shields.io/badge/Rust-1.80%2B-orange.svg)](https://www.rust-lang.org/)
+[![Dioxus](https://img.shields.io/badge/Dioxus-0.7.1-blue.svg)](https://dioxuslabs.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Zero-Tracking](https://img.shields.io/badge/Privacy-Zero--Tracking-brightgreen.svg)](#privacy--legal-compliance)
+
 ---
 
-## Features
+## Key Features
 
 ### 1. Direct Official Karaoke Streams
 * Indexed official karaoke catalogs from **GMM Grammy** and **What The Duck**.
 * Includes full verified collections for top artists like **COCKTAIL** (*คุกเข่า*, *เธอ*, *คู่ชีวิต*, *ดึงดัน*, *เธอทำให้ฉันเสียใจ*), **BOWKYLION** (*ที่คั่นหนังสือ*, *วาดไว้*), **Silly Fools** (*วัดใจ*), **Big Ass** (*เล่นของสูง*), etc.
 
-### 2. Smart Platform Intro Skip
-* Automatically skips introductory channel bumpers (e.g. GMM's 13s intro) directly to the music start, with an on-screen toggle to play the intro if desired.
+### 2. Full Video Click Shield (Kiosk Safety)
+* A full-coverage transparent shield covers the player frame, preventing users from accidentally clicking external YouTube recommendations, advertisements, or channel links.
+* Preserves top-level browser focus so Type-to-Search works uninterrupted.
 
-### 3. Dual-Stream Vocal Switcher
-* **Karaoke Mode**: Official backing track for singing.
-* **Original Vocal Mode**: Instant switch to official artist MV to hear the original singer while preserving playback position.
+### 3. KTV Timeline Scrubber & Quick Jumps
+* Custom HTML5 timeline scrubber slider showing formatted `current_time` and `total_time` (`mm:ss`).
+* Dedicated on-screen **`-10s`** and **`+10s`** jump buttons for repeating tricky vocal passages or skipping guitar solos.
+* Keyboard arrow navigation: **`ArrowLeft`** (-5s) and **`ArrowRight`** (+5s).
 
-### 4. 10-Key KTV Keypad Remote
+### 4. Synchronized Vocal Switcher with Intro Offset Compensation
+* **Karaoke Mode**: Official backing track with lyrics.
+* **Original Vocal Mode**: Instant switch to official artist MV to hear the singer while preserving song progress.
+* **Offset Compensation**: Uses individual song offsets (`guide_offset_secs`) to align lyrics accurately between Karaoke bumpers and Official MV story intros without restarting from 0.
+
+### 5. OG KTV "Type-to-Search" (Global Keystroke Capture)
+* Type any song title, artist, or 5-digit code anywhere on your keyboard to instantly filter the catalog.
+* Native support for `Backspace`, `Delete`, and `Escape` for both English and Thai scripts.
+
+### 6. 10-Key KTV Keypad Remote & On-Screen Play/Pause
 * 5-digit quick code dialer (e.g. `#10026` for *คุกเข่า*).
-* Real-time Key Transposition (`-2` to `+2` semitones) and tempo control (`0.9x` to `1.1x`).
+* Real-time Key Transposition (`-6` to `+6` semitones) and tempo control (`0.9x` to `1.1x`).
+* Dedicated **Play / Pause** toggle button with active state styling.
 
-### 5. Automated Next-Song Transition
-* YouTube Iframe API event bridge detects video completion (`onStateChange: 0`) and transitions seamlessly to the next song in the queue.
-
-### 6. Auto-DJ Recommendation Engine (`katgpt-rs` inspired)
+### 7. Auto-DJ Recommendation Engine (`katgpt-rs` inspired)
 * **Dwell Telemetry**: Records active singing duration per track.
 * **Tropical $(\max, +)$ Semiring**: Hard-prunes songs skipped prematurely (< 20 seconds).
 * **BLAKE3 State Commitment**: 32-byte cryptographic hashes for instantaneous reactive change detection.
@@ -32,10 +46,23 @@
 
 ---
 
+## Keyboard Controls
+
+| Key | Action |
+| :--- | :--- |
+| **Any Character / Number** | Type-to-Search across the catalog |
+| **`Backspace` / `Delete`** | Delete character from search query |
+| **`Escape`** | Clear search query |
+| **`Space`** | Toggle Play / Pause |
+| **`ArrowLeft`** | Jump backward 5 seconds |
+| **`ArrowRight`** | Jump forward 5 seconds |
+
+---
+
 ## Getting Started
 
 ### Prerequisites
-* Rust 1.85+
+* Rust 1.80+ (`wasm32-unknown-unknown` target)
 * Dioxus CLI 0.7.1:
   ```bash
   cargo install dioxus-cli --version 0.7.1
@@ -49,8 +76,21 @@ Open [http://localhost:8080](http://localhost:8080) in your browser.
 
 ### Run Tests
 ```bash
-cargo test --test recommendation_test
+cargo test -p app --test recommendation_test
 ```
+
+### Run Linting
+```bash
+cargo clippy --fix --allow-dirty --quiet
+```
+
+---
+
+## Privacy & Legal Compliance
+
+* **100% Client-Side WebAssembly**: No media or copyrighted files are stored on our servers.
+* **YouTube Embed API Compliance**: Uses standard YouTube embedded players in accordance with YouTube Developer Policy Section 3.2. All ad views, watch time, and royalties go directly to the respective record labels and artists.
+* **Zero Tracking**: No tracking cookies, analytics pixels, or personal data collection (GDPR & PDPA compliant).
 
 ---
 
@@ -59,9 +99,11 @@ cargo test --test recommendation_test
 * [Architecture & Math Guide](file:///Users/ozone/karaoke/docs/ARCHITECTURE.md)
 * [Cloudflare Workers & Pages Deployment Guide](file:///Users/ozone/karaoke/docs/CLOUDFLARE_WORKERS_GUIDE.md)
 * [Developer Handover & Solana Integration Blueprint](file:///Users/ozone/karaoke/docs/DEVELOPER_GUIDE.md)
+* [System Handover 001](file:///Users/ozone/karaoke/.handovers/001_ktv_complete_system_handover.md)
+* [Issue 001: Video Focus Trap & Vocal Offset Fix](file:///Users/ozone/karaoke/.issues/001_vocal_switch_offset_and_scrubber_controls.md)
 
 ---
 
 ## License
 
-MIT License. Embeds comply with YouTube API Terms of Service.
+MIT License.

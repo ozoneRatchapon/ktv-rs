@@ -57,6 +57,7 @@ pub fn CustomAdd(
                     artist: song_artist,
                     youtube_id: vid,
                     guide_video_id: None,
+                    guide_offset_secs: 0,
                     duration_secs: 240,
                     intro_skip_secs: intro_skip(),
                     category: "Custom".to_string(),

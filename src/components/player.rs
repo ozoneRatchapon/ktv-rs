@@ -14,6 +14,7 @@ pub fn Player(
     let mut is_skipped = use_signal(|| true);
     let mut is_guide_vocal = use_signal(|| false);
     let mut is_scoring_active = use_signal(|| false);
+    let mut is_paused = use_signal(|| false);
     let mut preserved_switch_sec = use_signal(|| 0u64);
     let mut current_playback_sec = use_signal(|| 0u64);
 
@@ -44,10 +45,34 @@ pub fn Player(
                     } catch(e) {}
                 });
             }
+
+            window.addEventListener('ktv-pause-state', (e) => {
+                dioxus.send('PAUSE_STATE:' + (e.detail ? '1' : '0'));
+            });
+
+            window._ktv_toggle_playback = function(forcedState) {
+                let iframe = document.getElementById('ktv-youtube-player');
+                if (!iframe || !iframe.contentWindow) return;
+                let nextState = (typeof forcedState === 'boolean') ? forcedState : !window._ktv_is_paused;
+                window._ktv_is_paused = nextState;
+                if (!nextState) {
+                    window._ktv_video_mount_time = Date.now();
+                    window._ktv_current_start_sec = window._ktv_video_current_time || 0;
+                }
+                let cmd = nextState ? 'pauseVideo' : 'playVideo';
+                iframe.contentWindow.postMessage(JSON.stringify({
+                    event: 'command',
+                    func: cmd,
+                    args: []
+                }), '*');
+                window.dispatchEvent(new CustomEvent('ktv-pause-state', { detail: nextState }));
+            };
+
             if (window._ktv_progress_ticker) {
                 clearInterval(window._ktv_progress_ticker);
             }
             window._ktv_progress_ticker = setInterval(() => {
+                if (window._ktv_is_paused) return;
                 let iframe = document.getElementById('ktv-youtube-player');
                 if (iframe && iframe.contentWindow) {
                     try {
@@ -71,6 +96,8 @@ pub fn Player(
                     if let Ok(sec) = time_str.parse::<u64>() {
                         current_playback_sec.set(sec);
                     }
+                } else if let Some(pause_str) = msg.strip_prefix("PAUSE_STATE:") {
+                    is_paused.set(pause_str == "1");
                 }
             }
         });
@@ -141,9 +168,8 @@ pub fn Player(
                             title: "Click to Play/Pause",
                             onclick: move |_| {
                                 let _ = document::eval(r#"
-                                    let iframe = document.getElementById('ktv-youtube-player');
-                                    if (iframe && iframe.contentWindow) {
-                                        iframe.contentWindow.postMessage('{"event":"command","func":"togglePlay","args":""}', '*');
+                                    if (typeof window._ktv_toggle_playback === 'function') {
+                                        window._ktv_toggle_playback();
                                     }
                                     window.focus();
                                 "#);
@@ -304,20 +330,20 @@ pub fn Player(
                                                 }
                                                 dioxus.send(Math.floor(cur).toString());
                                             "#);
-                                            let intro_skip = u64::from(song.intro_skip_secs);
+                                            let offset = song.guide_offset_secs as i64;
                                             let dur = u64::from(song.duration_secs);
                                             spawn(async move {
                                                 if let Ok(sec_str) = eval_time.recv::<String>().await {
                                                     let raw_sec = sec_str.parse::<u64>().unwrap_or_else(|_| current_playback_sec());
                                                     if !is_guide_vocal() {
-                                                        // Karaoke -> Official MV: subtract intro skip bumper
-                                                        let mv_sec = raw_sec.saturating_sub(intro_skip).min(dur);
+                                                        // Karaoke -> Official MV: add individual song offset
+                                                        let mv_sec = (raw_sec as i64 + offset).clamp(0, dur as i64) as u64;
                                                         preserved_switch_sec.set(mv_sec);
                                                         current_playback_sec.set(mv_sec);
                                                         is_guide_vocal.set(true);
                                                     } else {
-                                                        // Official MV -> Karaoke: add intro skip bumper back
-                                                        let karaoke_sec = (raw_sec + intro_skip).min(dur);
+                                                        // Official MV -> Karaoke: subtract individual song offset
+                                                        let karaoke_sec = (raw_sec as i64 - offset).clamp(0, dur as i64) as u64;
                                                         preserved_switch_sec.set(karaoke_sec);
                                                         current_playback_sec.set(karaoke_sec);
                                                         is_guide_vocal.set(false);
@@ -330,6 +356,24 @@ pub fn Player(
                                         } else {
                                             span { "Vocal: Karaoke" }
                                         }
+                                    }
+                                }
+
+                                // Play / Pause Toggle Button
+                                button {
+                                    class: if is_paused() { "ctrl-btn action-btn pause-active" } else { "ctrl-btn action-btn" },
+                                    title: if is_paused() { "Resume Playback (Space)" } else { "Pause Playback (Space)" },
+                                    onclick: move |_| {
+                                        let _ = document::eval(r#"
+                                            if (typeof window._ktv_toggle_playback === 'function') {
+                                                window._ktv_toggle_playback();
+                                            }
+                                        "#);
+                                    },
+                                    if is_paused() {
+                                        span { "Play" }
+                                    } else {
+                                        span { "Pause" }
                                     }
                                 }
 
@@ -365,6 +409,7 @@ pub fn Player(
                                     onclick: move |_| {
                                         preserved_switch_sec.set(0);
                                         current_playback_sec.set(0);
+                                        is_paused.set(false);
                                         on_replay_song.call(());
                                     },
                                     span { "Replay" }

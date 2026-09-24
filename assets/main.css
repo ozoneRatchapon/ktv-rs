@@ -1858,6 +1858,12 @@ body {
     color: #ffffff !important;
 }
 
+.ctrl-btn.pause-active {
+    background: #d97706 !important;
+    border-color: #f59e0b !important;
+    color: #ffffff !important;
+}
+
 .ctrl-btn.score-active {
     background: #1e293b !important;
     border-color: var(--accent-cyan) !important;

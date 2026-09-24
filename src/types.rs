@@ -9,6 +9,8 @@ pub struct Song {
     pub youtube_id: String,
     #[serde(default)]
     pub guide_video_id: Option<String>,
+    #[serde(default)]
+    pub guide_offset_secs: i32,
     pub duration_secs: u32,
     pub intro_skip_secs: u32,
     pub category: String,
@@ -45,7 +47,7 @@ pub struct AppSettings {
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
-            default_intro_skip_secs: 13,
+            default_intro_skip_secs: 18,
             auto_skip_intro: true,
             volume: 85,
             room_name: "VIP ROOM 07".to_string(),

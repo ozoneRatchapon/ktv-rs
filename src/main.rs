@@ -96,6 +96,16 @@ fn App() -> Element {
                     dioxus.send('BACKSPACE');
                     return;
                 }
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    dioxus.send('SEEK_REL:-5');
+                    return;
+                }
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    dioxus.send('SEEK_REL:5');
+                    return;
+                }
                 if (e.key.length === 1) {
                     dioxus.send('CHAR:' + e.key);
                 }
@@ -120,11 +130,33 @@ fn App() -> Element {
                     search_query.set(String::new());
                 } else if msg == "SPACE" {
                     let _ = document::eval(r#"
-                        let iframe = document.getElementById('ktv-youtube-player');
-                        if (iframe && iframe.contentWindow) {
-                            iframe.contentWindow.postMessage('{"event":"command","func":"togglePlay","args":""}', '*');
+                        if (typeof window._ktv_toggle_playback === 'function') {
+                            window._ktv_toggle_playback();
                         }
                     "#);
+                } else if let Some(rel_str) = msg.strip_prefix("SEEK_REL:") {
+                    if let Ok(delta) = rel_str.parse::<i64>() {
+                        let js = format!(r#"
+                            let cur = window._ktv_video_current_time;
+                            if (!cur || cur <= 0) {{
+                                let elapsed = (Date.now() - (window._ktv_video_mount_time || Date.now())) / 1000;
+                                cur = Math.max(0, elapsed + (window._ktv_current_start_sec || 0));
+                            }}
+                            let target = Math.max(0, Math.floor(cur + ({delta})));
+                            window._ktv_video_mount_time = Date.now();
+                            window._ktv_current_start_sec = target;
+                            window._ktv_video_current_time = target;
+                            let iframe = document.getElementById('ktv-youtube-player');
+                            if (iframe && iframe.contentWindow) {{
+                                iframe.contentWindow.postMessage(JSON.stringify({{
+                                    event: 'command',
+                                    func: 'seekTo',
+                                    args: [target, true]
+                                }}), '*');
+                            }}
+                        "#);
+                        let _ = document::eval(&js);
+                    }
                 }
             }
         });
