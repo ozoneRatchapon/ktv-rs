@@ -4,11 +4,11 @@ use crate::types::Song;
 #[component]
 pub fn CatalogView(
     catalog: Vec<Song>,
+    mut search_query: Signal<String>,
     on_play_song: EventHandler<Song>,
     on_queue_song: EventHandler<Song>,
     on_queue_next_song: EventHandler<Song>,
 ) -> Element {
-    let mut search_query = use_signal(String::new);
     let mut selected_category = use_signal(|| "All".to_string());
 
     let categories = crate::catalog::get_categories();

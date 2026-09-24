@@ -88,6 +88,21 @@ pub fn Player(
                             allowfullscreen: true,
                         }
 
+                        // Full-coverage anti-redirect & focus protective shield
+                        div {
+                            class: "video-click-shield-full",
+                            title: "Click to Play/Pause",
+                            onclick: move |_| {
+                                let _ = document::eval(r#"
+                                    let iframe = document.getElementById('ktv-youtube-player');
+                                    if (iframe && iframe.contentWindow) {
+                                        iframe.contentWindow.postMessage('{"event":"command","func":"togglePlay","args":""}', '*');
+                                    }
+                                    window.focus();
+                                "#);
+                            },
+                        }
+
                         // Guide Vocal active badge overlay
                         if is_guide_vocal() {
                             div { class: "guide-vocal-indicator-badge",
@@ -193,6 +208,23 @@ pub fn Player(
                                 span { "Score HUD" }
                             }
 
+                            // Fullscreen Cinema Mode
+                            button {
+                                class: "ctrl-btn action-btn",
+                                title: "Toggle Fullscreen Cinema Mode",
+                                onclick: move |_| {
+                                    let _ = document::eval(r#"
+                                        let elem = document.querySelector('.stage-player-side');
+                                        if (!document.fullscreenElement) {
+                                            if (elem && elem.requestFullscreen) elem.requestFullscreen();
+                                        } else {
+                                            if (document.exitFullscreen) document.exitFullscreen();
+                                        }
+                                    "#);
+                                },
+                                span { "Fullscreen" }
+                            }
+
                             // Replay
                             button {
                                 class: "ctrl-btn action-btn",
@@ -217,8 +249,24 @@ pub fn Player(
             rsx! {
                 div { class: "player-container standby-mode",
                     div { class: "standby-content",
-                        h2 { class: "standby-title", "KTV STANDBY" }
-                        p { class: "standby-desc", "Select a song from Songbook or use Keypad to enter code" }
+                        div { class: "standby-hub-box",
+                            div { class: "standby-badge", "ROOM READY" }
+                            h2 { class: "standby-title", "KTV STANDBY" }
+                            p { class: "standby-desc", "Type any song name, artist, or 5-digit code on your keyboard to start" }
+
+                            div { class: "standby-qr-box",
+                                div { class: "qr-placeholder",
+                                    span { class: "qr-pixel-lead", "MOBILE REMOTE" }
+                                    span { class: "qr-sub", "Open ktv.local or scan code" }
+                                }
+                            }
+
+                            div { class: "standby-shortcuts-row",
+                                span { class: "shortcut-pill", "Keypad: 5-digit code" }
+                                span { class: "shortcut-pill", "Type to search" }
+                                span { class: "shortcut-pill", "Space: Pause" }
+                            }
+                        }
                     }
                 }
             }

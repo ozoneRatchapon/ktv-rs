@@ -28,7 +28,7 @@ fn main() {
 #[component]
 fn App() -> Element {
     let settings = use_signal(AppSettings::default);
-    let active_tab = use_signal(|| KtvTab::Catalog);
+    let mut active_tab = use_signal(|| KtvTab::Catalog);
     let mut catalog = use_signal(get_initial_catalog);
 
     // Initial default song (Joey Phuwasit - รักไม่ไหวแล้วโว้ย)
@@ -70,6 +70,65 @@ fn App() -> Element {
     let mut anticipator = use_signal(SleepTimeAnticipator::new);
     let mut song_started_at = use_signal(js_sys::Date::now);
     let mut auto_dj_notice = use_signal(|| None::<String>);
+    let mut search_query = use_signal(String::new);
+
+    // Global Keypress Listener (Type-to-Search & Space to Pause like authentic KTV booth)
+    use_effect(move || {
+        let mut eval = document::eval(r#"
+            if (window._ktv_remove_search_listener) {
+                window._ktv_remove_search_listener();
+            }
+            const handler = (e) => {
+                let tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+                if (tag === 'input' || tag === 'textarea') return;
+                if (e.ctrlKey || e.metaKey || e.altKey) return;
+                if (e.key === 'Escape') {
+                    dioxus.send('ESC');
+                    return;
+                }
+                if (e.key === ' ' || e.code === 'Space') {
+                    e.preventDefault();
+                    dioxus.send('SPACE');
+                    return;
+                }
+                if (e.key === 'Backspace' || e.key === 'Delete') {
+                    e.preventDefault();
+                    dioxus.send('BACKSPACE');
+                    return;
+                }
+                if (e.key.length === 1) {
+                    dioxus.send('CHAR:' + e.key);
+                }
+            };
+            window.addEventListener('keydown', handler);
+            window._ktv_remove_search_listener = () => window.removeEventListener('keydown', handler);
+        "#);
+
+        spawn(async move {
+            while let Ok(msg) = eval.recv::<String>().await {
+                if let Some(ch) = msg.strip_prefix("CHAR:") {
+                    let mut curr = search_query();
+                    curr.push_str(ch);
+                    search_query.set(curr);
+                    active_tab.set(KtvTab::Catalog);
+                } else if msg == "BACKSPACE" {
+                    let mut curr = search_query();
+                    curr.pop();
+                    search_query.set(curr);
+                    active_tab.set(KtvTab::Catalog);
+                } else if msg == "ESC" {
+                    search_query.set(String::new());
+                } else if msg == "SPACE" {
+                    let _ = document::eval(r#"
+                        let iframe = document.getElementById('ktv-youtube-player');
+                        if (iframe && iframe.contentWindow) {
+                            iframe.contentWindow.postMessage('{"event":"command","func":"togglePlay","args":""}', '*');
+                        }
+                    "#);
+                }
+            }
+        });
+    });
 
     // Sleep-time compute (pre-anticipates next recommended songs during playback)
     let anticipated_set = use_memo(move || {
@@ -379,6 +438,7 @@ fn App() -> Element {
                         KtvTab::Catalog => rsx! {
                             CatalogView {
                                 catalog: catalog(),
+                                search_query,
                                 on_play_song: handle_play_song,
                                 on_queue_song: handle_queue_song,
                                 on_queue_next_song: handle_queue_next_song,
