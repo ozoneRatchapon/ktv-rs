@@ -1,0 +1,7 @@
+pub mod catalog_view;
+pub mod custom_add;
+pub mod header;
+pub mod player;
+pub mod queue_view;
+pub mod remote;
+pub mod settings;
