@@ -1391,3 +1391,215 @@ body {
     from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Auto-DJ and Telemetry Styles */
+.now-playing-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.test-end-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(0, 245, 212, 0.4);
+    color: var(--neon-cyan);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.test-end-btn:hover {
+    background: rgba(0, 245, 212, 0.2);
+    box-shadow: 0 0 10px rgba(0, 245, 212, 0.3);
+}
+
+.auto-dj-toast {
+    position: fixed;
+    top: 76px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    background: linear-gradient(135deg, rgba(157, 78, 221, 0.95) 0%, rgba(255, 0, 127, 0.9) 100%);
+    color: white;
+    padding: 10px 18px;
+    border-radius: 30px;
+    box-shadow: 0 8px 25px rgba(255, 0, 127, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    animation: fadeIn 0.3s ease;
+}
+
+.toast-close-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 4px;
+}
+
+.auto-dj-section {
+    margin-top: 16px;
+    background: rgba(157, 78, 221, 0.06);
+    border: 1px solid rgba(157, 78, 221, 0.25);
+    border-radius: 14px;
+    padding: 14px;
+}
+
+.auto-dj-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.auto-dj-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dj-icon {
+    font-size: 20px;
+    filter: drop-shadow(0 0 8px var(--neon-purple));
+}
+
+.dj-heading {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #e0aaff;
+}
+
+.dj-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.blake3-badge {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 245, 212, 0.3);
+    color: var(--neon-cyan);
+    font-family: monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.anticipated-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.anticipated-card {
+    background: rgba(22, 29, 44, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    transition: all 0.2s ease;
+}
+
+.anticipated-card:hover {
+    border-color: rgba(157, 78, 221, 0.4);
+    background: rgba(28, 36, 56, 0.85);
+    transform: translateY(-1px);
+}
+
+.antic-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.antic-score-ring {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(157, 78, 221, 0.15);
+    border: 2px solid var(--neon-purple);
+    box-shadow: 0 0 10px rgba(157, 78, 221, 0.3);
+    flex-shrink: 0;
+}
+
+.score-val {
+    font-size: 11px;
+    font-weight: 800;
+    color: #e0aaff;
+    line-height: 1;
+}
+
+.score-lbl {
+    font-size: 8px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.antic-meta {
+    min-width: 0;
+}
+
+.antic-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.antic-artist {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.antic-reason {
+    font-size: 10px;
+    color: var(--neon-amber);
+    margin-top: 2px;
+}
+
+.antic-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.antic-btn {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.antic-btn.play {
+    background: linear-gradient(135deg, #00f5d4 0%, #00b4d8 100%);
+    color: #07090e;
+}
+
+.antic-btn.queue {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--border-glass);
+    color: var(--text-primary);
+}

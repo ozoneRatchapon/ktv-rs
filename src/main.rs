@@ -1,7 +1,9 @@
 use dioxus::prelude::*;
+use std::collections::HashSet;
 
 mod catalog;
 mod components;
+mod recommendation;
 mod types;
 
 use catalog::get_initial_catalog;
@@ -14,6 +16,7 @@ use components::{
     remote::Remote,
     settings::Settings,
 };
+use recommendation::{SleepTimeAnticipator, SongTelemetry};
 use types::{AppSettings, KtvTab, QueueItem, Song};
 
 const MAIN_CSS: Asset = asset!("/assets/main.css");
@@ -64,23 +67,90 @@ fn App() -> Element {
 
     let mut next_queue_id = use_signal(|| 5u64);
     let mut playback_speed = use_signal(|| 1.0f32);
+    let mut anticipator = use_signal(SleepTimeAnticipator::new);
+    let mut song_started_at = use_signal(js_sys::Date::now);
+    let mut auto_dj_notice = use_signal(|| None::<String>);
 
-    // Next / Skip Song Handler
-    let handle_next_song = move |_: ()| {
+    // Sleep-time compute (pre-anticipates next recommended songs during playback)
+    let anticipated_set = use_memo(move || {
+        let cat = catalog();
+        let q = queue();
+        let queued_ids: HashSet<String> = q.iter().map(|it| it.song.id.clone()).collect();
+        let curr_id = current_song().map(|c| c.song.id);
+
+        let ant = anticipator();
+        ant.sleep_compute(&cat, &queued_ids, curr_id.as_deref(), 4)
+    });
+
+    // Helper: Finish song and transition to next or Auto-DJ
+    let mut transition_to_next = move |completed_natural: bool| {
+        let elapsed_secs = ((js_sys::Date::now() - song_started_at()) / 1000.0).max(1.0);
+
+        // Record telemetry for the finished/skipped song
+        if let Some(curr) = current_song() {
+            let tele = SongTelemetry {
+                song_id: curr.song.id.clone(),
+                code: curr.song.code.clone(),
+                title: curr.song.title.clone(),
+                artist: curr.song.artist.clone(),
+                category: curr.song.category.clone(),
+                duration_secs: curr.song.duration_secs,
+                sang_seconds: elapsed_secs,
+                completed_natural,
+            };
+            let mut ant = anticipator();
+            ant.record_song_playback(tele);
+            anticipator.set(ant);
+        }
+
+        // Reset timer
+        song_started_at.set(js_sys::Date::now());
+
+        // Check queue
         let mut q = queue();
         if !q.is_empty() {
             let next_item = q.remove(0);
             queue.set(q);
             current_song.set(Some(next_item));
+            auto_dj_notice.set(None);
         } else {
-            current_song.set(None);
+            // Queue is empty: Trigger Auto-DJ wake_consume from katgpt anticipation set!
+            let ant_set = anticipated_set();
+            if let Some(rec) = anticipator().wake_consume(&ant_set) {
+                let qid = next_queue_id();
+                next_queue_id.set(qid + 1);
+
+                auto_dj_notice.set(Some(format!(
+                    "🧠 Auto-DJ: เพลงในคิวหมดแล้ว! เล่นต่ออัตโนมัติ: {} - {} ({})",
+                    rec.song.title, rec.song.artist, rec.reason
+                )));
+
+                current_song.set(Some(QueueItem {
+                    queue_id: qid,
+                    song: rec.song,
+                    key_shift: 0,
+                    requester: "Smart Auto-DJ".to_string(),
+                }));
+            } else {
+                current_song.set(None);
+            }
         }
+    };
+
+    // Next / Skip Song Handler (manual skip)
+    let handle_next_song = move |_: ()| {
+        transition_to_next(false);
+    };
+
+    // Video natural ended handler (via YouTube onStateChange: 0)
+    let handle_video_ended = move |_: ()| {
+        transition_to_next(true);
     };
 
     // Replay current song
     let handle_replay_song = move |_: ()| {
         if let Some(curr) = current_song() {
-            // Trigger player refresh
+            song_started_at.set(js_sys::Date::now());
             current_song.set(None);
             current_song.set(Some(curr));
         }
@@ -90,6 +160,7 @@ fn App() -> Element {
     let handle_play_song = move |song: Song| {
         let qid = next_queue_id();
         next_queue_id.set(qid + 1);
+        song_started_at.set(js_sys::Date::now());
 
         current_song.set(Some(QueueItem {
             queue_id: qid,
@@ -112,6 +183,7 @@ fn App() -> Element {
         };
 
         if current_song().is_none() {
+            song_started_at.set(js_sys::Date::now());
             current_song.set(Some(new_item));
         } else {
             let mut q = queue();
@@ -133,6 +205,7 @@ fn App() -> Element {
         };
 
         if current_song().is_none() {
+            song_started_at.set(js_sys::Date::now());
             current_song.set(Some(new_item));
         } else {
             let mut q = queue();
@@ -146,6 +219,7 @@ fn App() -> Element {
         if let Some(s) = catalog().iter().find(|s| s.code == code).cloned() {
             let qid = next_queue_id();
             next_queue_id.set(qid + 1);
+            song_started_at.set(js_sys::Date::now());
             current_song.set(Some(QueueItem {
                 queue_id: qid,
                 song: s,
@@ -167,6 +241,7 @@ fn App() -> Element {
                 requester: "Remote Code".to_string(),
             };
             if current_song().is_none() {
+                song_started_at.set(js_sys::Date::now());
                 current_song.set(Some(item));
             } else {
                 let mut q = queue();
@@ -246,6 +321,7 @@ fn App() -> Element {
         };
 
         if play_now || current_song().is_none() {
+            song_started_at.set(js_sys::Date::now());
             current_song.set(Some(item));
         } else {
             let mut q = queue();
@@ -255,6 +331,8 @@ fn App() -> Element {
     };
 
     let current_key = current_song().map(|c| c.key_shift).unwrap_or(0);
+    let ant_candidates = anticipated_set().candidates;
+    let ant_commitment = anticipated_set().commitment_hash;
 
     rsx! {
         document::Link { rel: "stylesheet", href: MAIN_CSS }
@@ -265,6 +343,19 @@ fn App() -> Element {
                 active_tab,
                 queue_len: queue().len(),
                 room_name: settings().room_name.clone(),
+            }
+
+            // Auto-DJ Toast Notification
+            if let Some(notice) = auto_dj_notice() {
+                div { class: "auto-dj-toast",
+                    span { class: "toast-icon", "✨" }
+                    span { "{notice}" }
+                    button {
+                        class: "toast-close-btn",
+                        onclick: move |_| auto_dj_notice.set(None),
+                        "✕"
+                    }
+                }
             }
 
             // Main Split Stage
@@ -278,6 +369,7 @@ fn App() -> Element {
                         on_next_song: handle_next_song,
                         on_replay_song: handle_replay_song,
                         on_key_change: handle_key_change,
+                        on_video_ended: handle_video_ended,
                     }
                 }
 
@@ -296,12 +388,17 @@ fn App() -> Element {
                             QueueView {
                                 queue: queue(),
                                 current_item: current_song(),
+                                anticipated: ant_candidates,
+                                commitment_hash: ant_commitment,
                                 on_skip: handle_next_song,
                                 on_remove: handle_remove_queue,
                                 on_move_up: handle_move_up,
                                 on_move_down: handle_move_down,
                                 on_clear_queue: handle_clear_queue,
                                 on_adjust_item_key: handle_adjust_item_key,
+                                on_queue_song: handle_queue_song,
+                                on_play_song: handle_play_song,
+                                on_simulate_end: handle_video_ended,
                             }
                         },
                         KtvTab::Remote => rsx! {

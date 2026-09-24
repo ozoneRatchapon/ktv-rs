@@ -1,22 +1,39 @@
 use dioxus::prelude::*;
-use crate::types::QueueItem;
+use crate::recommendation::AnticipatedRecommendation;
+use crate::types::{QueueItem, Song};
 
 #[component]
 pub fn QueueView(
     queue: Vec<QueueItem>,
     current_item: Option<QueueItem>,
+    anticipated: Vec<AnticipatedRecommendation>,
+    commitment_hash: String,
     on_skip: EventHandler<()>,
     on_remove: EventHandler<u64>,
     on_move_up: EventHandler<usize>,
     on_move_down: EventHandler<usize>,
     on_clear_queue: EventHandler<()>,
     on_adjust_item_key: EventHandler<(u64, i32)>,
+    on_queue_song: EventHandler<Song>,
+    on_play_song: EventHandler<Song>,
+    on_simulate_end: EventHandler<()>,
 ) -> Element {
     rsx! {
         div { class: "queue-container",
             // Currently Playing Card
             div { class: "now-playing-section",
-                div { class: "section-badge", "NOW SINGING (กำลังร้องอยู่)" }
+                div { class: "now-playing-header-row",
+                    div { class: "section-badge", "NOW SINGING (กำลังร้องอยู่)" }
+                    if current_item.is_some() {
+                        button {
+                            class: "test-end-btn",
+                            title: "Simulate video ending to test auto-advance to next song",
+                            onclick: move |_| on_simulate_end.call(()),
+                            "🎬 จบเพลงนี้ (Test Auto-Next)"
+                        }
+                    }
+                }
+
                 if let Some(curr) = current_item {
                     div { class: "now-playing-card",
                         div { class: "now-left",
@@ -41,7 +58,7 @@ pub fn QueueView(
                     }
                 } else {
                     div { class: "empty-now-playing",
-                        p { "ไม่มีเพลงกำลังร้องอยู่ เลือกเพลงเพื่อเริ่มร้องทันที" }
+                        p { "ไม่มีเพลงกำลังร้องอยู่ เลือกเพลงเพื่อเริ่มร้องทันที หรือให้ Auto-DJ เล่นเพลงถัดไป" }
                     }
                 }
             }
@@ -66,8 +83,8 @@ pub fn QueueView(
             if queue.is_empty() {
                 div { class: "empty-queue-box",
                     div { class: "empty-icon", "🎵" }
-                    h4 { "ยังไม่มีเพลงในคิว" }
-                    p { "กด 'จองเพลง' หรือ 'แทรกคิว' จากหน้า Songbook ได้เลย" }
+                    h4 { "คิวเพลงว่างแล้ว" }
+                    p { "เมื่อเพลงปัจจุบันจบ Auto-DJ จะเล่นเพลงที่คาดการณ์ไว้ด้านล่างให้อัตโนมัติ" }
                 }
             } else {
                 div { class: "queue-list",
@@ -136,6 +153,62 @@ pub fn QueueView(
                                         move |_| on_remove.call(qid)
                                     },
                                     "✕"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Smart Auto-DJ Anticipation Section (katgpt-sleep substrate)
+            div { class: "auto-dj-section",
+                div { class: "auto-dj-header",
+                    div { class: "auto-dj-title-group",
+                        span { class: "dj-icon", "🧠" }
+                        div {
+                            h4 { class: "dj-heading", "AUTO-DJ ANTICIPATION (คาดการณ์เพลงถัดไป)" }
+                            p { class: "dj-sub", "วิเคราะห์จาก Dwell-time ประวัติและแนวเพลงที่คุณร้องจริง" }
+                        }
+                    }
+                    if !commitment_hash.is_empty() {
+                        span {
+                            class: "blake3-badge",
+                            title: "BLAKE3 cryptographic state commitment",
+                            "BLAKE3: {&commitment_hash[..8]}"
+                        }
+                    }
+                }
+
+                div { class: "anticipated-list",
+                    for rec in anticipated.iter() {
+                        div { key: "{rec.song.id}", class: "anticipated-card",
+                            div { class: "antic-left",
+                                div { class: "antic-score-ring",
+                                    span { class: "score-val", "{(rec.predictability * 100.0) as u32}%" }
+                                    span { class: "score-lbl", "match" }
+                                }
+                                div { class: "antic-meta",
+                                    div { class: "antic-title", "{rec.song.title}" }
+                                    div { class: "antic-artist", "{rec.song.artist} • {rec.song.category}" }
+                                    div { class: "antic-reason", "💡 {rec.reason}" }
+                                }
+                            }
+                            div { class: "antic-actions",
+                                button {
+                                    class: "antic-btn play",
+                                    onclick: {
+                                        let s = rec.song.clone();
+                                        move |_| on_play_song.call(s.clone())
+                                    },
+                                    "▶️ ร้องเลย"
+                                }
+                                button {
+                                    class: "antic-btn queue",
+                                    onclick: {
+                                        let s = rec.song.clone();
+                                        move |_| on_queue_song.call(s.clone())
+                                    },
+                                    "➕ จอง"
                                 }
                             }
                         }

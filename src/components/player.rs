@@ -9,6 +9,7 @@ pub fn Player(
     on_next_song: EventHandler<()>,
     on_replay_song: EventHandler<()>,
     on_key_change: EventHandler<i32>,
+    on_video_ended: EventHandler<()>,
 ) -> Element {
     let mut is_skipped = use_signal(|| true);
 
@@ -18,6 +19,31 @@ pub fn Player(
             is_skipped.set(auto_skip);
         }
     }));
+
+    // Listen to YouTube Iframe onStateChange: 0 (ENDED)
+    use_effect(move || {
+        let mut eval = document::eval(r#"
+            if (!window._ktv_youtube_listener_active) {
+                window._ktv_youtube_listener_active = true;
+                window.addEventListener('message', (event) => {
+                    try {
+                        let data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+                        if (data && (data.event === 'onStateChange' && data.info === 0 || data.info === 0)) {
+                            dioxus.send('ended');
+                        }
+                    } catch(e) {}
+                });
+            }
+        "#);
+
+        spawn(async move {
+            while let Ok(msg) = eval.recv::<String>().await {
+                if msg == "ended" {
+                    on_video_ended.call(());
+                }
+            }
+        });
+    });
 
     match current_item {
         Some(item) => {
@@ -126,7 +152,7 @@ pub fn Player(
                     div { class: "standby-content",
                         div { class: "standby-pulse", "🎤" }
                         h2 { class: "standby-title", "KARAOKE ROOM STANDBY" }
-                        p { class: "standby-desc", "ไม่มีเพลงกำลังเล่น เลือกเพลงจาก Songbook หรือกดรหัสเพลงในรีโมทเพื่อเริ่มร้อง" }
+                        p { class: "standby-desc", "ไม่มีเพลงกำลังเล่น เลือกเพลงจาก Songbook หรือให้ Auto-DJ แนะนำเพลงถัดไป" }
                     }
                 }
             }
