@@ -89,24 +89,28 @@ impl SleepTimeAnticipator {
         self.played_song_ids.insert(telemetry.song_id.clone());
 
         let ratio = telemetry.completion_ratio();
-        let dwell_delta = if telemetry.is_high_affinity() {
-            // High dwell time: strong positive signal
-            1.5 + ratio
-        } else if telemetry.is_early_skip() {
-            // Early skip: negative penalty on this genre/artist
-            -1.8
+        if telemetry.is_early_skip() {
+            // Tropical (max, +) Bottleneck Pruner:
+            // Early skip triggers a hard bottleneck suppression (-infinity)
+            self.genre_weights.insert(telemetry.category.clone(), f32::NEG_INFINITY);
+            self.artist_weights.insert(telemetry.artist.clone(), f32::NEG_INFINITY);
         } else {
-            // Moderate listening
-            0.5 * ratio
-        };
+            let dwell_delta = if telemetry.is_high_affinity() {
+                1.5 + ratio
+            } else {
+                0.5 * ratio
+            };
 
-        // Update category/genre weights
-        let g_entry = self.genre_weights.entry(telemetry.category.clone()).or_insert(0.0);
-        *g_entry = (*g_entry + dwell_delta).clamp(-5.0, 10.0);
+            let g_entry = self.genre_weights.entry(telemetry.category.clone()).or_insert(0.0);
+            if *g_entry != f32::NEG_INFINITY {
+                *g_entry = (*g_entry + dwell_delta).clamp(-5.0, 10.0);
+            }
 
-        // Update artist weights
-        let a_entry = self.artist_weights.entry(telemetry.artist.clone()).or_insert(0.0);
-        *a_entry = (*a_entry + dwell_delta * 1.2).clamp(-5.0, 10.0);
+            let a_entry = self.artist_weights.entry(telemetry.artist.clone()).or_insert(0.0);
+            if *a_entry != f32::NEG_INFINITY {
+                *a_entry = (*a_entry + dwell_delta * 1.2).clamp(-5.0, 10.0);
+            }
+        }
 
         self.session_history.push(telemetry);
         self.version += 1;
@@ -139,6 +143,11 @@ impl SleepTimeAnticipator {
             // Calculate base latent score
             let genre_weight = self.genre_weights.get(&song.category).copied().unwrap_or(0.0);
             let artist_weight = self.artist_weights.get(&song.artist).copied().unwrap_or(0.0);
+
+            // Tropical Hard Bottleneck Prune:
+            if genre_weight == f32::NEG_INFINITY || artist_weight == f32::NEG_INFINITY {
+                continue;
+            }
 
             // Recency penalty if played in current session
             let recency_penalty = if self.played_song_ids.contains(&song.id) {

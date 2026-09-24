@@ -1,10 +1,10 @@
 use dioxus::prelude::*;
 use std::collections::HashSet;
 
-mod catalog;
-mod components;
-mod recommendation;
-mod types;
+use app::catalog;
+use app::components;
+use app::recommendation;
+use app::types;
 
 use catalog::get_initial_catalog;
 use components::{
