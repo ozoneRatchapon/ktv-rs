@@ -11,18 +11,17 @@ pub fn Settings(
         div { class: "settings-container",
             div { class: "settings-card",
                 div { class: "settings-header",
-                    span { class: "settings-icon", "⚙️" }
                     div {
-                        h3 { "การตั้งค่าระบบคาราโอเกะ (KTV Settings)" }
-                        p { "ปรับแต่งพฤติกรรมของเครื่องเล่นและระบบข้ามอินโทรอัตโนมัติ" }
+                        h3 { "System Settings" }
+                        p { "Player configuration and intro skip preferences" }
                     }
                 }
 
                 // Auto-skip intro toggle
                 div { class: "setting-row",
                     div { class: "setting-desc",
-                        div { class: "setting-title", "⚡ ข้ามอินโทรแพลตฟอร์มอัตโนมัติ (Auto Skip Platform Intro)" }
-                        div { class: "setting-sub", "ข้ามโลโก้และสปอตเปิดหัวเพลงของ YouTube Karaoke ทันทีที่เริ่มเล่น" }
+                        div { class: "setting-title", "Auto Skip Platform Intro" }
+                        div { class: "setting-sub", "Automatically skip channel bumper intro on playback start" }
                     }
                     button {
                         class: if current_settings.auto_skip_intro { "toggle-btn active" } else { "toggle-btn" },
@@ -31,15 +30,15 @@ pub fn Settings(
                             s.auto_skip_intro = !s.auto_skip_intro;
                             settings.set(s);
                         },
-                        if current_settings.auto_skip_intro { "เปิดใช้งาน (ON)" } else { "ปิด (OFF)" }
+                        if current_settings.auto_skip_intro { "ON" } else { "OFF" }
                     }
                 }
 
                 // Default Intro Skip Offset
                 div { class: "setting-row",
                     div { class: "setting-desc",
-                        div { class: "setting-title", "⏱️ เวลาข้ามอินโทรเริ่มต้น (Default Skip Duration)" }
-                        div { class: "setting-sub", "สำหรับเพลงของ GMM Karaoke โลโก้เปิดหัวเพลงมาตรฐานมีความยาวประมาณ 13 วินาที" }
+                        div { class: "setting-title", "Default Skip Duration" }
+                        div { class: "setting-sub", "Standard channel intro offset duration in seconds (13s for GMM)" }
                     }
                     div { class: "setting-input-group",
                         input {
@@ -56,15 +55,15 @@ pub fn Settings(
                                 }
                             }
                         }
-                        span { class: "input-unit", "วินาที" }
+                        span { class: "input-unit", "sec" }
                     }
                 }
 
                 // Room Name
                 div { class: "setting-row",
                     div { class: "setting-desc",
-                        div { class: "setting-title", "🏷️ ชื่อห้องคาราโอเกะ (Room Name)" }
-                        div { class: "setting-sub", "กำหนดชื่อห้องสำหรับแสดงที่หน้าจอหลัก" }
+                        div { class: "setting-title", "Room Name" }
+                        div { class: "setting-sub", "Display identifier for this KTV room" }
                     }
                     input {
                         class: "text-input",

@@ -36,11 +36,10 @@ pub fn CatalogView(
             // Search and Category Bar
             div { class: "catalog-filter-bar",
                 div { class: "search-input-wrapper",
-                    span { class: "search-icon", "🔍" }
                     input {
                         class: "search-input",
                         r#type: "text",
-                        placeholder: "ค้นหาชื่อเพลง, ศิลปิน หรือรหัส 5 หลัก...",
+                        placeholder: "Search by title, artist, or 5-digit code...",
                         value: "{search_query()}",
                         oninput: move |evt| search_query.set(evt.value()),
                     }
@@ -68,7 +67,7 @@ pub fn CatalogView(
 
             // Song list count
             div { class: "catalog-meta-row",
-                span { class: "count-text", "พบ {filtered_songs.len()} เพลงจาก Official GMM Karaoke" }
+                span { class: "count-text", "{filtered_songs.len()} Songs" }
             }
 
             // Song list grid
@@ -79,10 +78,12 @@ pub fn CatalogView(
                             div { class: "song-code-tag", "#{song.code}" }
                             div { class: "song-details",
                                 h3 { class: "song-title", "{song.title}" }
-                                p { class: "song-artist", "{song.artist}" }
+                                p { class: "song-artist", "{song.artist} • {song.channel}" }
                                 div { class: "song-badges",
                                     span { class: "genre-badge", "{song.category}" }
-                                    span { class: "intro-badge", "⏩ ข้ามอินโทร {song.intro_skip_secs}วิ" }
+                                    if song.intro_skip_secs > 0 {
+                                        span { class: "intro-badge", "Intro: {song.intro_skip_secs}s" }
+                                    }
                                 }
                             }
                         }
@@ -95,7 +96,7 @@ pub fn CatalogView(
                                     let s = song.clone();
                                     move |_| on_play_song.call(s.clone())
                                 },
-                                span { "▶️ ร้องเลย" }
+                                span { "Play" }
                             }
                             button {
                                 class: "card-btn queue-next",
@@ -104,7 +105,7 @@ pub fn CatalogView(
                                     let s = song.clone();
                                     move |_| on_queue_next_song.call(s.clone())
                                 },
-                                span { "⬆️ แทรกคิว" }
+                                span { "Insert" }
                             }
                             button {
                                 class: "card-btn queue-add",
@@ -113,7 +114,7 @@ pub fn CatalogView(
                                     let s = song.clone();
                                     move |_| on_queue_song.call(s.clone())
                                 },
-                                span { "➕ จองเพลง" }
+                                span { "Queue" }
                             }
                         }
                     }

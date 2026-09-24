@@ -80,10 +80,9 @@ pub fn CustomAdd(
         div { class: "custom-add-container",
             div { class: "custom-add-card",
                 div { class: "card-heading",
-                    span { class: "heading-icon", "📺" }
                     div {
-                        h3 { "เพิ่มเพลงจาก YouTube อิสระ" }
-                        p { "วางลิงก์วิดีโอคาราโอเกะใดก็ได้จาก YouTube พร้อมตั้งค่าเวลาตัดอินโทร" }
+                        h3 { "Add Custom YouTube Song" }
+                        p { "Enter any YouTube video URL or ID with optional intro skip offset" }
                     }
                 }
 
@@ -92,11 +91,11 @@ pub fn CustomAdd(
                 }
 
                 div { class: "form-group",
-                    label { "YouTube URL หรือ Video ID *" }
+                    label { "YouTube URL or Video ID *" }
                     input {
                         class: "form-input",
                         r#type: "text",
-                        placeholder: "e.g. https://www.youtube.com/watch?v=inGSjouS77g หรือ inGSjouS77g",
+                        placeholder: "e.g. https://www.youtube.com/watch?v=9aCUDQ8SPcA or 9aCUDQ8SPcA",
                         value: "{url_or_id()}",
                         oninput: move |evt| url_or_id.set(evt.value()),
                     }
@@ -104,22 +103,22 @@ pub fn CustomAdd(
 
                 div { class: "form-row",
                     div { class: "form-group flex-1",
-                        label { "ชื่อเพลง (Title)" }
+                        label { "Song Title" }
                         input {
                             class: "form-input",
                             r#type: "text",
-                            placeholder: "ชื่อเพลง",
+                            placeholder: "Title",
                             value: "{title()}",
                             oninput: move |evt| title.set(evt.value()),
                         }
                     }
 
                     div { class: "form-group flex-1",
-                        label { "ศิลปิน (Artist)" }
+                        label { "Artist" }
                         input {
                             class: "form-input",
                             r#type: "text",
-                            placeholder: "ชื่อศิลปิน",
+                            placeholder: "Artist",
                             value: "{artist()}",
                             oninput: move |evt| artist.set(evt.value()),
                         }
@@ -127,22 +126,22 @@ pub fn CustomAdd(
                 }
 
                 div { class: "form-group",
-                    label { "ระยะเวลาข้าม Intro แพลตฟอร์ม (วินาที)" }
+                    label { "Intro Skip Offset (Seconds)" }
                     div { class: "intro-preset-row",
                         button {
                             class: if intro_skip() == 0 { "preset-btn active" } else { "preset-btn" },
                             onclick: move |_| intro_skip.set(0),
-                            "0s (ไม่ข้าม)"
+                            "0s"
                         }
                         button {
                             class: if intro_skip() == 10 { "preset-btn active" } else { "preset-btn" },
                             onclick: move |_| intro_skip.set(10),
-                            "10s (สั้น)"
+                            "10s"
                         }
                         button {
                             class: if intro_skip() == 13 { "preset-btn active" } else { "preset-btn" },
                             onclick: move |_| intro_skip.set(13),
-                            "13s (GMM มาตรฐาน)"
+                            "13s"
                         }
                         button {
                             class: if intro_skip() == 15 { "preset-btn active" } else { "preset-btn" },
@@ -166,12 +165,12 @@ pub fn CustomAdd(
 
                 div { class: "form-actions-row",
                     button {
-                        class: "submit-btn primary-glow",
+                        class: "submit-btn primary-btn",
                         onclick: {
                             let mut action = submit_action;
                             move |_| action(true)
                         },
-                        span { "▶️ ร้องทันที (Play Now)" }
+                        span { "Play Now" }
                     }
                     button {
                         class: "submit-btn secondary-btn",
@@ -179,7 +178,7 @@ pub fn CustomAdd(
                             let mut action = submit_action;
                             move |_| action(false)
                         },
-                        span { "➕ เพิ่มเข้าคิว (Add Queue)" }
+                        span { "Add to Queue" }
                     }
                 }
             }

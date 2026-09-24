@@ -91,8 +91,7 @@ pub fn Player(
                         // Guide Vocal active badge overlay
                         if is_guide_vocal() {
                             div { class: "guide-vocal-indicator-badge",
-                                span { class: "badge-icon", "🎙️" }
-                                span { "ORIGINAL SINGER VOCAL ON (กำลังฟังเสียงร้องจริงต้นฉบับ)" }
+                                span { "Original Singer Vocal" }
                             }
                         }
 
@@ -105,7 +104,7 @@ pub fn Player(
                                     span { class: "hud-rank-badge", "RANK S" }
                                 }
                                 div { class: "hud-pitch-track",
-                                    div { class: "pitch-note-pill perfect", "C#4 PERFECT" }
+                                    div { class: "pitch-note-pill perfect", "C#4 Match" }
                                     div { class: "pitch-visualizer-bars",
                                         div { class: "wave-bar h-60" }
                                         div { class: "wave-bar h-85" }
@@ -113,7 +112,7 @@ pub fn Player(
                                         div { class: "wave-bar h-75" }
                                         div { class: "wave-bar h-45" }
                                     }
-                                    div { class: "combo-badge", "🔥 COMBO x18" }
+                                    div { class: "combo-badge", "Combo 18" }
                                 }
                             }
                         }
@@ -123,8 +122,7 @@ pub fn Player(
                             div { class: "intro-skip-badge-overlay",
                                 if is_skipped() {
                                     div { class: "intro-banner skipped",
-                                        span { class: "badge-icon", "⚡" }
-                                        span { "Skipped Intro ({song.intro_skip_secs}s)" }
+                                        span { "Intro Skipped ({song.intro_skip_secs}s)" }
                                         button {
                                             class: "badge-action-btn",
                                             onclick: move |_| is_skipped.set(false),
@@ -133,12 +131,11 @@ pub fn Player(
                                     }
                                 } else {
                                     div { class: "intro-banner playing-intro",
-                                        span { class: "badge-icon", "⏱️" }
-                                        span { "Playing Intro bumper ({song.intro_skip_secs}s)" }
+                                        span { "Playing Intro ({song.intro_skip_secs}s)" }
                                         button {
                                             class: "badge-action-btn primary",
                                             onclick: move |_| is_skipped.set(true),
-                                            "Skip Intro ⏩"
+                                            "Skip Intro"
                                         }
                                     }
                                 }
@@ -163,14 +160,14 @@ pub fn Player(
                                     class: "ctrl-btn key-btn",
                                     title: "Pitch Down (-1 semitone)",
                                     onclick: move |_| on_key_change.call(-1),
-                                    "♭ -1"
+                                    "-1"
                                 }
                                 span { class: "key-pill", "{key_label}" }
                                 button {
                                     class: "ctrl-btn key-btn",
                                     title: "Pitch Up (+1 semitone)",
                                     onclick: move |_| on_key_change.call(1),
-                                    "♯ +1"
+                                    "+1"
                                 }
                             }
 
@@ -178,12 +175,12 @@ pub fn Player(
                             if has_guide {
                                 button {
                                     class: if is_guide_vocal() { "ctrl-btn action-btn guide-active" } else { "ctrl-btn action-btn" },
-                                    title: if is_guide_vocal() { "สลับเป็นดนตรีล้วน (Karaoke)" } else { "สลับฟังเสียงร้องจริงของนักร้องต้นฉบับ" },
+                                    title: if is_guide_vocal() { "Switch to Instrumental Karaoke" } else { "Switch to Original Artist Vocal" },
                                     onclick: move |_| is_guide_vocal.set(!is_guide_vocal()),
                                     if is_guide_vocal() {
-                                        span { "🎙️ เสียงร้องจริง: ON" }
+                                        span { "Vocal: Original" }
                                     } else {
-                                        span { "🎵 ดนตรีล้วน (Karaoke)" }
+                                        span { "Vocal: Karaoke" }
                                     }
                                 }
                             }
@@ -191,25 +188,25 @@ pub fn Player(
                             // Live Pitch & Score Evaluation Toggle
                             button {
                                 class: if is_scoring_active() { "ctrl-btn action-btn score-active" } else { "ctrl-btn action-btn" },
-                                title: "เปิด/ปิด ระบบวัดระดับเสียงร้องสด & ให้คะแนน (Sing & Score)",
+                                title: "Toggle live pitch evaluation",
                                 onclick: move |_| is_scoring_active.set(!is_scoring_active()),
-                                span { "🎤 วัดคะแนนร้องสด" }
+                                span { "Score HUD" }
                             }
 
                             // Replay
                             button {
                                 class: "ctrl-btn action-btn",
-                                title: "Restart Song (ร้องใหม่)",
+                                title: "Restart Song",
                                 onclick: move |_| on_replay_song.call(()),
-                                span { "🔄 ร้องใหม่" }
+                                span { "Replay" }
                             }
 
                             // Next Song / Skip
                             button {
                                 class: "ctrl-btn action-btn primary-glow",
-                                title: "Skip Song (ตัดเพลงถัดไป)",
+                                title: "Next Song",
                                 onclick: move |_| on_next_song.call(()),
-                                span { "ข้ามเพลง ⏭️" }
+                                span { "Next Song" }
                             }
                         }
                     }
@@ -220,9 +217,8 @@ pub fn Player(
             rsx! {
                 div { class: "player-container standby-mode",
                     div { class: "standby-content",
-                        div { class: "standby-pulse", "🎤" }
-                        h2 { class: "standby-title", "KARAOKE ROOM STANDBY" }
-                        p { class: "standby-desc", "ไม่มีเพลงกำลังเล่น เลือกเพลงจาก Songbook หรือให้ Auto-DJ แนะนำเพลงถัดไป" }
+                        h2 { class: "standby-title", "KTV STANDBY" }
+                        p { class: "standby-desc", "Select a song from Songbook or use Keypad to enter code" }
                     }
                 }
             }

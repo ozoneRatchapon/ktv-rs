@@ -60,7 +60,7 @@ pub fn Remote(
             div { class: "remote-panel",
                 // Header of Remote
                 div { class: "remote-header",
-                    div { class: "remote-title-badge", "KTV SMART CONTROLLER" }
+                    div { class: "remote-title-badge", "KEYPAD CONTROLLER" }
                     if let Some(msg) = message_feedback() {
                         div { class: "remote-feedback-toast", "{msg}" }
                     }
@@ -82,10 +82,9 @@ pub fn Remote(
                     // Song preview if found
                     if let Some(s) = matched_song {
                         div { class: "preview-card",
-                            span { class: "preview-icon", "🎵" }
                             div { class: "preview-text",
                                 div { class: "preview-title", "{s.title}" }
-                                div { class: "preview-artist", "{s.artist}" }
+                                div { class: "preview-artist", "{s.artist} • {s.channel}" }
                             }
                         }
                     }
@@ -133,62 +132,62 @@ pub fn Remote(
                 // Code Actions: Play Now vs Add to Queue
                 div { class: "code-actions-row",
                     button {
-                        class: "code-action-btn primary-glow",
+                        class: "code-action-btn primary-btn",
                         onclick: play_now,
-                        span { "▶️ ร้องเลย (Play)" }
+                        span { "Play" }
                     }
                     button {
                         class: "code-action-btn secondary-btn",
                         onclick: queue_now,
-                        span { "➕ จองเพลง (Queue)" }
+                        span { "Queue" }
                     }
                 }
 
                 // Pitch Transpose Control Section
                 div { class: "remote-section",
-                    div { class: "section-title", "🎚️ KEY TRANSPOSE (ปรับคีย์)" }
+                    div { class: "section-title", "KEY TRANSPOSE" }
                     div { class: "key-transpose-row",
                         button {
                             class: "pitch-btn",
                             onclick: move |_| on_key_shift.call(-2),
-                            "♭♭ -2"
+                            "-2"
                         }
                         button {
                             class: "pitch-btn",
                             onclick: move |_| on_key_shift.call(-1),
-                            "♭ -1"
+                            "-1"
                         }
                         button {
                             class: if current_key == 0 { "pitch-btn active" } else { "pitch-btn" },
                             onclick: move |_| on_reset_key.call(()),
-                            "ORIGINAL (±0)"
+                            "ORIGINAL"
                         }
                         button {
                             class: "pitch-btn",
                             onclick: move |_| on_key_shift.call(1),
-                            "♯ +1"
+                            "+1"
                         }
                         button {
                             class: "pitch-btn",
                             onclick: move |_| on_key_shift.call(2),
-                            "♯♯ +2"
+                            "+2"
                         }
                     }
                 }
 
                 // Tempo & Song Controls
                 div { class: "remote-section",
-                    div { class: "section-title", "⚡ PLAYBACK CONTROLS (ควบคุมเพลง)" }
+                    div { class: "section-title", "PLAYBACK CONTROLS" }
                     div { class: "transport-row",
                         button {
                             class: "transport-btn warning",
                             onclick: move |_| on_replay_song.call(()),
-                            "🔄 ร้องใหม่"
+                            "Replay"
                         }
                         button {
                             class: "transport-btn danger",
                             onclick: move |_| on_skip_song.call(()),
-                            "⏭️ ข้ามเพลง"
+                            "Next Song"
                         }
                     }
 
@@ -197,17 +196,17 @@ pub fn Remote(
                         button {
                             class: if (current_speed - 0.9).abs() < 0.01 { "speed-pill active" } else { "speed-pill" },
                             onclick: move |_| on_speed_change.call(0.9),
-                            "0.9x ช้า"
+                            "0.9x"
                         }
                         button {
                             class: if (current_speed - 1.0).abs() < 0.01 { "speed-pill active" } else { "speed-pill" },
                             onclick: move |_| on_speed_change.call(1.0),
-                            "1.0x ปกติ"
+                            "1.0x"
                         }
                         button {
                             class: if (current_speed - 1.1).abs() < 0.01 { "speed-pill active" } else { "speed-pill" },
                             onclick: move |_| on_speed_change.call(1.1),
-                            "1.1x เร็ว"
+                            "1.1x"
                         }
                     }
                 }

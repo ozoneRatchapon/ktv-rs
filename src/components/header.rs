@@ -10,12 +10,9 @@ pub fn Header(
     rsx! {
         header { class: "ktv-header",
             div { class: "header-left",
-                div { class: "neon-logo",
-                    span { class: "neon-icon", "🎤" }
-                    div { class: "logo-text-group",
-                        span { class: "logo-brand", "NEON KTV" }
-                        span { class: "logo-sub", "GMM OFFICIAL FEED" }
-                    }
+                div { class: "brand-group",
+                    span { class: "brand-title", "KTV-RS" }
+                    span { class: "brand-sub", "OPEN KARAOKE PLATFORM" }
                 }
                 div { class: "room-badge",
                     span { class: "status-dot" }
@@ -27,15 +24,13 @@ pub fn Header(
                 button {
                     class: if active_tab() == KtvTab::Catalog { "nav-btn active" } else { "nav-btn" },
                     onclick: move |_| active_tab.set(KtvTab::Catalog),
-                    span { class: "nav-icon", "📖" }
-                    span { "Songbook (เลือกเพลง)" }
+                    span { "Songbook" }
                 }
 
                 button {
                     class: if active_tab() == KtvTab::Queue { "nav-btn active" } else { "nav-btn" },
                     onclick: move |_| active_tab.set(KtvTab::Queue),
-                    span { class: "nav-icon", "📋" }
-                    span { "Queue (คิวเพลง)" }
+                    span { "Queue" }
                     if queue_len > 0 {
                         span { class: "queue-badge", "{queue_len}" }
                     }
@@ -44,21 +39,18 @@ pub fn Header(
                 button {
                     class: if active_tab() == KtvTab::Remote { "nav-btn active" } else { "nav-btn" },
                     onclick: move |_| active_tab.set(KtvTab::Remote),
-                    span { class: "nav-icon", "🎛️" }
-                    span { "Remote (รีโมท)" }
+                    span { "Keypad" }
                 }
 
                 button {
                     class: if active_tab() == KtvTab::CustomAdd { "nav-btn active" } else { "nav-btn" },
                     onclick: move |_| active_tab.set(KtvTab::CustomAdd),
-                    span { class: "nav-icon", "➕" }
-                    span { "Add URL (เพิ่มลิงก์)" }
+                    span { "Add URL" }
                 }
 
                 button {
                     class: if active_tab() == KtvTab::Settings { "nav-btn active" } else { "nav-btn" },
                     onclick: move |_| active_tab.set(KtvTab::Settings),
-                    span { class: "nav-icon", "⚙️" }
                     span { "Settings" }
                 }
             }

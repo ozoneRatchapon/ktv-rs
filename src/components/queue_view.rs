@@ -23,13 +23,13 @@ pub fn QueueView(
             // Currently Playing Card
             div { class: "now-playing-section",
                 div { class: "now-playing-header-row",
-                    div { class: "section-badge", "NOW SINGING (กำลังร้องอยู่)" }
+                    div { class: "section-badge", "NOW SINGING" }
                     if current_item.is_some() {
                         button {
                             class: "test-end-btn",
                             title: "Simulate video ending to test auto-advance to next song",
                             onclick: move |_| on_simulate_end.call(()),
-                            "🎬 จบเพลงนี้ (Test Auto-Next)"
+                            "End Song"
                         }
                     }
                 }
@@ -45,20 +45,20 @@ pub fn QueueView(
                             div { class: "now-meta",
                                 div { class: "now-code", "#{curr.song.code}" }
                                 h3 { class: "now-song-title", "{curr.song.title}" }
-                                p { class: "now-song-artist", "{curr.song.artist}" }
+                                p { class: "now-song-artist", "{curr.song.artist} • {curr.song.channel}" }
                             }
                         }
                         div { class: "now-actions",
                             button {
                                 class: "skip-btn primary-glow",
                                 onclick: move |_| on_skip.call(()),
-                                "ข้ามเพลงนี้ ⏭️"
+                                "Skip"
                             }
                         }
                     }
                 } else {
                     div { class: "empty-now-playing",
-                        p { "ไม่มีเพลงกำลังร้องอยู่ เลือกเพลงเพื่อเริ่มร้องทันที หรือให้ Auto-DJ เล่นเพลงถัดไป" }
+                        p { "No song currently playing. Select a song from the catalog to begin." }
                     }
                 }
             }
@@ -66,15 +66,15 @@ pub fn QueueView(
             // Up Next Queue Header
             div { class: "queue-header-row",
                 div { class: "queue-title-group",
-                    h3 { class: "queue-heading", "UP NEXT IN QUEUE (คิวเพลงรอร้อง)" }
-                    span { class: "queue-count-pill", "{queue.len()} เพลง" }
+                    h3 { class: "queue-heading", "QUEUE" }
+                    span { class: "queue-count-pill", "{queue.len()} songs" }
                 }
 
                 if !queue.is_empty() {
                     button {
                         class: "clear-all-btn",
                         onclick: move |_| on_clear_queue.call(()),
-                        "ลบคิวทั้งหมด 🗑️"
+                        "Clear Queue"
                     }
                 }
             }
@@ -82,9 +82,8 @@ pub fn QueueView(
             // Queue List
             if queue.is_empty() {
                 div { class: "empty-queue-box",
-                    div { class: "empty-icon", "🎵" }
-                    h4 { "คิวเพลงว่างแล้ว" }
-                    p { "เมื่อเพลงปัจจุบันจบ Auto-DJ จะเล่นเพลงที่คาดการณ์ไว้ด้านล่างให้อัตโนมัติ" }
+                    h4 { "Queue is empty" }
+                    p { "Auto-DJ will automatically transition to anticipated songs." }
                 }
             } else {
                 div { class: "queue-list",
@@ -95,7 +94,7 @@ pub fn QueueView(
                             div { class: "item-info",
                                 div { class: "item-code", "#{item.song.code}" }
                                 div { class: "item-title", "{item.song.title}" }
-                                div { class: "item-artist", "{item.song.artist}" }
+                                div { class: "item-artist", "{item.song.artist} • {item.song.channel}" }
                             }
 
                             // Pre-set key for this song
@@ -164,10 +163,9 @@ pub fn QueueView(
             div { class: "auto-dj-section",
                 div { class: "auto-dj-header",
                     div { class: "auto-dj-title-group",
-                        span { class: "dj-icon", "🧠" }
                         div {
-                            h4 { class: "dj-heading", "AUTO-DJ ANTICIPATION (คาดการณ์เพลงถัดไป)" }
-                            p { class: "dj-sub", "วิเคราะห์จาก Dwell-time ประวัติและแนวเพลงที่คุณร้องจริง" }
+                            h4 { class: "dj-heading", "AUTO-DJ SUGGESTIONS" }
+                            p { class: "dj-sub", "Predictive queue based on listening history & dwell time" }
                         }
                     }
                     if !commitment_hash.is_empty() {
@@ -190,7 +188,7 @@ pub fn QueueView(
                                 div { class: "antic-meta",
                                     div { class: "antic-title", "{rec.song.title}" }
                                     div { class: "antic-artist", "{rec.song.artist} • {rec.song.category}" }
-                                    div { class: "antic-reason", "💡 {rec.reason}" }
+                                    div { class: "antic-reason", "{rec.reason}" }
                                 }
                             }
                             div { class: "antic-actions",
@@ -200,7 +198,7 @@ pub fn QueueView(
                                         let s = rec.song.clone();
                                         move |_| on_play_song.call(s.clone())
                                     },
-                                    "▶️ ร้องเลย"
+                                    "Play"
                                 }
                                 button {
                                     class: "antic-btn queue",
@@ -208,7 +206,7 @@ pub fn QueueView(
                                         let s = rec.song.clone();
                                         move |_| on_queue_song.call(s.clone())
                                     },
-                                    "➕ จอง"
+                                    "Queue"
                                 }
                             }
                         }
