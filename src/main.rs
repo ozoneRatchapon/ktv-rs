@@ -7,7 +7,7 @@ use app::components;
 use app::recommendation;
 use app::storage::{self, Session, GUIDES_KEY, SESSION_KEY, SETTINGS_KEY};
 use app::sync::SyncCommand;
-use app::timing::{self, GuideOverrides};
+use app::timing::{self, GuideOverrides, SavedTiming};
 use app::types;
 
 use catalog::builtin_catalog;
@@ -463,15 +463,22 @@ fn App() -> Element {
         set_song_guide(&song_id, Some(guide));
     };
 
+    let catalog_guide = |song_id: &str| builtin_catalog().iter().find(|s| s.id == song_id).and_then(|s| s.guide.clone());
+
     // Back to the catalog timing (custom songs have none, so their guide is dropped)
     let handle_revert_guide = move |_: ()| {
         let Some(song_id) = current_song().map(|c| c.song.id) else { return };
         guide_overrides.write().remove(&song_id);
-        let builtin = builtin_catalog().iter().find(|s| s.id == song_id).and_then(|s| s.guide.clone());
-        set_song_guide(&song_id, builtin);
+        set_song_guide(&song_id, catalog_guide(&song_id));
     };
 
-    let guide_overridden = current_song().is_some_and(|c| guide_overrides.read().contains_key(&c.song.id));
+    let saved_timing = match current_song().map(|c| c.song.id) {
+        Some(id) if guide_overrides.read().contains_key(&id) => match catalog_guide(&id) {
+            Some(_) => SavedTiming::OverCatalog,
+            None => SavedTiming::Only,
+        },
+        _ => SavedTiming::None,
+    };
     let current_key = current_song().map(|c| c.key_shift).unwrap_or(0);
     let ant_candidates = anticipated_set().candidates;
     let ant_commitment = anticipated_set().commitment_hash;
@@ -516,7 +523,7 @@ fn App() -> Element {
                         on_key_change: handle_key_change,
                         on_video_ended: handle_video_ended,
                         show_timing_tools: settings().show_timing_tools,
-                        guide_overridden,
+                        saved_timing,
                         on_save_guide: handle_save_guide,
                         on_revert_guide: handle_revert_guide,
                     }
