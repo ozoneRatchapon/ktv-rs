@@ -1,12 +1,15 @@
 use dioxus::prelude::*;
 use std::collections::HashSet;
+use std::rc::Rc;
 
 use app::catalog;
 use app::components;
 use app::recommendation;
+use app::storage::{self, Session, SESSION_KEY, SETTINGS_KEY};
+use app::sync::SyncCommand;
 use app::types;
 
-use catalog::get_initial_catalog;
+use catalog::builtin_catalog;
 use components::{
     catalog_view::CatalogView,
     custom_add::CustomAdd,
@@ -25,48 +28,61 @@ fn main() {
     dioxus::launch(App);
 }
 
+/// First visit: a demo current song and queue so the booth is never empty
+fn demo_session() -> Session {
+    let cat = builtin_catalog();
+    let item = |queue_id: u64, index: usize, requester: &str| QueueItem {
+        queue_id,
+        song: cat[index].clone(),
+        key_shift: 0,
+        requester: requester.to_string(),
+    };
+    Session {
+        current: Some(item(1, 3, "KTV Host")), // โจอี้ ภูวศิษฐ์ - รักไม่ไหวแล้วโว้ย
+        queue: vec![
+            item(2, 2, "Table 1"), // เสือ ธนพล - นกหลงรัง
+            item(3, 6, "Table 1"), // LULA - ดาวเสาร์
+            item(4, 12, "VIP"),    // Atom - oasis
+        ],
+        next_queue_id: 5,
+        custom_songs: Vec::new(),
+    }
+}
+
 #[component]
 fn App() -> Element {
-    let settings = use_signal(AppSettings::default);
+    let settings = use_signal(|| storage::load::<AppSettings>(SETTINGS_KEY).unwrap_or_default());
     let mut active_tab = use_signal(|| KtvTab::Catalog);
-    let mut catalog = use_signal(get_initial_catalog);
 
-    // Initial default song (Joey Phuwasit - รักไม่ไหวแล้วโว้ย)
-    let initial_song = catalog().get(3).cloned().unwrap_or_else(|| catalog()[0].clone());
-    let mut current_song = use_signal(move || {
-        Some(QueueItem {
-            queue_id: 1,
-            song: initial_song,
-            key_shift: 0,
-            requester: "KTV Host".to_string(),
-        })
+    // Resume the last session (reconciled with this build's catalog), or start with the demo queue
+    let restored = use_hook(|| {
+        Rc::new(storage::load::<Session>(SESSION_KEY).map_or_else(demo_session, |s| s.reconcile(builtin_catalog())))
+    });
+    let mut catalog = use_signal({
+        let restored = restored.clone();
+        move || builtin_catalog().iter().chain(&restored.custom_songs).cloned().collect::<Vec<_>>()
+    });
+    let mut current_song = use_signal({
+        let restored = restored.clone();
+        move || restored.current.clone()
+    });
+    let mut queue = use_signal({
+        let restored = restored.clone();
+        move || restored.queue.clone()
+    });
+    let mut next_queue_id = use_signal(move || restored.next_queue_id);
+
+    // Persist on change (effects re-run when the signals they read are written)
+    use_effect(move || storage::save(SETTINGS_KEY, &*settings.read()));
+    use_effect(move || {
+        let session =
+            Session::capture(current_song(), queue(), next_queue_id(), &catalog.read(), builtin_catalog());
+        storage::save(SESSION_KEY, &session);
     });
 
-    let mut queue = use_signal(|| {
-        vec![
-            QueueItem {
-                queue_id: 2,
-                song: get_initial_catalog()[2].clone(), // เสือ ธนพล - นกหลงรัง
-                key_shift: 0,
-                requester: "Table 1".to_string(),
-            },
-            QueueItem {
-                queue_id: 3,
-                song: get_initial_catalog()[6].clone(), // LULA - ดาวเสาร์
-                key_shift: 0,
-                requester: "Table 1".to_string(),
-            },
-            QueueItem {
-                queue_id: 4,
-                song: get_initial_catalog()[12].clone(), // Atom - oasis
-                key_shift: 0,
-                requester: "VIP".to_string(),
-            },
-        ]
-    });
-
-    let mut next_queue_id = use_signal(|| 5u64);
     let mut playback_speed = use_signal(|| 1.0f32);
+    // Player's per-song "Play Intro" choice; seeded from settings on each new song, read by replay
+    let intro_skipped = use_signal(|| true);
     let mut anticipator = use_signal(SleepTimeAnticipator::new);
     let mut song_started_at = use_signal(js_sys::Date::now);
     let mut auto_dj_notice = use_signal(|| None::<String>);
@@ -129,33 +145,10 @@ fn App() -> Element {
                 } else if msg == "ESC" {
                     search_query.set(String::new());
                 } else if msg == "SPACE" {
-                    let _ = document::eval(r#"
-                        if (typeof window._ktv_toggle_playback === 'function') {
-                            window._ktv_toggle_playback();
-                        }
-                    "#);
+                    SyncCommand::TogglePlayback.run();
                 } else if let Some(rel_str) = msg.strip_prefix("SEEK_REL:") {
                     if let Ok(delta) = rel_str.parse::<i64>() {
-                        let js = format!(r#"
-                            let cur = window._ktv_video_current_time;
-                            if (!cur || cur <= 0) {{
-                                let elapsed = (Date.now() - (window._ktv_video_mount_time || Date.now())) / 1000;
-                                cur = Math.max(0, elapsed + (window._ktv_current_start_sec || 0));
-                            }}
-                            let target = Math.max(0, Math.floor(cur + ({delta})));
-                            window._ktv_video_mount_time = Date.now();
-                            window._ktv_current_start_sec = target;
-                            window._ktv_video_current_time = target;
-                            let iframe = document.getElementById('ktv-youtube-player');
-                            if (iframe && iframe.contentWindow) {{
-                                iframe.contentWindow.postMessage(JSON.stringify({{
-                                    event: 'command',
-                                    func: 'seekTo',
-                                    args: [target, true]
-                                }}), '*');
-                            }}
-                        "#);
-                        let _ = document::eval(&js);
+                        SyncCommand::SeekBy(delta).run();
                     }
                 }
             }
@@ -238,12 +231,11 @@ fn App() -> Element {
         transition_to_next(true);
     };
 
-    // Replay current song
+    // Replay current song in place (same iframe): seek to its start and resume
     let handle_replay_song = move |_: ()| {
         if let Some(curr) = current_song() {
             song_started_at.set(js_sys::Date::now());
-            current_song.set(None);
-            current_song.set(Some(curr));
+            SyncCommand::Restart(curr.song.start_sec(intro_skipped())).run();
         }
     };
 
@@ -396,9 +388,11 @@ fn App() -> Element {
     };
 
     // Add custom song from YouTube
-    let handle_add_custom_song = move |(new_song, play_now): (Song, bool)| {
+    // Returns the stored song (with its keypad code) so the form can report success or failure
+    let handle_add_custom_song = move |(new_song, play_now): (Song, bool)| -> Result<Song, catalog::CustomCodesExhausted> {
         let mut cat = catalog();
-        cat.push(new_song.clone());
+        // Assigns a unique keypad code; re-adding the same video reuses its entry
+        let new_song = catalog::upsert_custom(&mut cat, new_song)?;
         catalog.set(cat);
 
         let qid = next_queue_id();
@@ -406,7 +400,7 @@ fn App() -> Element {
 
         let item = QueueItem {
             queue_id: qid,
-            song: new_song,
+            song: new_song.clone(),
             key_shift: 0,
             requester: "YouTube Direct".to_string(),
         };
@@ -419,6 +413,7 @@ fn App() -> Element {
             q.push(item);
             queue.set(q);
         }
+        Ok(new_song)
     };
 
     let current_key = current_song().map(|c| c.key_shift).unwrap_or(0);
@@ -456,6 +451,7 @@ fn App() -> Element {
                     Player {
                         current_item: current_song(),
                         auto_skip_intro: settings().auto_skip_intro,
+                        is_skipped: intro_skipped,
                         playback_speed: playback_speed(),
                         on_next_song: handle_next_song,
                         on_replay_song: handle_replay_song,

@@ -14,17 +14,22 @@ We built and perfected **KTV-RS**, an authentic, high-performance Web Karaoke pl
 - **Type-to-Search (OG KTV Booth Style):** Global keystroke detection allows users to type song titles, artist names, or 5-digit song codes anywhere on the keyboard without needing to pre-focus the search bar. Backspace and Delete are fully supported for English and Thai scripts.
 - **Full Video Click Shield:** Protects the screen against accidental redirection to external YouTube links, ensuring kiosk/booth safety while preserving parent window focus.
 - **KTV Timeline Scrubber & Quick Jumps:** Drag-and-drop timeline slider (`min: 0`, `max: duration`) showing formatted `mm:ss` timestamps, with quick `-10s` and `+10s` jump buttons and `ArrowLeft` / `ArrowRight` (-5s / +5s) keyboard navigation.
-- **Synchronized Vocal Switch (Time-Preserved with Intro Offset Compensation):** Toggling between Karaoke and Original singer MV preserves the singing moment seamlessly without restarting from 0. Each song has a calibrated `guide_offset_secs` accounting for GMM channel bumpers vs MV story intros.
+- **Synchronized Vocal Switch (Time-Preserved with Intro Offset Compensation):** Toggling between Karaoke and Original singer MV preserves the singing moment seamlessly without restarting from 0. Each song has a measured `GuideTrack { offset_secs, rate }` (see `tools/guide_align.py`, Issue 001 update 2026-09-26); the karaoke video stays visible (muted) while a hidden guide player is rate-controlled to stay within ~0.1s.
 - **On-Screen Play / Pause Controls:** Spacebar shortcut and an interactive on-screen button with active visual indicator.
-- **Pitch Scoring & Auto-DJ (KatGPT-RS Sleep-Time Compute):** Autonomous recommendation engine anticipates next songs during playback and automatically fills empty queues.
-- **Developer Portfolio & Legal Transparency Disclosure:** Clear educational showcase attribution in Settings compliant with YouTube Embed API ToS (Section 3.2), Fair Use, and zero-tracking privacy (PDPA / GDPR ready).
+- **Auto-DJ (KatGPT-RS Sleep-Time Compute):** Recommendation engine anticipates next songs during playback and automatically fills empty queues. *Pitch scoring is not implemented* (the mock Score HUD was removed 2026-09-26; real scoring is Phase 2 of `.plans/001_roadmap.md`). Key transpose only records a per-song key label — YouTube embed audio is cross-origin and cannot be pitch-shifted.
+- **Guide Failure Fallback:** If the guide MV errors (removed / private / embedding disabled), playback falls back to karaoke audio and the vocal button shows "Unavailable" for that song.
+- **Developer Portfolio & Legal Transparency Disclosure:** Educational showcase attribution in Settings. The app sets no first-party cookies; embeds use YouTube's privacy-enhanced mode (`youtube-nocookie.com`), but YouTube may still store data once playback starts, so this is *not* zero-tracking. ToS / licensing stance is an open owner decision.
 
 ---
 
 ## 2. Where is the Plan, Code, and Tests
 - **Core Architecture & App Root:** [`src/main.rs`](file:///Users/ozone/karaoke/src/main.rs)
 - **Player & Scrubber Component:** [`src/components/player.rs`](file:///Users/ozone/karaoke/src/components/player.rs)
-- **Catalog & Video ID Verification:** [`src/catalog.rs`](file:///Users/ozone/karaoke/src/catalog.rs)
+- **Player Sync Core (JS) & Rust Bridge:** [`assets/ktv_sync.js`](file:///Users/ozone/karaoke/assets/ktv_sync.js), [`src/sync.rs`](file:///Users/ozone/karaoke/src/sync.rs); tests `node --test tests/ktv_sync.test.cjs` and `cargo test --test sync_test`
+- **Catalog & Video ID Verification:** [`assets/catalog.json`](file:///Users/ozone/karaoke/assets/catalog.json) (data, embedded at compile time by [`src/catalog.rs`](file:///Users/ozone/karaoke/src/catalog.rs); validated by `tests/catalog_test.rs`)
+- **Persistence (settings + session in `localStorage`):** [`src/storage.rs`](file:///Users/ozone/karaoke/src/storage.rs); tests `cargo test --test storage_test`
+- **CI & link-rot:** `.github/workflows/ci.yml`, `.github/workflows/link-rot.yml`; run the link check locally with `python3 tools/link_check.py`
+- **Mic pitch meter (display only, no scoring yet):** detector [`src/pitch/`](file:///Users/ozone/karaoke/src/pitch/mod.rs) (McLeod Pitch Method; `cargo test --test pitch_test`), capture [`src/mic/`](file:///Users/ozone/karaoke/src/mic/mod.rs) + worklet [`assets/mic_worklet.js`](file:///Users/ozone/karaoke/assets/mic_worklet.js), UI [`src/components/pitch_meter.rs`](file:///Users/ozone/karaoke/src/components/pitch_meter.rs). Benchmarks: `bench/NNN_*.md` (next free number), harness `cargo bench --bench pitch_detector`.
 - **Data Models & Types:** [`src/types.rs`](file:///Users/ozone/karaoke/src/types.rs)
 - **Sleep-Time Recommendation Engine:** [`src/recommendation.rs`](file:///Users/ozone/karaoke/src/recommendation.rs)
 - **UI Design System & Aesthetics:** [`assets/main.css`](file:///Users/ozone/karaoke/assets/main.css)
@@ -55,7 +60,7 @@ We built and perfected **KTV-RS**, an authentic, high-performance Web Karaoke pl
 
 ## 5. How to Develop & Test
 ### 1. Prerequisites
-- Rust 1.80+ and `wasm32-unknown-unknown` target.
+- Rust 1.82+ and `wasm32-unknown-unknown` target (`wasm32-wasip1` only for the wasm benchmark).
 - Dioxus CLI: `cargo install dioxus-cli --version 0.7.1`
 
 ### 2. Running Local Dev Server
@@ -63,6 +68,10 @@ We built and perfected **KTV-RS**, an authentic, high-performance Web Karaoke pl
 dx serve --platform web --port 8080
 ```
 Open `http://localhost:8080/`.
+
+Release bundle: `~/.cargo/bin/dx build --release --platform web` (output under `$CARGO_TARGET_DIR/dx/app/release/web/public`). dx exits 0 even when wasm-opt/esbuild fail, so scan its log for `ERROR`: an esbuild fallback leaves `./snippets/` imports unbundled and the page renders blank. If esbuild "fails to run", check `file ~/.dx/tools/esbuild-*/esbuild` is arm64 (an x86_64 copy was found once) and delete it so dx re-downloads. On reload, `dx serve` serves its last full build, not hot patches: test persistence/startup code against a fresh build.
+
+Testing the mic without a microphone: navigate with an init script that replaces `navigator.mediaDevices.getUserMedia` with an `OscillatorNode` → `createMediaStreamDestination().stream` (sawtooth, gain 0.3), then set `osc.frequency.value` and read `.pitch-readout`. Real mics need https or localhost.
 
 ### 3. Running Unit Tests
 ```bash
