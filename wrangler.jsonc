@@ -1,0 +1,11 @@
+{
+  // Assets-only Worker: serves the static Dioxus web build, no Worker script.
+  // Build + deploy with ./deploy.sh (release builds from `main` only).
+  "$schema": "https://unpkg.com/wrangler@4/config-schema.json",
+  "name": "ktv-rs",
+  "compatibility_date": "2026-09-20",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

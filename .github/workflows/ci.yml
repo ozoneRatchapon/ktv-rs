@@ -60,16 +60,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: cargo-bins/cargo-binstall@main
       - run: cargo binstall -y --locked dioxus-cli@${{ env.DIOXUS_CLI_VERSION }}
-      # dx exits 0 even when wasm-opt or esbuild fail: it ships an unoptimised wasm, or JS whose
-      # `./snippets/` imports 404 (blank page). Treat any logged ERROR or a leftover snippet import as a failure.
-      - name: dx build --release (fail on degraded bundle)
-        shell: bash
-        run: |
-          dx build --release --platform web 2>&1 | tee dx-build.log
-          if grep -q "ERROR" dx-build.log; then echo "::error::dx logged an ERROR (see above)"; exit 1; fi
-          if grep -l "snippets/" target/dx/app/release/web/public/assets/*.js; then echo "::error::unbundled wasm-bindgen snippet import"; exit 1; fi
+      # Same script as deploy.sh: fails on a degraded bundle, stages dist/ with Cloudflare _headers
+      - run: tools/build_web.sh
       - uses: actions/upload-artifact@v7
         with:
           name: ktv-rs-web
-          path: target/dx/app/release/web/public
+          path: dist
           retention-days: 7
