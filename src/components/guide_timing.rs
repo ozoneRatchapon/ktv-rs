@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 
 use crate::sync::{self, SyncCommand};
-use crate::timing::{self, SyncMark};
+use crate::timing::{self, SavedTiming, SyncMark};
 use crate::types::{GuideTrack, Song};
 use crate::youtube::parse_video_id;
 
@@ -19,7 +19,7 @@ fn format_mark(secs: f64) -> String {
 pub fn GuideTiming(
     song: Song,
     mut is_guide_vocal: Signal<bool>,
-    is_overridden: bool,
+    saved_timing: SavedTiming,
     on_save: EventHandler<GuideTrack>,
     on_revert: EventHandler<()>,
 ) -> Element {
@@ -99,17 +99,20 @@ pub fn GuideTiming(
             div { class: "timing-head",
                 h4 { "Guide timing" }
                 span { class: "timing-status",
-                    match (unsaved, is_overridden, song.guide.is_some()) {
+                    match (unsaved, saved_timing, song.guide.is_some()) {
                         (true, _, _) => "unsaved changes",
-                        (false, true, _) => "saved on this device",
-                        (false, false, true) => "from catalog",
-                        (false, false, false) => "no guide yet",
+                        (false, SavedTiming::OverCatalog | SavedTiming::Only, _) => "saved on this device",
+                        (false, SavedTiming::None, true) => "from catalog",
+                        (false, SavedTiming::None, false) => "no guide yet",
                     }
                 }
             }
 
             div { class: "timing-row",
                 input {
+                    id: "guide_video",
+                    name: "guide_video",
+                    aria_label: "Guide video link or ID",
                     class: "text-input timing-video-input",
                     r#type: "text",
                     placeholder: "Original MV link or video ID",
@@ -204,12 +207,22 @@ pub fn GuideTiming(
                         },
                         "Save"
                     }
-                    if is_overridden {
+                    if let Some((title, done)) = match saved_timing {
+                        SavedTiming::None => None,
+                        SavedTiming::OverCatalog => Some((
+                            "Drop the timing saved on this device and use the catalog's",
+                            "Back to the catalog timing",
+                        )),
+                        SavedTiming::Only => Some((
+                            "Drop the guide saved on this device (this song has no catalog guide)",
+                            "Guide removed: this song has no catalog guide",
+                        )),
+                    } {
                         button {
                             class: "ctrl-btn",
-                            title: "Drop the timing saved on this device and use the catalog's",
+                            title,
                             onclick: move |_| {
-                                notice.set(Some("Timing saved on this device removed".to_string()));
+                                notice.set(Some(done.to_string()));
                                 on_revert.call(());
                             },
                             "Revert"

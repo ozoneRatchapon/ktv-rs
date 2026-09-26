@@ -34,5 +34,17 @@ impl std::fmt::Display for FitError {
 
 impl std::error::Error for FitError {}
 
+/// Where the current song's guide timing comes from, as far as Revert is concerned.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SavedTiming {
+    /// Nothing saved on this device: the catalog timing (or no guide) is in use.
+    #[default]
+    None,
+    /// Saved on this device over a built-in song's catalog timing; Revert restores the catalog's.
+    OverCatalog,
+    /// Saved on this device for a song with no catalog timing (Add URL); Revert removes the guide.
+    Only,
+}
+
 /// Guide timings set in the app, keyed by song id; they win over `assets/catalog.json`.
 pub type GuideOverrides = BTreeMap<String, GuideTrack>;

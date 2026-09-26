@@ -42,6 +42,9 @@ pub fn Settings(
                     }
                     div { class: "setting-input-group",
                         input {
+                            id: "default_intro_skip",
+                            name: "default_intro_skip",
+                            aria_label: "Default skip duration in seconds",
                             class: "number-input",
                             r#type: "number",
                             min: "0",
@@ -83,6 +86,9 @@ pub fn Settings(
                         div { class: "setting-sub", "Display identifier for this KTV room" }
                     }
                     input {
+                        id: "room_name",
+                        name: "room_name",
+                        aria_label: "Room name",
                         class: "text-input",
                         r#type: "text",
                         value: "{current_settings.room_name}",

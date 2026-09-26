@@ -5,4 +5,4 @@ mod fit;
 mod types;
 
 pub use fit::{apply_overrides, catalog_snippet, fit, mark_at, new_guide, nudge, MIN_FIT_SPAN_SECS, RATE_RANGE};
-pub use types::{FitError, GuideOverrides, SyncMark};
+pub use types::{FitError, GuideOverrides, SavedTiming, SyncMark};

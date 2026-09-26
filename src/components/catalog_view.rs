@@ -37,6 +37,9 @@ pub fn CatalogView(
             div { class: "catalog-filter-bar",
                 div { class: "search-input-wrapper",
                     input {
+                        id: "song_search",
+                        name: "song_search",
+                        aria_label: "Search songs",
                         class: "search-input",
                         r#type: "text",
                         placeholder: "Search by title, artist, or 5-digit code...",

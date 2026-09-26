@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 use crate::sync::{self, SyncCommand, SyncEvent, GUIDE_FRAME_ID, KARAOKE_FRAME_ID};
 use crate::components::guide_timing::GuideTiming;
 use crate::components::pitch_meter::PitchMeter;
+use crate::timing::SavedTiming;
 use crate::types::{GuideTrack, QueueItem};
 
 #[component]
@@ -18,7 +19,7 @@ pub fn Player(
     on_video_ended: EventHandler<()>,
     show_timing_tools: bool,
     /// The current song's guide timing comes from this device, not the catalog.
-    guide_overridden: bool,
+    saved_timing: SavedTiming,
     on_save_guide: EventHandler<GuideTrack>,
     on_revert_guide: EventHandler<()>,
 ) -> Element {
@@ -174,6 +175,9 @@ pub fn Player(
                             span { class: "time-text current-time", "{format_time(current_playback_sec())}" }
                             div { class: "slider-wrapper",
                                 input {
+                                    id: "playback_scrubber",
+                                    name: "playback_scrubber",
+                                    aria_label: "Playback position",
                                     class: "ktv-scrubber-slider",
                                     r#type: "range",
                                     min: "0",
@@ -328,7 +332,7 @@ pub fn Player(
                         GuideTiming {
                             song: timing_song,
                             is_guide_vocal,
-                            is_overridden: guide_overridden,
+                            saved_timing,
                             on_save: on_save_guide,
                             on_revert: on_revert_guide,
                         }
