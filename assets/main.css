@@ -896,6 +896,80 @@ body {
     padding: 1px 6px;
 }
 
+/* Last take's result + recent scores (control column / Queue tab, never over a player) */
+.score-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-glass);
+    background: linear-gradient(90deg, rgba(0, 245, 212, 0.12), transparent);
+    flex-shrink: 0;
+}
+
+.score-card-value {
+    font-family: var(--font-heading);
+    font-size: 30px;
+    font-weight: 800;
+    min-width: 56px;
+    text-align: center;
+    color: var(--accent-cyan);
+}
+
+.score-card-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.score-card-verdict {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.score-card-song,
+.score-card-detail {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.score-history {
+    margin-top: 20px;
+}
+
+.score-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-glass);
+    font-size: 13px;
+}
+
+.score-row-value {
+    min-width: 32px;
+    font-weight: 800;
+    color: var(--accent-cyan);
+}
+
+.score-row-song {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+}
+
+.score-row-detail {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
 /* Catalog View */
 .catalog-container {
     display: flex;

@@ -7,7 +7,8 @@ use app::catalog;
 use app::components;
 use app::keys::{self, KeyAction};
 use app::recommendation;
-use app::storage::{self, Session, GUIDES_KEY, SESSION_KEY, SETTINGS_KEY};
+use app::score::{self, TakeResult};
+use app::storage::{self, Session, GUIDES_KEY, SCORES_KEY, SESSION_KEY, SETTINGS_KEY};
 use app::sync::SyncCommand;
 use app::timing::{self, GuideOverrides, SavedTiming};
 use app::types;
@@ -21,6 +22,7 @@ use components::{
     queue_view::QueueView,
     remote::Remote,
     settings::Settings,
+    score_card::ScoreCard,
     shortcuts::ShortcutHelp,
 };
 use recommendation::{SleepTimeAnticipator, SongTelemetry};
@@ -92,6 +94,10 @@ fn App() -> Element {
     // Persist on change (effects re-run when the signals they read are written)
     use_effect(move || storage::save(SETTINGS_KEY, &*settings.read()));
     use_effect(move || storage::save(GUIDES_KEY, &*guide_overrides.read()));
+    // Finished takes (newest first) and the one just finished, shown until closed
+    let mut score_history = use_signal(|| storage::load::<Vec<TakeResult>>(SCORES_KEY).unwrap_or_default());
+    let mut last_result = use_signal(|| None::<TakeResult>);
+    use_effect(move || storage::save(SCORES_KEY, &*score_history.read()));
     use_effect(move || {
         let b = booth.read();
         let session = Session::capture(b.current.clone(), b.queue.clone(), b.next_queue_id, &catalog.read(), builtin_catalog());
@@ -312,11 +318,18 @@ fn App() -> Element {
                         saved_timing,
                         on_save_guide: handle_save_guide,
                         on_revert_guide: handle_revert_guide,
+                        on_take_end: move |result: TakeResult| {
+                            score::record(&mut score_history.write(), result.clone());
+                            last_result.set(Some(result));
+                        },
                     }
                 }
 
                 // Right / Tabbed Controller Panel
                 section { class: "stage-control-side",
+                    if let Some(result) = last_result() {
+                        ScoreCard { result, on_close: move |_| last_result.set(None) }
+                    }
                     if show_help() {
                         ShortcutHelp {
                             on_close: move |_| {
@@ -342,6 +355,7 @@ fn App() -> Element {
                                 queue: queue(),
                                 current_item: current_song(),
                                 anticipated: ant_candidates,
+                                score_history: score_history(),
                                 on_skip: handle_next_song,
                                 on_remove: handle_remove_queue,
                                 on_move_up: handle_move_up,

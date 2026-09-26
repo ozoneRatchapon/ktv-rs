@@ -11,11 +11,23 @@ const chrome_bin = process.env.CHROME_BIN ??
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// A steady sawtooth "voice" instead of a microphone (headless Chrome has none)
+const FAKE_MIC = `navigator.mediaDevices.getUserMedia = async () => {
+  const ctx = new AudioContext();
+  const osc = new OscillatorNode(ctx, { type: 'sawtooth', frequency: 220 });
+  const gain = new GainNode(ctx, { gain: 0.3 });
+  const out = ctx.createMediaStreamDestination();
+  osc.connect(gain).connect(out);
+  osc.start();
+  window.__mic = osc;
+  return out.stream;
+};`;
+
 /** Launch headless Chrome; returns { new_page, close }. Each page gets its own browser context (fresh storage). */
 export async function launch() {
   const profile = mkdtempSync(join(tmpdir(), 'ktv-e2e-'));
   const args = ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run',
-    '--no-default-browser-check', '--mute-audio', 'about:blank'];
+    '--no-default-browser-check', '--mute-audio', '--autoplay-policy=no-user-gesture-required', 'about:blank'];
   if (process.env.CI) args.push('--no-sandbox');
   const proc = spawn(chrome_bin, args, { stdio: ['ignore', 'ignore', 'pipe'] });
   const ws_url = await new Promise((resolve, reject) => {
@@ -29,7 +41,8 @@ export async function launch() {
   });
   const browser = await connect(ws_url);
 
-  async function new_page({ width = 1280, height = 900 } = {}) {
+  /** `fake_mic`: getUserMedia returns an oscillator; set its pitch with `window.__mic.frequency.value = hz`. */
+  async function new_page({ width = 1280, height = 900, fake_mic = false } = {}) {
     const { browserContextId } = await browser.send('Target.createBrowserContext');
     const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank', browserContextId });
     const { sessionId } = await browser.send('Target.attachToTarget', { targetId, flatten: true });
@@ -46,6 +59,9 @@ export async function launch() {
     await page.send('Page.addScriptToEvaluateOnNewDocument', {
       source: `window.__csp = []; document.addEventListener('securitypolicyviolation', (e) => window.__csp.push(e.violatedDirective + ' ' + e.blockedURI));`,
     });
+    if (fake_mic) {
+      await page.send('Page.addScriptToEvaluateOnNewDocument', { source: FAKE_MIC });
+    }
     await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
     page.close = () => browser.send('Target.disposeBrowserContext', { browserContextId });
     return page;

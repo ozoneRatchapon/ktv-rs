@@ -2,7 +2,8 @@ use dioxus::prelude::*;
 
 use crate::mic::{Mic, MicError};
 use crate::pitch::{Mpm, MpmConfig, NoteReading};
-use crate::score::{TuningScorer, TuningSummary, MIN_SCORED_NOTES, PERFECT_CENTS, RANDOM_CENTS};
+use crate::score::{TakeResult, TuningScorer, TuningSummary, MIN_SCORED_NOTES, PERFECT_CENTS, RANDOM_CENTS};
+use crate::types::Song;
 
 #[derive(Debug, Clone, PartialEq)]
 enum MicState {
@@ -13,19 +14,30 @@ enum MicState {
 }
 
 /// Live pitch of the singer's mic (note name + cents) and a tuning score for the current take.
-/// `take` changes on every song start or replay, which restarts the score.
+/// `take` changes on every song start or replay, which restarts the score and reports the finished
+/// take through `on_take_end` (only if the mic judged at least one held note).
 #[component]
-pub fn PitchMeter(take: f64) -> Element {
+pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) -> Element {
     // Owns the device; dropping the session (toggle off or unmount) releases the mic
     let mut session = use_signal(|| None::<Mic>);
     let mut state = use_signal(|| MicState::Off);
     let mut reading = use_signal(|| None::<NoteReading>);
     let mut summary = use_signal(TuningSummary::default);
     let mut current_take = use_signal(|| take);
+    // Song of the take being scored: guide edits change `song` without starting a new take
+    let song_meta = (song.id, song.title, song.artist);
+    let mut take_song = use_signal(|| song_meta.clone());
 
-    use_effect(use_reactive!(|take| {
-        current_take.set(take);
-        summary.set(TuningSummary::default());
+    use_effect(use_reactive!(|take, song_meta| {
+        if *current_take.peek() != take {
+            let (id, title, artist) = &*take_song.peek();
+            if let Some(result) = TakeResult::new(id, title, artist, *summary.peek()) {
+                on_take_end.call(result);
+            }
+            current_take.set(take);
+            summary.set(TuningSummary::default());
+        }
+        take_song.set(song_meta);
     }));
 
     let toggle = move |_| {

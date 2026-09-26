@@ -40,10 +40,15 @@
 * Real-time Key Transposition (`-6` to `+6` semitones) and tempo control (`0.9x` to `1.1x`).
 * Dedicated **Play / Pause** toggle button with active state styling.
 
-### 7. Auto-DJ Recommendation Engine (`katgpt-rs` inspired)
+### 7. Auto-DJ Recommendation Engine
 * **Dwell Telemetry**: Records active singing duration per track.
-* **Tropical $(\max, +)$ Semiring**: Hard-prunes songs skipped prematurely (< 20 seconds).
+* **Early-skip pruning**: A song skipped early (under 30 seconds or 20% of its length) rules its artist and genre out of Auto-DJ picks for the session.
 * **Auto Fallback**: Automatically continues music playback with the top anticipated recommendation when the queue finishes.
+
+### 8. Mic Pitch Meter & Tuning Score
+* **Mic: On** shows the note you are singing (e.g. `A4 +12¢`), detected in Rust/wasm (McLeod pitch method) from an AudioWorklet. Mic audio never leaves the device.
+* **Tuning 0–100** rates how exactly your held notes land on a semitone (after 3 held notes). It does not know the song's melody, so it cannot tell whether they are the right notes; tap the badge for the full explanation.
+* When a song ends, a result card shows that take's score; **Queue → Recent scores** keeps the last 20 on this device.
 
 ---
 
@@ -65,9 +70,9 @@
 
 ### Prerequisites
 * Rust 1.80+ (`wasm32-unknown-unknown` target)
-* Dioxus CLI 0.7.1:
+* Dioxus CLI 0.7.10 (the version CI uses):
   ```bash
-  cargo install dioxus-cli --version 0.7.1
+  cargo install dioxus-cli --version 0.7.10
   ```
 
 ### Run Locally
@@ -78,7 +83,11 @@ Open [http://localhost:8080](http://localhost:8080) in your browser.
 
 ### Run Tests
 ```bash
-cargo test -p app --test recommendation_test
+cargo test                                                    # Rust unit/integration tests (tests/*.rs)
+node --test tests/ktv_sync.test.cjs tests/ktv_keys.test.cjs   # player sync core + keyboard (JS)
+# End-to-end in headless Chrome, against the release bundle:
+tools/build_web.sh && npx wrangler@4.141.0 dev --port 8788    # in another terminal
+node --test tests/e2e/app.test.mjs                            # KTV_URL=<url> to test another deployment
 ```
 
 ### Run Linting

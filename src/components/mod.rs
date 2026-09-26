@@ -6,5 +6,6 @@ pub mod pitch_meter;
 pub mod player;
 pub mod queue_view;
 pub mod remote;
+pub mod score_card;
 pub mod settings;
 pub mod shortcuts;

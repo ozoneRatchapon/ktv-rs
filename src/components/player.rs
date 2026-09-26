@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 use crate::sync::{self, SyncCommand, SyncEvent, GUIDE_FRAME_ID, KARAOKE_FRAME_ID};
 use crate::components::guide_timing::GuideTiming;
 use crate::components::pitch_meter::PitchMeter;
+use crate::score::TakeResult;
 use crate::timing::SavedTiming;
 use crate::types::{GuideTrack, QueueItem};
 
@@ -22,6 +23,7 @@ pub fn Player(
     saved_timing: SavedTiming,
     on_save_guide: EventHandler<GuideTrack>,
     on_revert_guide: EventHandler<()>,
+    on_take_end: EventHandler<TakeResult>,
 ) -> Element {
     let mut is_guide_vocal = use_signal(|| false);
     let mut is_guide_failed = use_signal(|| false);
@@ -273,7 +275,7 @@ pub fn Player(
                                     }
                                 }
 
-                                PitchMeter { take: take_started_at }
+                                PitchMeter { take: take_started_at, song: song.clone(), on_take_end }
 
                                 // Play / Pause Toggle Button
                                 button {
