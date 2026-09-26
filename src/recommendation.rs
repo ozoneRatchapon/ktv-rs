@@ -88,7 +88,10 @@ impl SleepTimeAnticipator {
         if telemetry.is_early_skip() {
             // Tropical (max, +) Bottleneck Pruner:
             // Early skip triggers a hard bottleneck suppression (-infinity)
-            self.genre_weights.insert(telemetry.category.clone(), f32::NEG_INFINITY);
+            // A library song has no genre: "" must not prune every other library song
+            if !telemetry.category.is_empty() {
+                self.genre_weights.insert(telemetry.category.clone(), f32::NEG_INFINITY);
+            }
             self.artist_weights.insert(telemetry.artist.clone(), f32::NEG_INFINITY);
         } else {
             let dwell_delta = if telemetry.is_high_affinity() {
@@ -97,9 +100,11 @@ impl SleepTimeAnticipator {
                 0.5 * ratio
             };
 
-            let g_entry = self.genre_weights.entry(telemetry.category.clone()).or_insert(0.0);
-            if *g_entry != f32::NEG_INFINITY {
-                *g_entry = (*g_entry + dwell_delta).clamp(-5.0, 10.0);
+            if !telemetry.category.is_empty() {
+                let g_entry = self.genre_weights.entry(telemetry.category.clone()).or_insert(0.0);
+                if *g_entry != f32::NEG_INFINITY {
+                    *g_entry = (*g_entry + dwell_delta).clamp(-5.0, 10.0);
+                }
             }
 
             let a_entry = self.artist_weights.entry(telemetry.artist.clone()).or_insert(0.0);
@@ -111,26 +116,22 @@ impl SleepTimeAnticipator {
         self.session_history.push(telemetry);
     }
 
-    /// Sleep-time compute: Pre-anticipates the top song recommendations from the catalog.
-    pub fn sleep_compute(
+    /// Sleep-time compute: Pre-anticipates the top song recommendations from `songs`
+    /// (the catalog, then the full library). Songs are scored by reference and only the top `limit`
+    /// are cloned; ties keep `songs` order, so curated songs lead until the session has taste signals.
+    pub fn sleep_compute<'a>(
         &self,
-        catalog: &[Song],
+        songs: impl IntoIterator<Item = &'a Song>,
         queued_song_ids: &HashSet<String>,
         current_song_id: Option<&str>,
         limit: usize,
     ) -> AnticipatedRecommendationSet {
-        let mut scored_slots: Vec<AnticipatedRecommendation> = Vec::new();
+        let mut scored: Vec<(f32, &Song, f32, f32)> = Vec::new();
 
-        for song in catalog {
+        for song in songs {
             // Constraint Pruning (from katgpt-rs ConstraintPruner trait):
-            // 1. Prune currently playing song
-            if let Some(curr_id) = current_song_id {
-                if song.id == curr_id {
-                    continue;
-                }
-            }
-            // 2. Prune songs already waiting in the queue
-            if queued_song_ids.contains(&song.id) {
+            // 1. Prune currently playing song, 2. songs already waiting in the queue
+            if current_song_id == Some(song.id.as_str()) || queued_song_ids.contains(&song.id) {
                 continue;
             }
 
@@ -144,45 +145,32 @@ impl SleepTimeAnticipator {
             }
 
             // Recency penalty if played in current session
-            let recency_penalty = if self.played_song_ids.contains(&song.id) {
-                -3.0
-            } else {
-                0.0
-            };
+            let recency_penalty = if self.played_song_ids.contains(&song.id) { -3.0 } else { 0.0 };
 
-            // Dot-product composite score
-            let raw_dot = (genre_weight * 0.45) + (artist_weight * 0.45) + recency_penalty;
-
-            // Apply katgpt sigmoid gating (never softmax)
-            let predictability = sigmoid(raw_dot);
-
-            // Determine explanation reason
-            let reason = if artist_weight > 1.0 {
-                format!("Artist you love ({artist})", artist = song.artist)
-            } else if genre_weight > 1.0 {
-                format!("Your usual genre ({genre})", genre = song.category)
-            } else if song.is_favorite {
-                "Room favourite".to_string()
-            } else {
-                "Recommended for you".to_string()
-            };
-
-            scored_slots.push(AnticipatedRecommendation {
-                song: song.clone(),
-                predictability,
-                reason,
-            });
+            // Dot-product composite score, katgpt sigmoid gating (never softmax)
+            let predictability = sigmoid((genre_weight * 0.45) + (artist_weight * 0.45) + recency_penalty);
+            scored.push((predictability, song, genre_weight, artist_weight));
         }
 
-        // Sort descending by predictability score
-        scored_slots.sort_by(|a, b| {
-            b.predictability
-                .partial_cmp(&a.predictability)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-
-        scored_slots.truncate(limit);
-        AnticipatedRecommendationSet { candidates: scored_slots }
+        // Best first (stable, so ties keep input order)
+        scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+        let candidates = scored
+            .into_iter()
+            .take(limit)
+            .map(|(predictability, song, genre_weight, artist_weight)| {
+                let reason = if artist_weight > 1.0 {
+                    format!("Artist you love ({artist})", artist = song.artist)
+                } else if genre_weight > 1.0 {
+                    format!("Your usual genre ({genre})", genre = song.category)
+                } else if song.is_favorite {
+                    "Room favourite".to_string()
+                } else {
+                    "Recommended for you".to_string()
+                };
+                AnticipatedRecommendation { song: song.clone(), predictability, reason }
+            })
+            .collect();
+        AnticipatedRecommendationSet { candidates }
     }
 
     /// Wake-time lookup: Consumes the top anticipated candidate when the queue is empty.

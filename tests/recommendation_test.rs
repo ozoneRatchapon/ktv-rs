@@ -97,3 +97,49 @@ fn test_wake_consume_latency_sub_microsecond() {
     // Should be sub-microsecond
     assert!(elapsed.as_nanos() < 50_000, "Wake time must be sub-microsecond");
 }
+
+fn telemetry(song: &Song, sang_seconds: f64) -> SongTelemetry {
+    SongTelemetry {
+        song_id: song.id.clone(),
+        code: song.code.clone(),
+        title: song.title.clone(),
+        artist: song.artist.clone(),
+        category: song.category.clone(),
+        duration_secs: song.duration_secs,
+        sang_seconds,
+        completed_natural: false,
+    }
+}
+
+#[test]
+fn test_library_artist_affinity_and_genre_less_skips() {
+    let catalog = [sample_song("c1", "Pop", "Curated Artist"), sample_song("c2", "Rock", "Other Artist")];
+    // Library songs have no genre
+    let library = vec![sample_song("yt_a", "", "Skipped Artist"), sample_song("yt_b", "", "Loved Artist"), sample_song("yt_c", "", "Loved Artist")];
+    let songs = || catalog.iter().chain(&library);
+    let mut anticipator = SleepTimeAnticipator::new();
+
+    // An early skip of one library song only prunes that artist, not every genre-less song
+    anticipator.record_song_playback(telemetry(&library[0], 5.0));
+    assert!(!anticipator.genre_weights.contains_key(""), "no weight for the empty genre");
+    let ids: Vec<String> = anticipator.sleep_compute(songs(), &HashSet::new(), None, 10).candidates.into_iter().map(|c| c.song.id).collect();
+    assert_eq!(ids, ["c1", "c2", "yt_b", "yt_c"], "ties keep catalog-then-library order");
+
+    // Singing a library artist through brings their other library songs to the top
+    anticipator.record_song_playback(telemetry(&library[1], 200.0));
+    let top = anticipator.sleep_compute(songs(), &HashSet::new(), Some("yt_b"), 1).candidates;
+    assert_eq!(top[0].song.id, "yt_c");
+    assert_eq!(top[0].reason, "Artist you love (Loved Artist)");
+}
+
+#[test]
+fn test_sleep_compute_over_full_library_is_fast() {
+    let library = app::library::parse(include_str!("../assets/library.json")).expect("library parses");
+    let anticipator = SleepTimeAnticipator::new();
+    let start = Instant::now();
+    let set = anticipator.sleep_compute(&library, &HashSet::new(), None, 4);
+    let elapsed = start.elapsed();
+    assert_eq!(set.candidates.len(), 4);
+    // Runs on every queue change: guards against scoring by cloning every song again
+    assert!(elapsed.as_millis() < 50, "sleep_compute over {} songs took {elapsed:?}", library.len());
+}

@@ -159,14 +159,13 @@ fn App() -> Element {
     });
 
     // Sleep-time compute (pre-anticipates next recommended songs during playback)
+    // Candidates: the booth's catalog first, then the full library once it has loaded
     let anticipated_set = use_memo(move || {
-        let cat = catalog();
-        let q = queue();
-        let queued_ids: HashSet<String> = q.iter().map(|it| it.song.id.clone()).collect();
+        let queued_ids: HashSet<String> = queue.read().iter().map(|it| it.song.id.clone()).collect();
         let curr_id = current_song().map(|c| c.song.id);
-
-        let ant = anticipator();
-        ant.sleep_compute(&cat, &queued_ids, curr_id.as_deref(), 4)
+        let songs = catalog.read();
+        let candidates = songs.iter().chain(song_library().songs());
+        anticipator.read().sleep_compute(candidates, &queued_ids, curr_id.as_deref(), 4)
     });
 
     // Helper: Finish song and transition to next or Auto-DJ
