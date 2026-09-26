@@ -9,6 +9,7 @@ fn sample_song(id: &str, category: &str, artist: &str) -> Song {
         code: "10001".to_string(),
         title: format!("Test Song {id}"),
         artist: artist.to_string(),
+        aliases: Vec::new(),
         youtube_id: "test1234567".to_string(),
         guide: None,
         duration_secs: 200,

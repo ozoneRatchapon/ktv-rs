@@ -4,6 +4,9 @@
     "code": "10001",
     "title": "รักแล้วยอมได้",
     "artist": "แช่ม แช่มรัมย์",
+    "aliases": [
+      "Rak Laew Yom Dai"
+    ],
     "youtube_id": "inGSjouS77g",
     "guide": {
       "video_id": "qdaeYIGnpiA",
@@ -21,6 +24,9 @@
     "code": "10002",
     "title": "ปลายทางของความคิดถึง",
     "artist": "ตั๊กแตน ชลดา",
+    "aliases": [
+      "Plai Tang Khong Kwam Kid Tueng"
+    ],
     "youtube_id": "0cq9nSoPGZo",
     "guide": {
       "video_id": "dj-iph1Nt0Y",
@@ -38,6 +44,9 @@
     "code": "10003",
     "title": "นกหลงรัง",
     "artist": "เสือ ธนพล",
+    "aliases": [
+      "Nok Long Rung"
+    ],
     "youtube_id": "qq_pRBQjrSg",
     "guide": {
       "video_id": "6iilLpdieOE",
@@ -55,6 +64,9 @@
     "code": "10004",
     "title": "รักไม่ไหวแล้วโว้ย",
     "artist": "โจอี้ ภูวศิษฐ์",
+    "aliases": [
+      "Rak Mai Wai Laew Voi"
+    ],
     "youtube_id": "r1crPncm5aE",
     "guide": {
       "video_id": "vjCO0DDGFio",
@@ -72,6 +84,9 @@
     "code": "10005",
     "title": "ไม่มีครั้งสุดท้าย",
     "artist": "มิ้น อรรถวดี",
+    "aliases": [
+      "Mai Mee Krung Sud Tai"
+    ],
     "youtube_id": "p5sPRujGdqM",
     "guide": {
       "video_id": "Quqp2_wGSdo",
@@ -89,6 +104,9 @@
     "code": "10006",
     "title": "ไปอยู่ที่ไหนมา",
     "artist": "โอ๊ค สมิทธิ์",
+    "aliases": [
+      "Pai Yu Tee Nai Ma"
+    ],
     "youtube_id": "c0tYoAQm9_k",
     "guide": {
       "video_id": "Lm3dtgN63i0",
@@ -106,6 +124,9 @@
     "code": "10007",
     "title": "ดาวเสาร์ (Saturn)",
     "artist": "LULA",
+    "aliases": [
+      "Daw Sao"
+    ],
     "youtube_id": "RDTWvDDn0Bk",
     "guide": {
       "video_id": "hoGABRCJEvw",
@@ -123,6 +144,9 @@
     "code": "10008",
     "title": "บ่กล้าบอกไผ",
     "artist": "ไหมไทย ใจตะวัน",
+    "aliases": [
+      "Bor Kla Bok Pai"
+    ],
     "youtube_id": "pZctcALD-0U",
     "guide": {
       "video_id": "HrbwK-0m_MI",
@@ -140,6 +164,9 @@
     "code": "10009",
     "title": "ไม่รักแต่ไม่ลืม",
     "artist": "แอม เสาวลักษณ์",
+    "aliases": [
+      "Mai Rak Tae Mai Luem"
+    ],
     "youtube_id": "iyEDnU0AUQs",
     "guide": {
       "video_id": "CewUf5r9MQM",
@@ -157,6 +184,9 @@
     "code": "10010",
     "title": "น้ำใสใจจริง",
     "artist": "ปราโมทย์ วิเลปะนะ",
+    "aliases": [
+      "Num Sai Jai Jing"
+    ],
     "youtube_id": "Xp8D5lRYf-c",
     "guide": {
       "video_id": "y5AmxI-7Jr8",
@@ -191,6 +221,9 @@
     "code": "10012",
     "title": "นางร้าย",
     "artist": "Pancake",
+    "aliases": [
+      "Nang Rai"
+    ],
     "youtube_id": "iF64rmmKJaY",
     "guide": {
       "video_id": "vSrJqGaEt9Q",
@@ -225,6 +258,9 @@
     "code": "10014",
     "title": "ทุกนาทีให้เธอ",
     "artist": "ไอซ์ ศรัณยู",
+    "aliases": [
+      "Tuk Na Tee Hai Ther"
+    ],
     "youtube_id": "Kyx2Jbm5bFg",
     "guide": {
       "video_id": "W9n0rNTgiek",
@@ -242,6 +278,9 @@
     "code": "10015",
     "title": "ลุคBAD SADบ่อย",
     "artist": "MUSSEAW",
+    "aliases": [
+      "Look Bad Sad Boi"
+    ],
     "youtube_id": "ouzdahsP7tM",
     "guide": {
       "video_id": "ib1b2m7Ngow",
@@ -259,6 +298,9 @@
     "code": "10016",
     "title": "ลืมหน่อยก็ไม่ได้",
     "artist": "เอิร์น สุรัตน์ติกานต์",
+    "aliases": [
+      "Leum Noi Kor Mai Dai"
+    ],
     "youtube_id": "9zndDpiItas",
     "guide": {
       "video_id": "SNWqDeLJcPU",
@@ -276,6 +318,9 @@
     "code": "10017",
     "title": "เพื่อนกันไม่ทำแบบนี้",
     "artist": "PRINCE",
+    "aliases": [
+      "Peuan Kan Mai Tam Bab Nee"
+    ],
     "youtube_id": "34ApHPRuu0I",
     "guide": {
       "video_id": "NIC27TiwUeQ",
@@ -293,6 +338,9 @@
     "code": "10018",
     "title": "ความจำสั้น",
     "artist": "ต๊อง วิตติวัต",
+    "aliases": [
+      "Kwam Jam Sun"
+    ],
     "youtube_id": "gLADl-lcLIA",
     "guide": {
       "video_id": "ZlV-cXLbaZE",
@@ -310,6 +358,9 @@
     "code": "10019",
     "title": "ชีวิตที่เคยมีเรา",
     "artist": "The Mousses",
+    "aliases": [
+      "Che Vit Ti Koey Me Rao"
+    ],
     "youtube_id": "-ZgREu-tU9Y",
     "guide": {
       "video_id": "V4CaJc4KnEw",
@@ -327,6 +378,9 @@
     "code": "10020",
     "title": "ยิ่งใกล้...ยิ่งไกล",
     "artist": "เจนนิเฟอร์ คิ้ม",
+    "aliases": [
+      "Ying Klai Ying Klai"
+    ],
     "youtube_id": "mOKoOVynxxM",
     "guide": {
       "video_id": "j3KZ79md60s",
@@ -344,6 +398,9 @@
     "code": "10021",
     "title": "เปียกอับชื้น",
     "artist": "Buddha Bless",
+    "aliases": [
+      "Pieak Up Cheun"
+    ],
     "youtube_id": "F32jJgDyyAI",
     "guide": {
       "video_id": "GujaVE7qFdw",
@@ -361,6 +418,9 @@
     "code": "10022",
     "title": "ห้ามใจ",
     "artist": "หนูนา หนึ่งธิดา",
+    "aliases": [
+      "Ham Jai"
+    ],
     "youtube_id": "s8GIehbfun8",
     "guide": {
       "video_id": "dzmN1ILnfuo",
@@ -395,6 +455,9 @@
     "code": "10024",
     "title": "สาว ตจว. ม.ราชภัฏ",
     "artist": "จั๊กจั่น วันวิสา",
+    "aliases": [
+      "Sao Tor Jor Wor Mor Rat Cha Pat"
+    ],
     "youtube_id": "gVWKW150UK8",
     "guide": {
       "video_id": "lh1cBWVtGQw",
@@ -412,6 +475,9 @@
     "code": "10025",
     "title": "เล่นของสูง",
     "artist": "Big Ass",
+    "aliases": [
+      "Len Kaung Soong"
+    ],
     "youtube_id": "5ZleaanG8mk",
     "guide": {
       "video_id": "bAQw8ZS_0kg",
@@ -429,6 +495,9 @@
     "code": "10026",
     "title": "คุกเข่า",
     "artist": "COCKTAIL",
+    "aliases": [
+      "Kook Kow"
+    ],
     "youtube_id": "9aCUDQ8SPcA",
     "guide": {
       "video_id": "dXf3sWxIhfY",
@@ -548,6 +617,9 @@
     "code": "10027",
     "title": "วัดใจ",
     "artist": "Silly Fools",
+    "aliases": [
+      "Wut Jai"
+    ],
     "youtube_id": "VZAm_CfIjvs",
     "guide": {
       "video_id": "VNIE3VX1KeA",

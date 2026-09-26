@@ -6,6 +6,9 @@ pub struct Song {
     pub code: String,
     pub title: String,
     pub artist: String,
+    /// Other spellings people search by, e.g. the channel's romanised title ("Rak Mai Wai Laew Voi").
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub aliases: Vec<String>,
     pub youtube_id: String,
     #[serde(default)]
     pub guide: Option<GuideTrack>,

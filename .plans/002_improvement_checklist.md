@@ -30,8 +30,8 @@ The score today is tuning precision (held notes vs the semitone grid); there is 
 - [x] 6b. Queue tab "End Song" button ("Simulate video ending") is a debug control shipped to users: hide it behind the Guide Timing Tools setting or remove. Done: shown only with Guide Timing Tools on (it records a natural finish, which would skew Auto-DJ).
 
 ## Wave 4 — content & search
-- [ ] 14. Thai-aware search: tone marks, romanised input ("rak mai wai"), typo tolerance.
-- [ ] 13. Favourites, recently sung, history (localStorage).
+- [x] 14. Thai-aware search: tone marks, romanised input ("rak mai wai"), typo tolerance. Done: `src/search/` — `normalize` (drops Thai tone marks/thanthakhat, spaces, punctuation, case), `aliases` on `Song` (24 songs, from the official GMM video titles via oEmbed, `tools/title_aliases.py`), Kedmanee ⇄ QWERTY `retype` used only when nothing matches as typed (UI says which query it used). Tests: `tests/search_test.rs` (7), e2e alias + wrong-layout type-to-search. General typo tolerance (edit distance) not done: with 43 songs the three rules cover the common misses; revisit with a bigger catalog.
+- [x] 13. Favourites, recently sung, history (localStorage). Done: `src/picks/` (`Picks` + typed `Shelf` enum replacing the category string; `catalog::CATEGORIES` const), `ktv.picks.v1`. ☆/★ toggle on song cards; ★ Favourites / Recently sung chips (a song counts after 30 s on stage, newest first, 20 kept). Score history (item 6) covers mic takes. Tests: `tests/picks_test.rs` (4), e2e shelves.
 - [ ] 12. Community guide timing submissions (Copy JSON → PR template / issue form).
 - [ ] 11. Grow the catalog beyond 43 songs **(checked)**.
 

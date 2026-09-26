@@ -13,6 +13,7 @@ fn song(id: &str, guide: Option<GuideTrack>) -> Song {
         code: "10001".to_string(),
         title: "t".to_string(),
         artist: "a".to_string(),
+        aliases: Vec::new(),
         youtube_id: "inGSjouS77g".to_string(),
         guide,
         duration_secs: 200,

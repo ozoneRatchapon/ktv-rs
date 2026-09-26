@@ -44,6 +44,7 @@ pub fn CustomAdd(
                     code: String::new(), // assigned on insert (catalog::upsert_custom)
                     title: song_title,
                     artist: song_artist,
+                    aliases: Vec::new(),
                     youtube_id: vid,
                     guide: None,
                     duration_secs: 240,

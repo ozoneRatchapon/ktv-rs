@@ -15,6 +15,8 @@ pub const SESSION_KEY: &str = "ktv.session.v1";
 pub const GUIDES_KEY: &str = "ktv.guides.v1";
 /// [`crate::score::TakeResult`] history, newest first.
 pub const SCORES_KEY: &str = "ktv.scores.v1";
+/// [`crate::picks::Picks`]: favourites and recently sung songs.
+pub const PICKS_KEY: &str = "ktv.picks.v1";
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Session {
