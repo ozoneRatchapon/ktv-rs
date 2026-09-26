@@ -1,0 +1,33 @@
+name: Link rot
+
+# Weekly: every karaoke + guide video in assets/catalog.json must still be public and embeddable.
+on:
+  schedule:
+    - cron: "0 2 * * 1" # Monday 09:00 Asia/Bangkok
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  oembed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - id: check
+        run: python3 tools/link_check.py | tee report.md
+        continue-on-error: true
+      # One open issue per outage: comment on it instead of opening duplicates
+      - if: steps.check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create link-rot --color B60205 --description "Dead catalog video" --force
+          open=$(gh issue list --label link-rot --state open --json number --jq '.[0].number')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body-file report.md
+          else
+            gh issue create --title "Link rot: dead catalog videos" --label link-rot --body-file report.md
+          fi
+          exit 1

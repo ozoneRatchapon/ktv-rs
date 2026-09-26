@@ -1,43 +1,32 @@
 use dioxus::prelude::*;
+use crate::catalog::{CustomCodesExhausted, CUSTOM_CODES};
 use crate::types::Song;
+use crate::youtube::parse_video_id;
+
+/// Outcome shown above the form after a submit.
+#[derive(Clone, Debug, PartialEq)]
+enum Feedback {
+    Added { code: String },
+    Error(String),
+}
 
 #[component]
 pub fn CustomAdd(
-    on_add_song: EventHandler<(Song, bool)>, // (song, play_now)
+    /// (song, play_now) → the stored song with its assigned keypad code
+    on_add_song: Callback<(Song, bool), Result<Song, CustomCodesExhausted>>,
 ) -> Element {
     let mut url_or_id = use_signal(String::new);
     let mut title = use_signal(String::new);
     let mut artist = use_signal(String::new);
     let mut intro_skip = use_signal(|| 13u32);
-    let mut feedback = use_signal(|| None::<String>);
-
-    let parse_youtube_id = |input: &str| -> Option<String> {
-        let trimmed = input.trim();
-        if trimmed.is_empty() {
-            return None;
-        }
-
-        if let Some(pos) = trimmed.find("v=") {
-            let rest = &trimmed[pos + 2..];
-            let id = rest.split('&').next().unwrap_or(rest);
-            return Some(id.to_string());
-        }
-
-        if let Some(pos) = trimmed.find("youtu.be/") {
-            let rest = &trimmed[pos + 9..];
-            let id = rest.split('?').next().unwrap_or(rest);
-            return Some(id.to_string());
-        }
-
-        Some(trimmed.to_string())
-    };
+    let mut feedback = use_signal(|| None::<Feedback>);
 
     let submit_action = move |play_now: bool| {
         let raw_url = url_or_id();
-        let maybe_id = parse_youtube_id(&raw_url);
+        let maybe_id = parse_video_id(&raw_url);
 
         match maybe_id {
-            Some(vid) if !vid.is_empty() => {
+            Some(vid) => {
                 let song_title = if title().trim().is_empty() {
                     format!("Custom YouTube Video ({vid})")
                 } else {
@@ -52,11 +41,11 @@ pub fn CustomAdd(
 
                 let new_song = Song {
                     id: format!("custom_{vid}"),
-                    code: "99999".to_string(),
+                    code: String::new(), // assigned on insert (catalog::upsert_custom)
                     title: song_title,
                     artist: song_artist,
                     youtube_id: vid,
-                    guide_video_id: None,
+                    guide: None,
                     duration_secs: 240,
                     intro_skip_secs: intro_skip(),
                     category: "Custom".to_string(),
@@ -64,14 +53,24 @@ pub fn CustomAdd(
                     is_favorite: false,
                 };
 
-                on_add_song.call((new_song, play_now));
-                feedback.set(Some("เพิ่มเพลงสำเร็จเรียบร้อยแล้ว!".to_string()));
-                url_or_id.set(String::new());
-                title.set(String::new());
-                artist.set(String::new());
+                match on_add_song.call((new_song, play_now)) {
+                    Ok(stored) => {
+                        feedback.set(Some(Feedback::Added { code: stored.code }));
+                        url_or_id.set(String::new());
+                        title.set(String::new());
+                        artist.set(String::new());
+                    }
+                    // Keep the form filled so nothing typed is lost
+                    Err(CustomCodesExhausted) => {
+                        let (first, last) = (CUSTOM_CODES.start(), CUSTOM_CODES.end());
+                        feedback.set(Some(Feedback::Error(format!(
+                            "เพิ่มเพลงไม่ได้: รหัสเพลงสำหรับเพลงที่เพิ่มเอง ({first}-{last}) ถูกใช้หมดแล้ว"
+                        ))));
+                    }
+                }
             }
-            _ => {
-                feedback.set(Some("กรุณากรอก YouTube URL หรือ Video ID ให้ถูกต้อง".to_string()));
+            None => {
+                feedback.set(Some(Feedback::Error("กรุณากรอก YouTube URL หรือ Video ID ให้ถูกต้อง".to_string())));
             }
         }
     };
@@ -86,8 +85,14 @@ pub fn CustomAdd(
                     }
                 }
 
-                if let Some(fb) = feedback() {
-                    div { class: "form-feedback", "{fb}" }
+                match feedback() {
+                    Some(Feedback::Added { code }) => rsx! {
+                        div { class: "form-feedback", role: "status", "เพิ่มเพลงสำเร็จ! รหัสเพลง {code}" }
+                    },
+                    Some(Feedback::Error(msg)) => rsx! {
+                        div { class: "form-feedback error", role: "alert", "{msg}" }
+                    },
+                    None => rsx! {},
                 }
 
                 div { class: "form-group",

@@ -1,4 +1,202 @@
-@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+/* Self-hosted Kanit + Outfit (SIL OFL 1.1, see /fonts/OFL-*.txt): no third-party requests, visitor IPs stay private.  */
+/* Files live in public/fonts (served unhashed at /fonts); unicode-range keeps Google's per-script subsets lazy. */
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url('/fonts/kanit-300-thai.woff2') format('woff2');
+    unicode-range: U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url('/fonts/kanit-300-vietnamese.woff2') format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url('/fonts/kanit-300-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: url('/fonts/kanit-300-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/kanit-400-thai.woff2') format('woff2');
+    unicode-range: U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/kanit-400-vietnamese.woff2') format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/kanit-400-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/kanit-400-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/kanit-500-thai.woff2') format('woff2');
+    unicode-range: U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/kanit-500-vietnamese.woff2') format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/kanit-500-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/kanit-500-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/kanit-600-thai.woff2') format('woff2');
+    unicode-range: U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/kanit-600-vietnamese.woff2') format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/kanit-600-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/kanit-600-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/kanit-700-thai.woff2') format('woff2');
+    unicode-range: U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/kanit-700-vietnamese.woff2') format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/kanit-700-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: 'Kanit';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/kanit-700-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Outfit';
+    font-style: normal;
+    font-weight: 400 800;
+    font-display: swap;
+    src: url('/fonts/outfit-var-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: 'Outfit';
+    font-style: normal;
+    font-weight: 400 800;
+    font-display: swap;
+    src: url('/fonts/outfit-var-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 :root {
     --bg-dark: #0b0d13;
@@ -213,11 +411,19 @@ body {
     position: relative;
 }
 
+/* Karaoke video + guide pane side by side: YouTube forbids drawing anything in front of an embedded player */
+.video-stage {
+    flex: 1;
+    display: flex;
+    min-height: 280px;
+    background: #000;
+}
+
 .video-frame-wrapper {
     flex: 1;
     position: relative;
-    background: #000;
-    min-height: 280px;
+    min-width: 200px;
+    min-height: 200px;
 }
 
 .video-frame-wrapper iframe {
@@ -229,16 +435,44 @@ body {
     left: 0;
 }
 
-/* Anti-redirect protective click shields */
-.video-click-shield-full {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 10;
-    pointer-events: auto;
-    background: transparent;
-    cursor: pointer;
+/* Guide pane: collapsed while the guide is paused + muted, open only while it plays (YouTube needs >= 200x200) */
+.guide-pane {
+    flex: 0 0 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+}
+
+.guide-pane.open {
+    flex-basis: 372px;
+    padding: 0 8px;
+}
+
+.guide-pane iframe {
+    width: 356px;
+    height: 200px;
+    flex-shrink: 0;
+    border: none;
+}
+
+.guide-pane-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 720px) {
+    .video-stage {
+        flex-direction: column;
+    }
+
+    .guide-pane.open {
+        flex-basis: auto;
+        padding: 8px 0;
+    }
 }
 
 /* Standby Hub */
@@ -267,38 +501,6 @@ body {
     margin-bottom: 12px;
 }
 
-.standby-qr-box {
-    margin: 20px 0;
-    padding: 24px;
-    background: #0f131c;
-    border: 1px dashed var(--border-glass);
-    border-radius: 8px;
-    width: 200px;
-    height: 140px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.qr-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-}
-
-.qr-pixel-lead {
-    font-size: 13px;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: 0.05em;
-}
-
-.qr-sub {
-    font-size: 10px;
-    color: var(--text-muted);
-}
-
 .standby-shortcuts-row {
     display: flex;
     flex-wrap: wrap;
@@ -316,13 +518,10 @@ body {
     border: 1px solid var(--border-glass);
 }
 
-/* Intro Skip Badge */
-.intro-skip-badge-overlay {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    z-index: 20;
-    pointer-events: auto;
+/* Intro Skip Banner (below the video, never over it) */
+.player-status-row {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .intro-banner {
@@ -368,9 +567,9 @@ body {
 }
 
 .badge-action-btn.primary {
-    background: var(--neon-cyan);
+    background: var(--accent-cyan);
     color: black;
-    border-color: var(--neon-cyan);
+    border-color: var(--accent-cyan);
 }
 
 /* Player Bottom Bar */
@@ -472,7 +671,7 @@ body {
 
 .song-code-pill {
     background: rgba(0, 245, 212, 0.15);
-    color: var(--neon-cyan);
+    color: var(--accent-cyan);
     font-family: var(--font-heading);
     font-weight: 700;
     font-size: 13px;
@@ -535,8 +734,39 @@ body {
     padding: 0 10px;
     font-size: 12px;
     font-weight: 700;
-    color: var(--neon-amber);
+    color: var(--accent-amber);
     letter-spacing: 0.5px;
+}
+
+/* Live mic pitch readout (display only, no scoring) */
+.pitch-meter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pitch-readout {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 76px;
+    font-variant-numeric: tabular-nums;
+}
+
+.pitch-note {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+}
+
+.pitch-note.idle {
+    color: var(--text-muted);
+}
+
+.pitch-cents {
+    font-size: 11px;
+    color: var(--text-secondary);
 }
 
 .action-btn {
@@ -571,24 +801,12 @@ body {
     padding: 40px;
 }
 
-.standby-pulse {
-    font-size: 64px;
-    margin-bottom: 16px;
-    filter: drop-shadow(0 0 20px var(--neon-pink));
-    animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-}
-
 .standby-title {
     font-family: var(--font-heading);
     font-size: 26px;
     font-weight: 800;
     letter-spacing: 2px;
-    color: var(--neon-cyan);
+    color: var(--accent-cyan);
     margin-bottom: 8px;
 }
 
@@ -653,7 +871,7 @@ body {
 
 .search-input:focus {
     outline: none;
-    border-color: var(--neon-cyan);
+    border-color: var(--accent-cyan);
     box-shadow: 0 0 14px rgba(0, 245, 212, 0.2);
     background: rgba(255, 255, 255, 0.08);
 }
@@ -696,7 +914,7 @@ body {
 
 .chip.active {
     background: rgba(157, 78, 221, 0.2);
-    border-color: var(--neon-purple);
+    border-color: var(--accent-primary);
     color: #e0aaff;
     box-shadow: 0 0 10px rgba(157, 78, 221, 0.3);
 }
@@ -746,7 +964,7 @@ body {
     font-family: var(--font-heading);
     font-size: 12px;
     font-weight: 700;
-    color: var(--neon-amber);
+    color: var(--accent-amber);
     background: rgba(255, 209, 102, 0.1);
     border: 1px solid rgba(255, 209, 102, 0.25);
     padding: 4px 8px;
@@ -789,7 +1007,7 @@ body {
 
 .intro-badge {
     font-size: 10px;
-    color: var(--neon-cyan);
+    color: var(--accent-cyan);
     background: rgba(0, 245, 212, 0.1);
     padding: 2px 6px;
     border-radius: 4px;
@@ -870,12 +1088,12 @@ body {
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 1px;
-    color: var(--neon-cyan);
+    color: var(--accent-cyan);
 }
 
 .remote-feedback-toast {
     font-size: 12px;
-    color: var(--neon-amber);
+    color: var(--accent-amber);
     animation: fadeIn 0.3s ease;
 }
 
@@ -901,7 +1119,7 @@ body {
     font-size: 32px;
     font-weight: 700;
     letter-spacing: 8px;
-    color: var(--neon-cyan);
+    color: var(--accent-cyan);
     text-shadow: 0 0 10px rgba(0, 245, 212, 0.5);
 }
 
@@ -957,13 +1175,13 @@ body {
 
 .numpad-key:active {
     transform: scale(0.96);
-    background: var(--neon-cyan);
+    background: var(--accent-cyan);
     color: black;
 }
 
 .numpad-key.fn-key {
     font-size: 14px;
-    color: var(--neon-pink);
+    color: var(--accent-red);
 }
 
 .code-actions-row {
@@ -991,7 +1209,7 @@ body {
 
 .code-action-btn.secondary-btn {
     background: rgba(157, 78, 221, 0.2);
-    border: 1px solid var(--neon-purple);
+    border: 1px solid var(--accent-primary);
     color: #e0aaff;
 }
 
@@ -1038,8 +1256,8 @@ body {
 
 .pitch-btn.active {
     background: rgba(255, 209, 102, 0.2);
-    border-color: var(--neon-amber);
-    color: var(--neon-amber);
+    border-color: var(--accent-amber);
+    color: var(--accent-amber);
 }
 
 .transport-row {
@@ -1095,8 +1313,8 @@ body {
 
 .speed-pill.active {
     background: rgba(0, 245, 212, 0.2);
-    border-color: var(--neon-cyan);
-    color: var(--neon-cyan);
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
 }
 
 /* Queue View */
@@ -1120,7 +1338,7 @@ body {
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 1px;
-    color: var(--neon-pink);
+    color: var(--accent-red);
     margin-bottom: 8px;
 }
 
@@ -1146,7 +1364,7 @@ body {
 
 .wave-bar {
     width: 3px;
-    background: var(--neon-pink);
+    background: var(--accent-red);
     border-radius: 2px;
     animation: wave 1s infinite ease-in-out;
 }
@@ -1162,7 +1380,7 @@ body {
 .now-code {
     font-size: 11px;
     font-weight: 700;
-    color: var(--neon-amber);
+    color: var(--accent-amber);
 }
 
 .now-song-title {
@@ -1177,7 +1395,7 @@ body {
 }
 
 .skip-btn {
-    background: var(--neon-pink);
+    background: var(--accent-red);
     border: none;
     color: white;
     font-family: var(--font-body);
@@ -1251,7 +1469,7 @@ body {
     font-family: var(--font-heading);
     font-size: 14px;
     font-weight: 800;
-    color: var(--neon-cyan);
+    color: var(--accent-cyan);
     min-width: 24px;
 }
 
@@ -1262,7 +1480,7 @@ body {
 
 .item-code {
     font-size: 10px;
-    color: var(--neon-amber);
+    color: var(--accent-amber);
 }
 
 .item-title {
@@ -1300,7 +1518,7 @@ body {
 .item-key-val {
     font-size: 11px;
     font-weight: 700;
-    color: var(--neon-amber);
+    color: var(--accent-amber);
     min-width: 18px;
     text-align: center;
 }
@@ -1400,7 +1618,7 @@ body {
 
 .form-input:focus, .text-input:focus, .number-input:focus {
     outline: none;
-    border-color: var(--neon-cyan);
+    border-color: var(--accent-cyan);
     box-shadow: 0 0 10px rgba(0, 245, 212, 0.25);
 }
 
@@ -1431,8 +1649,8 @@ body {
 
 .preset-btn.active {
     background: rgba(0, 245, 212, 0.2);
-    border-color: var(--neon-cyan);
-    color: var(--neon-cyan);
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
 }
 
 .mt-2 {
@@ -1458,11 +1676,17 @@ body {
 
 .form-feedback {
     background: rgba(0, 245, 212, 0.15);
-    border: 1px solid var(--neon-cyan);
-    color: var(--neon-cyan);
+    border: 1px solid var(--accent-cyan);
+    color: var(--accent-cyan);
     padding: 10px;
     border-radius: 8px;
     font-size: 13px;
+}
+
+.form-feedback.error {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: var(--accent-red);
+    color: var(--accent-red);
 }
 
 /* Settings Card Elements */
@@ -1502,9 +1726,9 @@ body {
 }
 
 .toggle-btn.active {
-    background: var(--neon-cyan);
+    background: var(--accent-cyan);
     color: black;
-    border-color: var(--neon-cyan);
+    border-color: var(--accent-cyan);
     box-shadow: 0 0 12px rgba(0, 245, 212, 0.4);
 }
 
@@ -1540,7 +1764,7 @@ body {
 .test-end-btn {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(0, 245, 212, 0.4);
-    color: var(--neon-cyan);
+    color: var(--accent-cyan);
     font-size: 11px;
     font-weight: 600;
     padding: 4px 10px;
@@ -1605,7 +1829,7 @@ body {
 
 .dj-icon {
     font-size: 20px;
-    filter: drop-shadow(0 0 8px var(--neon-purple));
+    filter: drop-shadow(0 0 8px var(--accent-primary));
 }
 
 .dj-heading {
@@ -1623,7 +1847,7 @@ body {
 .blake3-badge {
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid rgba(0, 245, 212, 0.3);
-    color: var(--neon-cyan);
+    color: var(--accent-cyan);
     font-family: monospace;
     font-size: 10px;
     padding: 3px 8px;
@@ -1670,7 +1894,7 @@ body {
     height: 44px;
     border-radius: 50%;
     background: rgba(157, 78, 221, 0.15);
-    border: 2px solid var(--neon-purple);
+    border: 2px solid var(--accent-primary);
     box-shadow: 0 0 10px rgba(157, 78, 221, 0.3);
     flex-shrink: 0;
 }
@@ -1708,7 +1932,7 @@ body {
 
 .antic-reason {
     font-size: 10px;
-    color: var(--neon-amber);
+    color: var(--accent-amber);
     margin-top: 2px;
 }
 
@@ -1741,127 +1965,21 @@ body {
     color: var(--text-primary);
 }
 
-/* Guide Vocal & Live Scoring Overlays */
-.guide-vocal-indicator-badge {
-/* Guide Vocal & Live Scoring Overlays */
-.guide-vocal-indicator-badge {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #1e293b;
-    border: 1px solid #334155;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #f8fafc;
-    z-index: 15;
-}
-
-.live-pitch-scoring-hud {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    background: rgba(15, 23, 42, 0.9);
-    border: 1px solid #334155;
-    padding: 8px 16px;
-    border-radius: 6px;
-    z-index: 14;
-}
-
-.hud-score-gauge {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.hud-label {
-    font-size: 9px;
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
-    font-weight: 700;
-}
-
-.hud-score-value {
-    font-family: var(--font-heading);
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--accent-cyan);
-}
-
-.hud-rank-badge {
-    display: inline-block;
-    font-size: 9px;
-    font-weight: 700;
-    background: var(--accent-amber);
-    color: #0f172a;
-    padding: 1px 6px;
-    border-radius: 4px;
-    width: fit-content;
-}
-
-.hud-pitch-track {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.pitch-note-pill {
-    font-family: var(--font-heading);
-    font-size: 12px;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 6px;
-    background: #1e293b;
-    border: 1px solid #334155;
-    color: var(--accent-cyan);
-}
-
-.pitch-visualizer-bars {
-    display: flex;
-    align-items: flex-end;
-    gap: 3px;
-    height: 28px;
-    padding: 2px 4px;
-    background: #0f172a;
-    border-radius: 4px;
-}
-
-.wave-bar {
-    width: 4px;
-    background: #64748b;
-    border-radius: 2px;
-    transition: height 0.1s ease;
-}
-
-.wave-bar.h-60 { height: 60%; }
-.wave-bar.h-85 { height: 85%; }
-.wave-bar.h-100 { height: 100%; background: var(--accent-cyan); }
-.wave-bar.h-75 { height: 75%; }
-.wave-bar.h-45 { height: 45%; }
-
-.combo-badge {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--accent-amber);
-}
-
 .ctrl-btn.guide-active {
     background: var(--accent-primary) !important;
     border-color: var(--accent-hover) !important;
     color: #ffffff !important;
 }
 
-.ctrl-btn.score-active {
-    background: #1e293b !important;
-    border-color: var(--accent-cyan) !important;
-    color: var(--accent-cyan) !important;
+.ctrl-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.ctrl-btn.pause-active {
+    background: #d97706 !important;
+    border-color: #f59e0b !important;
+    color: #ffffff !important;
 }
 
 /* Legal Transparency & Developer Portfolio Card */
@@ -1920,3 +2038,32 @@ body {
     color: #ffffff;
 }
 
+
+/* Reference-free tuning score beside the live pitch readout */
+.tuning-score {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    font-variant-numeric: tabular-nums;
+    cursor: help;
+}
+
+.tuning-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.tuning-value {
+    min-width: 2ch;
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+}
+
+.tuning-value.idle {
+    color: var(--text-muted);
+}

@@ -1,0 +1,733 @@
+[
+  {
+    "id": "gmm_001",
+    "code": "10001",
+    "title": "รักแล้วยอมได้",
+    "artist": "แช่ม แช่มรัมย์",
+    "youtube_id": "inGSjouS77g",
+    "guide": {
+      "video_id": "qdaeYIGnpiA",
+      "offset_secs": -18.34,
+      "rate": 1.0
+    },
+    "duration_secs": 220,
+    "intro_skip_secs": 18,
+    "category": "Luk Thung",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_002",
+    "code": "10002",
+    "title": "ปลายทางของความคิดถึง",
+    "artist": "ตั๊กแตน ชลดา",
+    "youtube_id": "0cq9nSoPGZo",
+    "guide": {
+      "video_id": "dj-iph1Nt0Y",
+      "offset_secs": -18.1,
+      "rate": 1.0
+    },
+    "duration_secs": 235,
+    "intro_skip_secs": 18,
+    "category": "Luk Thung",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_003",
+    "code": "10003",
+    "title": "นกหลงรัง",
+    "artist": "เสือ ธนพล",
+    "youtube_id": "qq_pRBQjrSg",
+    "guide": {
+      "video_id": "6iilLpdieOE",
+      "offset_secs": -17.89,
+      "rate": 1.0
+    },
+    "duration_secs": 260,
+    "intro_skip_secs": 18,
+    "category": "Rock",
+    "channel": "GMM Karaoke",
+    "is_favorite": true
+  },
+  {
+    "id": "gmm_004",
+    "code": "10004",
+    "title": "รักไม่ไหวแล้วโว้ย",
+    "artist": "โจอี้ ภูวศิษฐ์",
+    "youtube_id": "r1crPncm5aE",
+    "guide": {
+      "video_id": "vjCO0DDGFio",
+      "offset_secs": -18.02,
+      "rate": 1.0
+    },
+    "duration_secs": 215,
+    "intro_skip_secs": 18,
+    "category": "Modern",
+    "channel": "GMM Karaoke",
+    "is_favorite": true
+  },
+  {
+    "id": "gmm_005",
+    "code": "10005",
+    "title": "ไม่มีครั้งสุดท้าย",
+    "artist": "มิ้น อรรถวดี",
+    "youtube_id": "p5sPRujGdqM",
+    "guide": {
+      "video_id": "Quqp2_wGSdo",
+      "offset_secs": -18.5,
+      "rate": 1.0
+    },
+    "duration_secs": 240,
+    "intro_skip_secs": 18,
+    "category": "Pop",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_006",
+    "code": "10006",
+    "title": "ไปอยู่ที่ไหนมา",
+    "artist": "โอ๊ค สมิทธิ์",
+    "youtube_id": "c0tYoAQm9_k",
+    "guide": {
+      "video_id": "Lm3dtgN63i0",
+      "offset_secs": -20.5,
+      "rate": 1.0
+    },
+    "duration_secs": 228,
+    "intro_skip_secs": 18,
+    "category": "Pop",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_007",
+    "code": "10007",
+    "title": "ดาวเสาร์ (Saturn)",
+    "artist": "LULA",
+    "youtube_id": "RDTWvDDn0Bk",
+    "guide": {
+      "video_id": "hoGABRCJEvw",
+      "offset_secs": -18.15,
+      "rate": 1.0
+    },
+    "duration_secs": 230,
+    "intro_skip_secs": 18,
+    "category": "Pop",
+    "channel": "GMM Karaoke",
+    "is_favorite": true
+  },
+  {
+    "id": "gmm_008",
+    "code": "10008",
+    "title": "บ่กล้าบอกไผ",
+    "artist": "ไหมไทย ใจตะวัน",
+    "youtube_id": "pZctcALD-0U",
+    "guide": {
+      "video_id": "HrbwK-0m_MI",
+      "offset_secs": -18.34,
+      "rate": 1.0
+    },
+    "duration_secs": 250,
+    "intro_skip_secs": 18,
+    "category": "Luk Thung",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_009",
+    "code": "10009",
+    "title": "ไม่รักแต่ไม่ลืม",
+    "artist": "แอม เสาวลักษณ์",
+    "youtube_id": "iyEDnU0AUQs",
+    "guide": {
+      "video_id": "CewUf5r9MQM",
+      "offset_secs": -19.09,
+      "rate": 1.0
+    },
+    "duration_secs": 245,
+    "intro_skip_secs": 18,
+    "category": "Classic 90s",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_010",
+    "code": "10010",
+    "title": "น้ำใสใจจริง",
+    "artist": "ปราโมทย์ วิเลปะนะ",
+    "youtube_id": "Xp8D5lRYf-c",
+    "guide": {
+      "video_id": "y5AmxI-7Jr8",
+      "offset_secs": -17.56,
+      "rate": 1.0
+    },
+    "duration_secs": 225,
+    "intro_skip_secs": 18,
+    "category": "Pop",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_011",
+    "code": "10011",
+    "title": "I've Got You",
+    "artist": "PECK PALITCHOKE",
+    "youtube_id": "GEvqq6YbKfQ",
+    "guide": {
+      "video_id": "LhV1m9PQIP4",
+      "offset_secs": -16.58,
+      "rate": 1.0
+    },
+    "duration_secs": 210,
+    "intro_skip_secs": 18,
+    "category": "Pop",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_012",
+    "code": "10012",
+    "title": "นางร้าย",
+    "artist": "Pancake",
+    "youtube_id": "iF64rmmKJaY",
+    "guide": {
+      "video_id": "vSrJqGaEt9Q",
+      "offset_secs": -18.19,
+      "rate": 1.0
+    },
+    "duration_secs": 232,
+    "intro_skip_secs": 18,
+    "category": "Rock",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_013",
+    "code": "10013",
+    "title": "oasis",
+    "artist": "Atom ชนกันต์ feat. D Gerrard",
+    "youtube_id": "_NzrFynYFJU",
+    "guide": {
+      "video_id": "rPZIiRQNXjk",
+      "offset_secs": -16.96,
+      "rate": 1.0
+    },
+    "duration_secs": 240,
+    "intro_skip_secs": 18,
+    "category": "Modern",
+    "channel": "GMM Karaoke",
+    "is_favorite": true
+  },
+  {
+    "id": "gmm_014",
+    "code": "10014",
+    "title": "ทุกนาทีให้เธอ",
+    "artist": "ไอซ์ ศรัณยู",
+    "youtube_id": "Kyx2Jbm5bFg",
+    "guide": {
+      "video_id": "W9n0rNTgiek",
+      "offset_secs": -17.86,
+      "rate": 1.0
+    },
+    "duration_secs": 218,
+    "intro_skip_secs": 18,
+    "category": "Pop",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_015",
+    "code": "10015",
+    "title": "ลุคBAD SADบ่อย",
+    "artist": "MUSSEAW",
+    "youtube_id": "ouzdahsP7tM",
+    "guide": {
+      "video_id": "ib1b2m7Ngow",
+      "offset_secs": -13.02,
+      "rate": 1.0
+    },
+    "duration_secs": 205,
+    "intro_skip_secs": 18,
+    "category": "Modern",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_016",
+    "code": "10016",
+    "title": "ลืมหน่อยก็ไม่ได้",
+    "artist": "เอิร์น สุรัตน์ติกานต์",
+    "youtube_id": "9zndDpiItas",
+    "guide": {
+      "video_id": "SNWqDeLJcPU",
+      "offset_secs": -18.27,
+      "rate": 1.0
+    },
+    "duration_secs": 238,
+    "intro_skip_secs": 18,
+    "category": "Luk Thung",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_017",
+    "code": "10017",
+    "title": "เพื่อนกันไม่ทำแบบนี้",
+    "artist": "PRINCE",
+    "youtube_id": "34ApHPRuu0I",
+    "guide": {
+      "video_id": "NIC27TiwUeQ",
+      "offset_secs": -17.83,
+      "rate": 1.0
+    },
+    "duration_secs": 226,
+    "intro_skip_secs": 18,
+    "category": "Pop",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_018",
+    "code": "10018",
+    "title": "ความจำสั้น",
+    "artist": "ต๊อง วิตติวัต",
+    "youtube_id": "gLADl-lcLIA",
+    "guide": {
+      "video_id": "ZlV-cXLbaZE",
+      "offset_secs": -32.82,
+      "rate": 1.0
+    },
+    "duration_secs": 242,
+    "intro_skip_secs": 18,
+    "category": "Pop",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_019",
+    "code": "10019",
+    "title": "ชีวิตที่เคยมีเรา",
+    "artist": "The Mousses",
+    "youtube_id": "-ZgREu-tU9Y",
+    "guide": {
+      "video_id": "V4CaJc4KnEw",
+      "offset_secs": -18.06,
+      "rate": 1.0
+    },
+    "duration_secs": 250,
+    "intro_skip_secs": 18,
+    "category": "Rock",
+    "channel": "GMM Karaoke",
+    "is_favorite": true
+  },
+  {
+    "id": "gmm_020",
+    "code": "10020",
+    "title": "ยิ่งใกล้...ยิ่งไกล",
+    "artist": "เจนนิเฟอร์ คิ้ม",
+    "youtube_id": "mOKoOVynxxM",
+    "guide": {
+      "video_id": "j3KZ79md60s",
+      "offset_secs": -18.78,
+      "rate": 1.0
+    },
+    "duration_secs": 248,
+    "intro_skip_secs": 18,
+    "category": "Classic 90s",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_021",
+    "code": "10021",
+    "title": "เปียกอับชื้น",
+    "artist": "Buddha Bless",
+    "youtube_id": "F32jJgDyyAI",
+    "guide": {
+      "video_id": "GujaVE7qFdw",
+      "offset_secs": -18.21,
+      "rate": 1.0
+    },
+    "duration_secs": 230,
+    "intro_skip_secs": 18,
+    "category": "Modern",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_022",
+    "code": "10022",
+    "title": "ห้ามใจ",
+    "artist": "หนูนา หนึ่งธิดา",
+    "youtube_id": "s8GIehbfun8",
+    "guide": {
+      "video_id": "dzmN1ILnfuo",
+      "offset_secs": -17.27,
+      "rate": 1.0
+    },
+    "duration_secs": 220,
+    "intro_skip_secs": 18,
+    "category": "Pop",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_023",
+    "code": "10023",
+    "title": "CLOCK",
+    "artist": "Supersub",
+    "youtube_id": "MuHgMFxwH7U",
+    "guide": {
+      "video_id": "6M9QAZoR3Jw",
+      "offset_secs": -15.58,
+      "rate": 1.0
+    },
+    "duration_secs": 236,
+    "intro_skip_secs": 18,
+    "category": "Rock",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_024",
+    "code": "10024",
+    "title": "สาว ตจว. ม.ราชภัฏ",
+    "artist": "จั๊กจั่น วันวิสา",
+    "youtube_id": "gVWKW150UK8",
+    "guide": {
+      "video_id": "lh1cBWVtGQw",
+      "offset_secs": -18.2,
+      "rate": 0.9995
+    },
+    "duration_secs": 245,
+    "intro_skip_secs": 18,
+    "category": "Luk Thung",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_025",
+    "code": "10025",
+    "title": "เล่นของสูง",
+    "artist": "Big Ass",
+    "youtube_id": "5ZleaanG8mk",
+    "guide": {
+      "video_id": "bAQw8ZS_0kg",
+      "offset_secs": -3.15,
+      "rate": 1.0
+    },
+    "duration_secs": 248,
+    "intro_skip_secs": 18,
+    "category": "Rock",
+    "channel": "GMM Karaoke",
+    "is_favorite": true
+  },
+  {
+    "id": "gmm_026",
+    "code": "10026",
+    "title": "คุกเข่า",
+    "artist": "COCKTAIL",
+    "youtube_id": "9aCUDQ8SPcA",
+    "guide": {
+      "video_id": "dXf3sWxIhfY",
+      "offset_secs": -19.96,
+      "rate": 0.999
+    },
+    "duration_secs": 260,
+    "intro_skip_secs": 18,
+    "category": "Rock",
+    "channel": "GMM Karaoke",
+    "is_favorite": true
+  },
+  {
+    "id": "gmm_028",
+    "code": "10028",
+    "title": "เธอ (Tur)",
+    "artist": "COCKTAIL",
+    "youtube_id": "Nlr1jPW6LZ4",
+    "guide": {
+      "video_id": "nY9sHiZ4bTU",
+      "offset_secs": -14.87,
+      "rate": 1.0
+    },
+    "duration_secs": 268,
+    "intro_skip_secs": 18,
+    "category": "Rock",
+    "channel": "GMM Karaoke",
+    "is_favorite": true
+  },
+  {
+    "id": "gmm_029",
+    "code": "10029",
+    "title": "คู่ชีวิต (Koo-Chee-Wit)",
+    "artist": "COCKTAIL",
+    "youtube_id": "mMRkEh6Z6vE",
+    "guide": {
+      "video_id": "3mYVyVY-lU4",
+      "offset_secs": -19.49,
+      "rate": 1.0
+    },
+    "duration_secs": 335,
+    "intro_skip_secs": 18,
+    "category": "Rock",
+    "channel": "GMM Karaoke",
+    "is_favorite": true
+  },
+  {
+    "id": "gmm_030",
+    "code": "10030",
+    "title": "ดึงดัน (Dueng-Dun)",
+    "artist": "COCKTAIL x ตั๊ก ศิริพร",
+    "youtube_id": "7Bima2M9xy4",
+    "guide": {
+      "video_id": "AZ_t9iAJRDw",
+      "offset_secs": -21.26,
+      "rate": 1.0
+    },
+    "duration_secs": 250,
+    "intro_skip_secs": 18,
+    "category": "Rock",
+    "channel": "GMM Karaoke",
+    "is_favorite": true
+  },
+  {
+    "id": "gmm_031",
+    "code": "10031",
+    "title": "เธอทำให้ฉันเสียใจ",
+    "artist": "COCKTAIL",
+    "youtube_id": "Ekllc9Km16U",
+    "guide": {
+      "video_id": "jjAqxxSBi3Y",
+      "offset_secs": -20.15,
+      "rate": 1.0233
+    },
+    "duration_secs": 254,
+    "intro_skip_secs": 18,
+    "category": "Rock",
+    "channel": "GMM Karaoke",
+    "is_favorite": true
+  },
+  {
+    "id": "gmm_032",
+    "code": "10032",
+    "title": "ฉันร้องไห้เป็นหมื่นครั้งเพื่อมาเจอเธอ",
+    "artist": "COCKTAIL",
+    "youtube_id": "ty_8P3aHmuo",
+    "guide": {
+      "video_id": "mjydUqDRkNs",
+      "offset_secs": -19.76,
+      "rate": 1.0
+    },
+    "duration_secs": 275,
+    "intro_skip_secs": 18,
+    "category": "Rock",
+    "channel": "GMM Karaoke",
+    "is_favorite": true
+  },
+  {
+    "id": "gmm_033",
+    "code": "10033",
+    "title": "ทำดีไม่เคยจำ",
+    "artist": "COCKTAIL",
+    "youtube_id": "Km8J1H41sFk",
+    "guide": {
+      "video_id": "wG8kIfFdkUw",
+      "offset_secs": -12.1,
+      "rate": 1.0
+    },
+    "duration_secs": 248,
+    "intro_skip_secs": 18,
+    "category": "Rock",
+    "channel": "GMM Karaoke",
+    "is_favorite": false
+  },
+  {
+    "id": "gmm_027",
+    "code": "10027",
+    "title": "วัดใจ",
+    "artist": "Silly Fools",
+    "youtube_id": "VZAm_CfIjvs",
+    "guide": {
+      "video_id": "VNIE3VX1KeA",
+      "offset_secs": -18.99,
+      "rate": 1.0
+    },
+    "duration_secs": 255,
+    "intro_skip_secs": 18,
+    "category": "Rock",
+    "channel": "GMM Karaoke",
+    "is_favorite": true
+  },
+  {
+    "id": "wtd_001",
+    "code": "20001",
+    "title": "ที่คั่นหนังสือ (Sometimes)",
+    "artist": "BOWKYLION Ft. NONT TANONT",
+    "youtube_id": "xmyqhV0f9Go",
+    "guide": {
+      "video_id": "L051YSpEEYU",
+      "offset_secs": 2.0,
+      "rate": 1.0
+    },
+    "duration_secs": 242,
+    "intro_skip_secs": 0,
+    "category": "Indie",
+    "channel": "Whattheduck",
+    "is_favorite": true
+  },
+  {
+    "id": "wtd_002",
+    "code": "20002",
+    "title": "วาดไว้ (recall)",
+    "artist": "BOWKYLION",
+    "youtube_id": "Zzfu7_4NTig",
+    "guide": {
+      "video_id": "a0M_QUS3kC0",
+      "offset_secs": -0.06,
+      "rate": 1.0
+    },
+    "duration_secs": 250,
+    "intro_skip_secs": 0,
+    "category": "Indie",
+    "channel": "Whattheduck",
+    "is_favorite": true
+  },
+  {
+    "id": "wtd_003",
+    "code": "20003",
+    "title": "กำแพงหัวใจ (Heartwall)",
+    "artist": "Mirrr",
+    "youtube_id": "-rP1pLP5a2U",
+    "guide": {
+      "video_id": "zivpBXVprMI",
+      "offset_secs": 5.03,
+      "rate": 1.0
+    },
+    "duration_secs": 238,
+    "intro_skip_secs": 0,
+    "category": "Indie",
+    "channel": "Whattheduck",
+    "is_favorite": true
+  },
+  {
+    "id": "wtd_004",
+    "code": "20004",
+    "title": "พิจารณา (Consider)",
+    "artist": "Musketeers Ft. MAIYARAP",
+    "youtube_id": "dwU0WTiItio",
+    "guide": {
+      "video_id": "21E3MNWz5m4",
+      "offset_secs": 0.01,
+      "rate": 1.0
+    },
+    "duration_secs": 245,
+    "intro_skip_secs": 0,
+    "category": "Indie",
+    "channel": "Whattheduck",
+    "is_favorite": false
+  },
+  {
+    "id": "wtd_005",
+    "code": "20005",
+    "title": "เพลงรักเพลงแรก (Blooming)",
+    "artist": "LANDOKMAI",
+    "youtube_id": "V8K_pA72RPQ",
+    "guide": {
+      "video_id": "N9bashij_7c",
+      "offset_secs": 0.0,
+      "rate": 1.0
+    },
+    "duration_secs": 230,
+    "intro_skip_secs": 0,
+    "category": "Indie",
+    "channel": "Whattheduck",
+    "is_favorite": true
+  },
+  {
+    "id": "wtd_006",
+    "code": "20006",
+    "title": "รู้กันแค่นี้ (mint)",
+    "artist": "BOWKYLION",
+    "youtube_id": "RkdFRLJEcqM",
+    "guide": {
+      "video_id": "jlD2k41BGVk",
+      "offset_secs": 3.38,
+      "rate": 1.0
+    },
+    "duration_secs": 215,
+    "intro_skip_secs": 0,
+    "category": "Indie",
+    "channel": "Whattheduck",
+    "is_favorite": false
+  },
+  {
+    "id": "wtd_007",
+    "code": "20007",
+    "title": "จำเก่ง",
+    "artist": "F.HERO x Tilly Birds",
+    "youtube_id": "6rn0nrzuhCo",
+    "guide": {
+      "video_id": "7iSia7rb1PY",
+      "offset_secs": 0.04,
+      "rate": 1.0
+    },
+    "duration_secs": 260,
+    "intro_skip_secs": 0,
+    "category": "Modern",
+    "channel": "Whattheduck",
+    "is_favorite": true
+  },
+  {
+    "id": "wtd_008",
+    "code": "20008",
+    "title": "ทีละน้อย (little by little)",
+    "artist": "Hers",
+    "youtube_id": "lpWA9D_CmPQ",
+    "guide": {
+      "video_id": "Nc-ozevTY1c",
+      "offset_secs": 0.0,
+      "rate": 1.0
+    },
+    "duration_secs": 228,
+    "intro_skip_secs": 0,
+    "category": "Indie",
+    "channel": "Whattheduck",
+    "is_favorite": false
+  },
+  {
+    "id": "wtd_009",
+    "code": "20009",
+    "title": "Melbourne",
+    "artist": "Morvasu Ft. TangBadVoice",
+    "youtube_id": "KlqalFA9BzA",
+    "guide": {
+      "video_id": "BjBXoSX5aQI",
+      "offset_secs": 2.7,
+      "rate": 1.0
+    },
+    "duration_secs": 210,
+    "intro_skip_secs": 0,
+    "category": "Modern",
+    "channel": "Whattheduck",
+    "is_favorite": false
+  },
+  {
+    "id": "wtd_010",
+    "code": "20010",
+    "title": "ดอกไม้ที่รอฝน (spring)",
+    "artist": "THE TOYS x NONT TANONT",
+    "youtube_id": "EUzAdgsu4Eg",
+    "guide": {
+      "video_id": "0wiPKB3MDsM",
+      "offset_secs": -0.51,
+      "rate": 1.0
+    },
+    "duration_secs": 252,
+    "intro_skip_secs": 0,
+    "category": "Indie",
+    "channel": "Whattheduck",
+    "is_favorite": true
+  }
+]

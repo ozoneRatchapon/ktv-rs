@@ -95,18 +95,18 @@ pub fn Settings(
                         }
                         div { class: "metric-item",
                             span { class: "metric-num", "0" }
-                            span { class: "metric-desc", "Cookies / Trackers (PDPA Ready)" }
+                            span { class: "metric-desc", "First-Party Cookies / Trackers" }
                         }
                         div { class: "metric-item",
-                            span { class: "metric-num", "Direct" }
-                            span { class: "metric-desc", "Official YouTube Embeds" }
+                            span { class: "metric-num", "nocookie" }
+                            span { class: "metric-desc", "YouTube Privacy-Enhanced Embeds" }
                         }
                     }
 
                     div { class: "legal-text-block",
                         p {
                             strong { "Legal & Copyright Attribution: " }
-                            "This application is a non-commercial educational showcase and technical portfolio demonstrating high-performance web engineering with Dioxus 0.7 and WebAssembly. No audio or video files are hosted on our servers. All media playback is streamed directly via the official YouTube Embed API in compliance with YouTube Terms of Service. All rights, trademarks, and royalties remain with the respective artists and record labels (GMM Grammy, Genie Records, What The Duck)."
+                            "This application is a non-commercial educational showcase and technical portfolio demonstrating high-performance web engineering with Dioxus 0.7 and WebAssembly. No audio or video files are hosted on our servers. Videos load in YouTube's privacy-enhanced mode (youtube-nocookie.com); YouTube may still store data in your browser once playback starts, under Google's privacy policy. All media playback is streamed directly via the official YouTube Embed API in compliance with YouTube Terms of Service. All rights, trademarks, and royalties remain with the respective artists and record labels (GMM Grammy, Genie Records, What The Duck)."
                         }
                         p {
                             strong { "Open Source Repository: " }

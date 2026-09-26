@@ -146,7 +146,9 @@ pub fn Remote(
                 // Pitch Transpose Control Section
                 div { class: "remote-section",
                     div { class: "section-title", "KEY TRANSPOSE" }
-                    div { class: "key-transpose-row",
+                    div {
+                        class: "key-transpose-row",
+                        title: "Saved per song as a key label; YouTube audio cannot be pitch-shifted in the browser",
                         button {
                             class: "pitch-btn",
                             onclick: move |_| on_key_shift.call(-2),

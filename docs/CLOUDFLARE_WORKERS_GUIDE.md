@@ -27,23 +27,31 @@ graph TD
 
 ---
 
-## 1. Deploying Frontend to Cloudflare Pages
+## 1. Deploying the Frontend (Workers Static Assets) — current setup
 
-### Step 1: Build the Release WASM Bundle
-```bash
-# Compile optimized WASM package
-dx build --release --platform web
-```
-The output is generated in `./target/dx/app/release/web/public/`.
+The web app is an **assets-only Worker**: no Worker script, just the static Dioxus build served from Cloudflare's edge.
 
-### Step 2: Publish via Wrangler
+| File | Role |
+|---|---|
+| `wrangler.jsonc` | Worker `ktv-rs`, `assets.directory = ./dist`, SPA fallback |
+| `deploy/_headers` | CSP, `Permissions-Policy: microphone=(self)`, `nosniff`, COOP, immutable caching for hashed `/assets/*` |
+| `tools/build_web.sh` | Clean `dx build --release`, fails on a degraded bundle, stages `dist/` + `_headers` (also used by CI) |
+| `deploy.sh` | Guards (on `main`, clean, pushed), build, `wrangler deploy --tag <git describe>`, then `wrangler deployments list` |
+
 ```bash
-npx wrangler pages deploy ./target/dx/app/release/web/public --project-name neon-ktv
+./deploy.sh --dry-run   # any branch: build + validate, no upload
+./deploy.sh             # main only: real deploy
 ```
+
+Notes:
+* CSP needs `'unsafe-eval'` (Dioxus `document::eval` uses `new Function`) and `blob:` in `script-src` (mic AudioWorklet from a Blob URL).
+* Local preview of the exact prod bundle + headers: `npx wrangler@4.141.0 dev` after `tools/build_web.sh`.
+* "Pushed to main" is not "deployed": check `npx wrangler@4.141.0 deployments list`.
+* The room server below is **not built yet**. Durable Object bindings are currently blocked by the Cloudflare versions-API `10013` / PUT `10021` issue, so the phone remote should start with WebRTC or KV polling.
 
 ---
 
-## 2. Implementing the Room WebSocket Server with `workers-rs`
+## 2. (Planned) Room WebSocket Server with `workers-rs`
 
 ### Project Configuration (`wrangler.toml`)
 ```toml
