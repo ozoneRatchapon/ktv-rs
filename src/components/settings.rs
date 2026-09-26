@@ -66,7 +66,7 @@ pub fn Settings(
                 div { class: "setting-row",
                     div { class: "setting-desc",
                         div { class: "setting-title", "Guide Timing Tools" }
-                        div { class: "setting-sub", "Line up an original-vocal MV with the karaoke video by ear (saved on this device)" }
+                        div { class: "setting-sub", "Line up an original-vocal MV with the karaoke video by ear (saved on this device); also shows the Queue tab's End Song test button" }
                     }
                     button {
                         class: if current_settings.show_timing_tools { "toggle-btn active" } else { "toggle-btn" },

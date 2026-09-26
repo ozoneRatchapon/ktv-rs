@@ -126,3 +126,33 @@ fn test_pitches_unrelated_to_semitones_score_near_zero() {
     assert_eq!(s.summary().notes, 200);
     assert!(s.summary().score().unwrap() <= 15, "{:?}", s.summary());
 }
+
+fn take(title: &str, notes: u32, cents: f32) -> app::score::TakeResult {
+    let summary = TuningSummary { notes, mean_abs_cents: Some(cents) };
+    app::score::TakeResult::new("id", title, "artist", summary).expect("judged take")
+}
+
+#[test]
+fn test_take_result_needs_a_judged_note() {
+    assert_eq!(app::score::TakeResult::new("id", "t", "a", TuningSummary::default()), None, "mic on but silent");
+    let result = take("t", 5, 8.0);
+    assert_eq!(result.score(), Some(100));
+    assert_eq!(take("t", 2, 8.0).score(), None, "too few notes for a score, still kept");
+}
+
+#[test]
+fn test_history_is_newest_first_and_capped() {
+    let mut history = Vec::new();
+    for i in 0..app::score::MAX_RESULTS + 5 {
+        app::score::record(&mut history, take(&format!("song {i}"), 4, 10.0));
+    }
+    assert_eq!(history.len(), app::score::MAX_RESULTS);
+    assert_eq!(history[0].title, format!("song {}", app::score::MAX_RESULTS + 4));
+}
+
+#[test]
+fn test_history_round_trips_through_storage() {
+    let history = vec![take("รักไม่ไหวแล้วโว้ย", 12, 11.5)];
+    let json = serde_json::to_string(&history).unwrap();
+    assert_eq!(app::storage::decode::<Vec<app::score::TakeResult>>(Some(&json)), Some(history));
+}

@@ -1,5 +1,7 @@
 use dioxus::prelude::*;
+use crate::components::score_card::ScoreHistory;
 use crate::recommendation::AnticipatedRecommendation;
+use crate::score::TakeResult;
 use crate::types::{QueueItem, Song};
 
 #[component]
@@ -7,6 +9,7 @@ pub fn QueueView(
     queue: Vec<QueueItem>,
     current_item: Option<QueueItem>,
     anticipated: Vec<AnticipatedRecommendation>,
+    score_history: Vec<TakeResult>,
     on_skip: EventHandler<()>,
     on_remove: EventHandler<u64>,
     on_move_up: EventHandler<usize>,
@@ -16,6 +19,8 @@ pub fn QueueView(
     on_queue_song: EventHandler<Song>,
     on_play_song: EventHandler<Song>,
     on_simulate_end: EventHandler<()>,
+    /// Curator mode (Settings → Guide Timing Tools): shows the "End Song" test control.
+    show_dev_tools: bool,
 ) -> Element {
     rsx! {
         div { class: "queue-container",
@@ -23,7 +28,7 @@ pub fn QueueView(
             div { class: "now-playing-section",
                 div { class: "now-playing-header-row",
                     div { class: "section-badge", "NOW SINGING" }
-                    if current_item.is_some() {
+                    if show_dev_tools && current_item.is_some() {
                         button {
                             class: "test-end-btn",
                             title: "Simulate video ending to test auto-advance to next song",
@@ -158,7 +163,7 @@ pub fn QueueView(
                 }
             }
 
-            // Smart Auto-DJ Anticipation Section (katgpt-sleep substrate)
+            // Auto-DJ suggestions
             div { class: "auto-dj-section",
                 div { class: "auto-dj-header",
                     div { class: "auto-dj-title-group",
@@ -205,6 +210,8 @@ pub fn QueueView(
                     }
                 }
             }
+
+            ScoreHistory { results: score_history }
         }
     }
 }
