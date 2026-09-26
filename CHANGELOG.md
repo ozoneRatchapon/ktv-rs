@@ -3,7 +3,7 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.15.0] - 2026-09-27
+## [0.15.0] - 2026-09-27 (`44dc6a23`)
 ### Added
 - Full songbook: every official karaoke upload from **GMM Karaoke** (~7,900 songs), **Whattheduck** and **Muzik Move Karaoke**, ~8,200 songs in all. It loads in the background after the page opens; search, keypad codes, favourites and the queue all work with it. GMM's romanised titles are searchable ("kam ka sa ka la sin").
 - The song list shows 60 songs at a time with **Show more** (type to narrow it down).
