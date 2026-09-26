@@ -1,7 +1,8 @@
 use dioxus::prelude::*;
 use crate::sync::{self, SyncCommand, SyncEvent, GUIDE_FRAME_ID, KARAOKE_FRAME_ID};
+use crate::components::guide_timing::GuideTiming;
 use crate::components::pitch_meter::PitchMeter;
-use crate::types::QueueItem;
+use crate::types::{GuideTrack, QueueItem};
 
 #[component]
 pub fn Player(
@@ -15,11 +16,19 @@ pub fn Player(
     on_replay_song: EventHandler<()>,
     on_key_change: EventHandler<i32>,
     on_video_ended: EventHandler<()>,
+    show_timing_tools: bool,
+    /// The current song's guide timing comes from this device, not the catalog.
+    guide_overridden: bool,
+    on_save_guide: EventHandler<GuideTrack>,
+    on_revert_guide: EventHandler<()>,
 ) -> Element {
     let mut is_guide_vocal = use_signal(|| false);
     let mut is_guide_failed = use_signal(|| false);
     let mut is_paused = use_signal(|| false);
     let mut current_playback_sec = use_signal(|| 0u64);
+    // What the sync core was last loaded with: (queue id, intro skip, guide video) and the guide mapping
+    let mut loaded = use_signal(|| None::<(u64, bool, Option<String>)>);
+    let mut loaded_mapping = use_signal(|| (0.0f32, 1.0f32));
 
     // Sync core must exist before the effects below issue commands, so install during the first render
     use_hook(move || {
@@ -40,16 +49,28 @@ pub fn Player(
         });
     });
 
-    // Sync is_skipped with auto_skip_intro when current_item changes
+    // Reload the sync core only for a new song (or intro setting, or guide video). A key change or a saved
+    // guide timing also rewrites current_item, and must keep the vocal choice and position.
     use_effect(use_reactive((&current_item, &auto_skip_intro), move |(item, auto_skip)| {
-        if let Some(it) = item {
-            is_skipped.set(auto_skip);
-            is_guide_vocal.set(false);
-            is_guide_failed.set(false);
-            current_playback_sec.set(it.song.start_sec(auto_skip));
-            let (offset_secs, rate) = it.song.guide.as_ref().map_or((0.0, 1.0), |g| (g.offset_secs, g.rate));
-            SyncCommand::LoadSong { offset_secs, rate }.run();
+        let Some(it) = item else { return };
+        let mapping = it.song.guide.as_ref().map_or((0.0, 1.0), |g| (g.offset_secs, g.rate));
+        let identity = (it.queue_id, auto_skip, it.song.guide.as_ref().map(|g| g.video_id.clone()));
+        if loaded.peek().as_ref() == Some(&identity) {
+            if *loaded_mapping.peek() != mapping {
+                loaded_mapping.set(mapping);
+                let (offset_secs, rate) = mapping;
+                SyncCommand::SetMapping { offset_secs, rate }.run();
+            }
+            return;
         }
+        loaded.set(Some(identity));
+        loaded_mapping.set(mapping);
+        is_skipped.set(auto_skip);
+        is_guide_vocal.set(false);
+        is_guide_failed.set(false);
+        current_playback_sec.set(it.song.start_sec(auto_skip));
+        let (offset_secs, rate) = mapping;
+        SyncCommand::LoadSong { offset_secs, rate }.run();
     }));
 
     // Karaoke iframe remounts whenever its video or start second changes; keep the sync clock in step
@@ -66,6 +87,7 @@ pub fn Player(
     match current_item {
         Some(item) => {
             let song = item.song;
+            let timing_song = song.clone();
             let has_guide = song.guide.is_some();
             let active_video_id = song.youtube_id.clone();
 
@@ -108,7 +130,7 @@ pub fn Player(
                                 class: if is_guide_vocal() { "guide-pane open" } else { "guide-pane" },
                                 aria_hidden: if !is_guide_vocal() { "true" },
                                 iframe {
-                                    key: "guide_{song.id}",
+                                    key: "guide_{song.id}_{guide_src}",
                                     id: GUIDE_FRAME_ID,
                                     src: "{guide_src}",
                                     title: "Original singer vocal guide",
@@ -299,6 +321,16 @@ pub fn Player(
                                 onclick: move |_| on_next_song.call(()),
                                 span { "Next Song" }
                             }
+                        }
+                    }
+
+                    if show_timing_tools {
+                        GuideTiming {
+                            song: timing_song,
+                            is_guide_vocal,
+                            is_overridden: guide_overridden,
+                            on_save: on_save_guide,
+                            on_revert: on_revert_guide,
                         }
                     }
                 }

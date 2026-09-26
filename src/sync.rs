@@ -21,6 +21,10 @@ pub enum SyncCommand {
     /// Replay: seek both players to this second and resume if paused.
     Restart(u64),
     SwitchVocal { original: bool },
+    /// Same song, new guide mapping (timing mode or a saved override); the vocal choice is kept.
+    SetMapping { offset_secs: f32, rate: f32 },
+    /// Timing mode: keep karaoke audio audible under the guide so misalignment is heard as an echo.
+    SetMonitor(bool),
 }
 
 impl SyncCommand {
@@ -33,6 +37,8 @@ impl SyncCommand {
             Self::SeekBy(delta) => format!("seek_by({delta})"),
             Self::Restart(sec) => format!("restart({sec})"),
             Self::SwitchVocal { original } => format!("switch_vocal({original})"),
+            Self::SetMapping { offset_secs, rate } => format!("set_mapping({offset_secs}, {rate})"),
+            Self::SetMonitor(both) => format!("set_monitor({both})"),
         };
         format!("if (window.KtvSync) {{ window.KtvSync.{call}; }}")
     }
@@ -68,6 +74,16 @@ impl SyncEvent {
             _ => None,
         }
     }
+}
+
+/// Karaoke playback position with sub-second precision (`Time` events are whole seconds).
+/// `None` before the sync core is installed.
+pub async fn karaoke_time() -> Option<f64> {
+    document::eval("return window.KtvSync ? window.KtvSync.debug().karaoke_time : null;")
+        .join::<Option<f64>>()
+        .await
+        .ok()
+        .flatten()
 }
 
 /// Load the sync core (once per page) and bind its event channel to the returned eval.

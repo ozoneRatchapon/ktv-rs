@@ -1,6 +1,7 @@
 use app::catalog::builtin_catalog;
 use app::storage::{decode, Session};
-use app::types::{AppSettings, QueueItem, Song};
+use app::timing::GuideOverrides;
+use app::types::{AppSettings, GuideTrack, QueueItem, Song};
 
 fn item(queue_id: u64, song: &Song) -> QueueItem {
     QueueItem { queue_id, song: song.clone(), key_shift: 0, requester: "Test".to_string() }
@@ -14,6 +15,22 @@ fn custom_song() -> Song {
         guide: None,
         ..builtin_catalog()[0].clone()
     }
+}
+
+#[test]
+fn test_settings_saved_before_timing_tools_still_load() {
+    let old = r#"{"default_intro_skip_secs":13,"auto_skip_intro":false,"volume":70,"room_name":"Room 9","sound_fx_enabled":true}"#;
+    let settings = decode::<AppSettings>(Some(old)).expect("pre-timing-tools settings must decode");
+    assert_eq!(settings.room_name, "Room 9");
+    assert!(!settings.show_timing_tools);
+}
+
+#[test]
+fn test_guide_overrides_round_trip() {
+    let mut overrides = GuideOverrides::new();
+    overrides.insert("gmm_001".to_string(), GuideTrack { video_id: "qdaeYIGnpiA".to_string(), offset_secs: -18.2, rate: 1.0 });
+    let json = serde_json::to_string(&overrides).unwrap();
+    assert_eq!(decode::<GuideOverrides>(Some(&json)), Some(overrides));
 }
 
 #[test]

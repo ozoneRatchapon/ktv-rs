@@ -11,6 +11,8 @@ use crate::types::{QueueItem, Song};
 
 pub const SETTINGS_KEY: &str = "ktv.settings.v1";
 pub const SESSION_KEY: &str = "ktv.session.v1";
+/// [`crate::timing::GuideOverrides`]: guide timings set in the app's timing mode.
+pub const GUIDES_KEY: &str = "ktv.guides.v1";
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Session {

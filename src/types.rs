@@ -59,6 +59,9 @@ pub struct AppSettings {
     pub volume: u32,
     pub room_name: String,
     pub sound_fx_enabled: bool,
+    /// Curator tools: line up original-vocal MVs by ear (added later, so older saved settings lack it).
+    #[serde(default)]
+    pub show_timing_tools: bool,
 }
 
 impl Default for AppSettings {
@@ -69,6 +72,7 @@ impl Default for AppSettings {
             volume: 85,
             room_name: "VIP ROOM 07".to_string(),
             sound_fx_enabled: true,
+            show_timing_tools: false,
         }
     }
 }

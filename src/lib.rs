@@ -6,5 +6,6 @@ pub mod recommendation;
 pub mod score;
 pub mod storage;
 pub mod sync;
+pub mod timing;
 pub mod types;
 pub mod youtube;

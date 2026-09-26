@@ -59,3 +59,6 @@ Browser-measured sync error after switch: 0.00–0.12s (settled ~0.03–0.08s), 
   - `PAIR` (`_ktv_pair_lead`, default 0.05, learns ~0.02): karaoke and guide restart together — scrub/±10s, resume.
 - Fixed along the way: scrubbing while paused no longer starts the guide.
 - Browser (#10018, fresh `localStorage`): release −0.024s, scrub −0.034s / +0.002s, resume ≤0.016s — all from the first sample, no convergence tail. Paused scrub keeps guide paused. No console errors.
+
+## Update 2026-09-26 (later): measuring without downloads
+`tools/guide_align.py` downloaded karaoke and MV audio with yt-dlp, which YouTube's terms forbid, so it was removed (owner decision). New guides are timed by ear in the app: Settings → Guide Timing Tools (`src/timing/`, `src/components/guide_timing.rs`). *Hear both* plays the karaoke music under the guide so an offset is heard as an echo; *Mark in sync* early and late + *Fit speed* recovers `rate` for drifting MVs. The measured `guide` values already in `assets/catalog.json` stay. The edited-MV trap above still applies: if marks early and late disagree beyond a plausible speed (outside 0.9–1.1), Fit speed refuses; pick another upload.

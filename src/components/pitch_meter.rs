@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 
 use crate::mic::{Mic, MicError};
 use crate::pitch::{Mpm, MpmConfig, NoteReading};
-use crate::score::{TuningScorer, TuningSummary};
+use crate::score::{TuningScorer, TuningSummary, MIN_SCORED_NOTES, PERFECT_CENTS, RANDOM_CENTS};
 
 #[derive(Debug, Clone, PartialEq)]
 enum MicState {
@@ -104,23 +104,31 @@ pub fn PitchMeter(take: f64) -> Element {
 }
 
 /// Reference-free score: says what it measures, and what it cannot know.
+/// A tap target (`details`), not a hover tooltip: phones and tablets never show `title` text.
 #[component]
 fn TuningBadge(summary: TuningSummary) -> Element {
-    let detail = match summary.mean_abs_cents {
-        Some(cents) => format!("{} held notes, on average {cents:.0}¢ off the nearest semitone", summary.notes),
-        None => "Hold a few notes to get a score".to_string(),
+    let notes = summary.notes;
+    let average = summary.mean_abs_cents.map_or(String::new(), |c| format!(", on average {c:.0}¢ off the nearest semitone"));
+    let pending = match notes < MIN_SCORED_NOTES {
+        true => format!(" (a score needs {MIN_SCORED_NOTES})"),
+        false => String::new(),
     };
-    let title = format!(
-        "Tuning: how close your held notes sit to exact semitones ({detail}). \
-         Without the song's melody it cannot tell whether they are the right notes; \
-         loud speakers leaking into the mic can also raise it."
-    );
+    let progress = format!("This song so far: {notes} held notes{average}{pending}.");
     rsx! {
-        span { class: "tuning-score", title: "{title}",
-            span { class: "tuning-label", "Tuning" }
-            match summary.score() {
-                Some(score) => rsx! { span { class: "tuning-value", "{score}" } },
-                None => rsx! { span { class: "tuning-value idle", "—" } },
+        details { class: "tuning-score",
+            summary { title: "What do these numbers mean?",
+                span { class: "tuning-label", "Tuning" }
+                match summary.score() {
+                    Some(score) => rsx! { span { class: "tuning-value", "{score}" } },
+                    None => rsx! { span { class: "tuning-value idle", "—" } },
+                }
+                span { class: "tuning-help", aria_hidden: "true", "?" }
+            }
+            div { class: "tuning-explain",
+                p { strong { "Note (e.g. A4 +12¢): " } "the pitch you are singing right now. ¢ = cents: + is sharp, − is flat; 100¢ is one semitone." }
+                p { strong { "Tuning 0-100: " } "how exactly your held notes (sung steadily for about ⅕ s) land on a semitone. 100 = within {PERFECT_CENTS}¢ on average, 0 = {RANDOM_CENTS}¢ or more off. It appears after {MIN_SCORED_NOTES} held notes and restarts with each song or Replay." }
+                p { "{progress}" }
+                p { class: "tuning-caveat", "It does not know the song's melody, so it cannot tell whether they are the right notes. Loud speakers leaking into the mic can also move it." }
             }
         }
     }
