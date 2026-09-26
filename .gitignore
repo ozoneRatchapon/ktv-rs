@@ -9,3 +9,4 @@
 # Cloudflare deploy staging + wrangler local state
 /dist
 .wrangler
+tools/__pycache__/

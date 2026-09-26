@@ -1,9 +1,12 @@
 use dioxus::prelude::*;
+use crate::catalog::find_song;
+use crate::library::Library;
 use crate::types::Song;
 
 #[component]
 pub fn Remote(
     catalog: Vec<Song>,
+    library: Library,
     on_play_by_code: EventHandler<String>,
     on_queue_by_code: EventHandler<String>,
     on_skip_song: EventHandler<()>,
@@ -22,7 +25,7 @@ pub fn Remote(
         if code.is_empty() {
             None
         } else {
-            catalog.iter().find(|s| s.code == code).cloned()
+            find_song(&catalog, library, |s| s.code == code).cloned()
         }
     };
 

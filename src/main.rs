@@ -7,6 +7,7 @@ use app::booth::{Booth, Placement, Requester};
 use app::catalog;
 use app::components;
 use app::keys::{self, KeyAction};
+use app::library;
 use app::recommendation;
 use app::picks::Picks;
 use app::score::{self, TakeResult};
@@ -36,6 +37,8 @@ const _: Asset = asset!("/assets/main.css", AssetOptions::css().with_static_head
 // Classic scripts in the static <head>: they run before the wasm, so Rust calls them directly (no eval, see js_bridge)
 const _: Asset = asset!("/assets/ktv_sync.js", AssetOptions::js().with_static_head(true));
 const _: Asset = asset!("/assets/ktv_keys.js", AssetOptions::js().with_static_head(true));
+// The full songbook, fetched after the first paint (content-hashed, so cached for good)
+const LIBRARY_JSON: Asset = asset!("/assets/library.json");
 
 fn main() {
     dioxus::launch(App);
@@ -120,6 +123,16 @@ fn App() -> Element {
     let mut song_started_at = use_signal(js_sys::Date::now);
     let mut auto_dj_notice = use_signal(|| None::<String>);
     let mut search_query = use_signal(String::new);
+
+    // Full library: the curated catalog is usable at once; the rest joins when the fetch lands
+    let mut song_library = use_signal(library::loaded);
+    use_future(move || async move {
+        let Some(json) = app::browser::fetch_text(&LIBRARY_JSON.to_string()).await else { return };
+        match library::install(&json) {
+            Ok(loaded) => song_library.set(loaded),
+            Err(err) => dioxus::logger::tracing::warn!("assets/library.json unreadable: {err}"),
+        }
+    });
 
     // Booth keyboard: type-to-search, Space pause, arrows seek, ? help (assets/ktv_keys.js)
     use_effect(move || {
@@ -217,7 +230,8 @@ fn App() -> Element {
             song_started_at.set(js_sys::Date::now());
         }
     };
-    let song_by_code = move |code: &str| catalog.read().iter().find(|s| s.code == code).cloned();
+    let song_by_code =
+        move |code: &str| catalog::find_song(&catalog.read(), song_library(), |s| s.code == code).cloned();
 
     let handle_play_song = move |song: Song| request(song, Requester::Singer, Placement::Now);
     let handle_queue_song = move |song: Song| request(song, Requester::Guest, Placement::Back);
@@ -366,6 +380,7 @@ fn App() -> Element {
                         KtvTab::Catalog => rsx! {
                             CatalogView {
                                 catalog: catalog(),
+                                library: song_library(),
                                 search_query,
                                 on_play_song: handle_play_song,
                                 on_queue_song: handle_queue_song,
@@ -395,6 +410,7 @@ fn App() -> Element {
                         KtvTab::Remote => rsx! {
                             Remote {
                                 catalog: catalog(),
+                                library: song_library(),
                                 on_play_by_code: handle_play_by_code,
                                 on_queue_by_code: handle_queue_by_code,
                                 on_skip_song: handle_next_song,

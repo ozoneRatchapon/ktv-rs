@@ -1,6 +1,6 @@
 # KTV-RS: Modern Open-Source Karaoke Platform 🎤
 
-> A high-performance, minimalist Web Karaoke player built 100% in **Rust** using **Dioxus 0.7.1 (Web / WASM)**. Designed for real-world party rooms and home setups with official Thai music feeds (`@gmmkaraoke`, `@whattheduckmusic`), automated intro bumper bypass, verified song catalog, dual-stream vocal toggles, and an intelligent Auto-DJ recommendation engine.
+> A high-performance, minimalist Web Karaoke player built 100% in **Rust** using **Dioxus 0.7.1 (Web / WASM)**. Designed for real-world party rooms and home setups with official Thai music feeds (`@gmmkaraoke`, `@whattheduckmusic`, `@MuzikMoveKaraoke`), automated intro bumper bypass, verified song catalog, dual-stream vocal toggles, and an intelligent Auto-DJ recommendation engine.
 
 [![CI](https://github.com/ozoneRatchapon/ktv-rs/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/ozoneRatchapon/ktv-rs/actions/workflows/ci.yml)
 [![Prod check](https://github.com/ozoneRatchapon/ktv-rs/actions/workflows/prod-check.yml/badge.svg?branch=develop)](https://github.com/ozoneRatchapon/ktv-rs/actions/workflows/prod-check.yml)
@@ -21,7 +21,7 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 ## Key Features
 
 ### 1. Direct Official Karaoke Streams
-* Indexed official karaoke catalogs from **GMM Grammy** and **What The Duck**.
+* Full official karaoke libraries of **GMM Grammy** (GMM Karaoke), **What The Duck** and **Muzik Move**: ~8,200 songs, loaded after the first paint, plus a curated set with genres and original-vocal guides.
 * Includes full verified collections for top artists like **COCKTAIL** (*คุกเข่า*, *เธอ*, *คู่ชีวิต*, *ดึงดัน*, *เธอทำให้ฉันเสียใจ*), **BOWKYLION** (*ที่คั่นหนังสือ*, *วาดไว้*), **Silly Fools** (*วัดใจ*), **Big Ass** (*เล่นของสูง*), etc.
 
 ### 2. Unobstructed YouTube Players

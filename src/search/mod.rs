@@ -7,4 +7,4 @@ mod normalize;
 
 pub use layout::retype;
 pub use matcher::{search, SearchHits};
-pub use normalize::normalize;
+pub use normalize::{normalize, search_key};

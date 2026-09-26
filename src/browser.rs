@@ -26,3 +26,22 @@ pub fn toggle_fullscreen(selector: &str) {
     #[cfg(not(target_arch = "wasm32"))]
     let _ = selector;
 }
+
+/// GET a same-origin file as text (`None` on a network error or a non-2xx status). Always `None` on the host.
+pub async fn fetch_text(url: &str) -> Option<String> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        use wasm_bindgen::JsCast;
+        use wasm_bindgen_futures::JsFuture;
+        let response: web_sys::Response = JsFuture::from(web_sys::window()?.fetch_with_str(url)).await.ok()?.dyn_into().ok()?;
+        if !response.ok() {
+            return None;
+        }
+        JsFuture::from(response.text().ok()?).await.ok()?.as_string()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = url;
+        None
+    }
+}

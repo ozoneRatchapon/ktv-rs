@@ -1,8 +1,9 @@
 use app::catalog::builtin_catalog;
+use app::library::Library;
 use app::search::{normalize, retype, search};
 
 fn titles(query: &str) -> Vec<String> {
-    search(builtin_catalog(), query).songs.into_iter().map(|s| s.title).collect()
+    search(builtin_catalog(), Library::default(), query).songs.into_iter().map(|s| s.title.clone()).collect()
 }
 
 #[test]
@@ -41,19 +42,19 @@ fn test_retype_kedmanee_both_ways() {
 #[test]
 fn test_wrong_layout_query_is_retried_only_when_nothing_matches() {
     // "รัก" typed with the keyboard on English: i y d
-    let hits = search(builtin_catalog(), "iyd");
+    let hits = search(builtin_catalog(), Library::default(), "iyd");
     assert_eq!(hits.retyped.as_deref(), Some("รัก"));
     assert!(hits.songs.iter().all(|s| s.title.contains("รัก")));
-    let hits = search(builtin_catalog(), "นฟหรห");
+    let hits = search(builtin_catalog(), Library::default(), "นฟหรห");
     assert_eq!(hits.retyped.as_deref(), Some("oasis"));
     assert_eq!(hits.songs.len(), 1);
-    let direct = search(builtin_catalog(), "oasis");
+    let direct = search(builtin_catalog(), Library::default(), "oasis");
     assert_eq!((direct.retyped, direct.songs.len()), (None, 1), "a query that matches is never retyped");
 }
 
 #[test]
 fn test_no_match_stays_empty() {
-    let hits = search(builtin_catalog(), "zzzzqqq");
+    let hits = search(builtin_catalog(), Library::default(), "zzzzqqq");
     assert!(hits.songs.is_empty());
     assert_eq!(hits.retyped, None);
 }

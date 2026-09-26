@@ -210,14 +210,31 @@ test('mic: room check, noise gate, held notes give a Tuning score, the finished 
 test('search: romanised alias and wrong keyboard layout both find Thai songs', () => with_page({}, async (page) => {
   const titles = `[...document.querySelectorAll('.song-title')].map((e) => e.textContent)`;
   for (const key of 'rak mai wai'.replace(/ /g, '')) await page.key(key);
-  await page.wait_for(`${titles}.length === 1`);
-  assert.deepEqual(await page.eval(titles), ['รักไม่ไหวแล้วโว้ย']);
+  // Curated songs list first; the full library may add more "Rak Mai Wai..." titles after them
+  await page.wait_for(`${titles}[0] === 'รักไม่ไหวแล้วโว้ย'`);
   await page.key('Escape');
   // "รัก" typed with the keyboard left on English
   for (const key of 'iyd') await page.key(key);
   await page.wait_for(`!!document.querySelector('.retyped-text')`);
   assert.equal(await page.eval(`document.querySelector('.retyped-text strong').textContent`), 'รัก');
-  assert.ok(await page.eval(`${titles}.length > 0 && ${titles}.every((t) => t.includes('รัก'))`));
+  // Title or artist (library songs match on either)
+  const cards = `[...document.querySelectorAll('.song-details')].map((e) => e.textContent)`;
+  assert.ok(await page.eval(`${cards}.length > 0 && ${cards}.every((t) => t.includes('รัก'))`));
+}));
+
+test('full library: joins after first paint, capped list grows, alias search, a library song plays', () => with_page({}, async (page) => {
+  const total = `parseInt(document.querySelector('.catalog-meta-row .count-text').textContent.replace(/\\D/g, ''), 10)`;
+  const cards = `document.querySelectorAll('.song-card').length`;
+  await page.wait_for(`${total} > 5000`);
+  assert.equal(await page.eval(cards), 60, 'only the first page of cards is rendered');
+  await page.eval(`document.querySelector('.catalog-more-row button').click()`);
+  await page.wait_for(`${cards} === 120`);
+  // GMM's romanised title of กำก่าสกาฬสินธ์ุ
+  for (const key of 'kamkasakalasin') await page.key(key);
+  const card = `[...document.querySelectorAll('.song-card')].find((c) => c.querySelector('.song-title').textContent === 'กำก่าสกาฬสินธ์ุ')`;
+  await page.wait_for(`!!${card}`);
+  await page.eval(`${card}.querySelector('.play-now').click()`);
+  await page.wait_for(`document.querySelector('.sr-only[role=status]').textContent.includes('กำก่าสกาฬสินธ์ุ')`);
 }));
 
 test('favourites and recently sung shelves', () => with_page({}, async (page) => {

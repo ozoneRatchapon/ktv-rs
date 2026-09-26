@@ -1,8 +1,9 @@
 use app::catalog::builtin_catalog;
+use app::library::Library;
 use app::picks::{Picks, Shelf, MAX_RECENT, MIN_SUNG_SECS};
 use app::storage::decode;
 
-fn ids(songs: &[app::types::Song]) -> Vec<&str> {
+fn ids<'a>(songs: &[&'a app::types::Song]) -> Vec<&'a str> {
     songs.iter().map(|s| s.id.as_str()).collect()
 }
 
@@ -41,10 +42,10 @@ fn test_shelves() {
     picks.record_sung(&cat[3].id, 100.0);
     picks.record_sung("gone_song", 100.0);
     picks.record_sung(&cat[0].id, 100.0);
-    assert_eq!(picks.shelf(cat, &Shelf::All).len(), cat.len());
-    assert_eq!(ids(&picks.shelf(cat, &Shelf::Favourites)), [cat[1].id.as_str(), cat[5].id.as_str()], "catalog order");
-    assert_eq!(ids(&picks.shelf(cat, &Shelf::Recent)), [cat[0].id.as_str(), cat[3].id.as_str()], "newest first, unknown ids skipped");
-    assert!(picks.shelf(cat, &Shelf::Category("Rock")).iter().all(|s| s.category == "Rock"));
+    assert_eq!(picks.shelf(cat, Library::default(), &Shelf::All).len(), cat.len());
+    assert_eq!(ids(&picks.shelf(cat, Library::default(), &Shelf::Favourites)), [cat[1].id.as_str(), cat[5].id.as_str()], "catalog order");
+    assert_eq!(ids(&picks.shelf(cat, Library::default(), &Shelf::Recent)), [cat[0].id.as_str(), cat[3].id.as_str()], "newest first, unknown ids skipped");
+    assert!(picks.shelf(cat, Library::default(), &Shelf::Category("Rock")).iter().all(|s| s.category == "Rock"));
 }
 
 #[test]
