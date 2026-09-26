@@ -24,18 +24,19 @@ jobs:
       - id: check
         continue-on-error: true
         run: |
-          set -o pipefail
+          status=0
+          headers=$(curl -sSI --max-time 20 "$KTV_URL") || status=1
+          echo "$headers" | grep -qi '^content-security-policy:.*wasm-unsafe-eval' || status=1
+          node --test tests/e2e/app.test.mjs > e2e.log 2>&1 || status=1
           {
-            echo "## Prod check failed ($(date -u +%FT%TZ))"
+            echo "## Prod check $( [ $status = 0 ] && echo passed || echo failed ) ($(date -u +%FT%TZ))"
             echo
             echo '```'
-            curl -sS -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" "$KTV_URL"
-            curl -sSI "$KTV_URL" | grep -i -E '^(content-security-policy|permissions-policy|cross-origin-opener-policy):' || echo "missing security headers"
-            node --test tests/e2e/app.test.mjs 2>&1 | grep -E '^(✔|✖|ℹ (pass|fail))|actual|expected|Error' | head -60
+            echo "$headers" | grep -i -E '^(HTTP|content-security-policy|permissions-policy|cross-origin-opener-policy)' || echo "no response / missing headers"
+            grep -E '^(✔|✖|ℹ (pass|fail))|actual|expected|Error' e2e.log | head -60
             echo '```'
           } | tee report.md
-          curl -sSI "$KTV_URL" | grep -qi '^content-security-policy:.*wasm-unsafe-eval'
-          node --test tests/e2e/app.test.mjs > /dev/null 2>&1
+          exit $status
       # One open issue per outage: comment on it instead of opening duplicates
       - if: steps.check.outcome == 'failure'
         env:
