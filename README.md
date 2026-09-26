@@ -2,12 +2,21 @@
 
 > A high-performance, minimalist Web Karaoke player built 100% in **Rust** using **Dioxus 0.7.1 (Web / WASM)**. Designed for real-world party rooms and home setups with official Thai music feeds (`@gmmkaraoke`, `@whattheduckmusic`), automated intro bumper bypass, verified song catalog, dual-stream vocal toggles, and an intelligent Auto-DJ recommendation engine.
 
-[![Build & Test](https://img.shields.io/badge/Rust-1.80%2B-orange.svg)](https://www.rust-lang.org/)
+[![CI](https://github.com/ozoneRatchapon/ktv-rs/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/ozoneRatchapon/ktv-rs/actions/workflows/ci.yml)
+[![Prod check](https://github.com/ozoneRatchapon/ktv-rs/actions/workflows/prod-check.yml/badge.svg?branch=develop)](https://github.com/ozoneRatchapon/ktv-rs/actions/workflows/prod-check.yml)
 [![Dioxus](https://img.shields.io/badge/Dioxus-0.7.1-blue.svg)](https://dioxuslabs.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Zero-Tracking](https://img.shields.io/badge/Privacy-Zero--Tracking-brightgreen.svg)](#privacy--legal-compliance)
 
 ---
+
+## Screenshots
+
+| Desktop | Thai search (romanised) | Recent scores |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/desktop.png" alt="Songbook with favourites and recently sung shelves on desktop" width="420"> | <img src="docs/screenshots/mobile_search.png" alt="Typing rakmai finds รักไม่ไหวแล้วโว้ย on a phone" width="180"> | <img src="docs/screenshots/mobile_scores.png" alt="Auto-DJ suggestions and recent tuning scores on a phone" width="180"> |
+
+Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHANGELOG.md)
 
 ## Key Features
 

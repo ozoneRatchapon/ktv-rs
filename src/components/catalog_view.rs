@@ -66,7 +66,12 @@ pub fn CatalogView(
 
             // Song list count
             div { class: "catalog-meta-row",
-                span { class: "count-text", "{filtered_songs.len()} Songs" }
+                span { class: "count-text",
+                    match filtered_songs.len() {
+                        1 => "1 Song".to_string(),
+                        n => format!("{n} Songs"),
+                    }
+                }
                 if filtered_songs.is_empty() && search_query().is_empty() {
                     match shelf() {
                         Shelf::Favourites => rsx! { span { class: "shelf-hint", "Tap ☆ on a song to keep it here." } },

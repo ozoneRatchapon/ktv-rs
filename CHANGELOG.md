@@ -3,6 +3,12 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.12.1] - 2026-09-27
+### Fixed
+- Songbook count says "1 Song", not "1 Songs".
+### Added
+- README screenshots, CI and prod-check badges; scheduled prod check (e2e against the live site every 6 hours).
+
 ## [0.12.0] - 2026-09-27 (`8b2f2f96`)
 ### Security
 - Content-Security-Policy no longer allows `'unsafe-eval'`: the player-sync and keyboard scripts load as normal files and are called directly from Rust.
@@ -68,6 +74,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 ## [0.1.0] - 2026-09-26 (`f1fb63c8`)
 - First public release.
 
+[0.12.1]: https://github.com/ozoneRatchapon/ktv-rs/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/ozoneRatchapon/ktv-rs/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/ozoneRatchapon/ktv-rs/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/ozoneRatchapon/ktv-rs/compare/v0.9.0...v0.10.0
