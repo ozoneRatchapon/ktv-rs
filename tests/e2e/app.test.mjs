@@ -116,3 +116,50 @@ for (const width of [1280, 900, 600, 375]) {
     assert.ok(await page.eval(`document.documentElement.scrollWidth <= innerWidth`), 'no sideways page scroll');
   }));
 }
+
+/** Click a song card's button (Play / Insert / Queue) by keypad code; returns the song title. */
+const card_action = (code, button) => `(() => {
+  const card = [...document.querySelectorAll('.song-card')].find((c) => c.querySelector('.song-code-tag')?.textContent === '#${code}');
+  card.querySelector('.card-btn.${button}').click();
+  return card.querySelector('.song-title').textContent;
+})()`;
+const now_title = `document.querySelector('.now-title')?.textContent`;
+const queue_titles = `(async () => {
+  [...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Queue')).click();
+  await new Promise((r) => setTimeout(r, 200));
+  const titles = [...document.querySelectorAll('.item-title')].map((e) => e.textContent);
+  [...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'Songbook').click();
+  await new Promise((r) => setTimeout(r, 200));
+  return titles;
+})()`;
+
+test('queue: Queue appends, Insert goes first, Play replaces, Next Song advances, all survive reload', () => with_page({}, async (page) => {
+  const start = await page.eval(queue_titles);
+  assert.equal(start.length, 3, 'demo queue');
+  const queued = await page.eval(card_action('10001', 'queue-add'));
+  const inserted = await page.eval(card_action('10005', 'queue-next'));
+  await sleep(200);
+  assert.deepEqual(await page.eval(queue_titles), [inserted, ...start, queued]);
+  const played = await page.eval(card_action('10008', 'play-now'));
+  await page.wait_for(`${now_title} === ${JSON.stringify(played)}`);
+  await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
+  await page.wait_for(`${now_title} === ${JSON.stringify(inserted)}`);
+  assert.deepEqual(await page.eval(queue_titles), [...start, queued]);
+  await page.reload();
+  assert.equal(await page.eval(now_title), inserted);
+  assert.deepEqual(await page.eval(queue_titles), [...start, queued]);
+}));
+
+test('empty queue: Next Song hands over to Auto-DJ with a different song', () => with_page({}, async (page) => {
+  const finished = await page.eval(now_title);
+  await page.eval(`(async () => {
+    [...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Queue')).click();
+    await new Promise((r) => setTimeout(r, 200));
+    [...document.querySelectorAll('button')].find((b) => b.textContent === 'Clear Queue').click();
+  })()`);
+  await page.wait_for(`document.querySelectorAll('.item-title').length === 0`);
+  await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
+  await page.wait_for(`document.querySelector('.auto-dj-toast')?.textContent.includes('Auto-DJ')`);
+  const next = await page.eval(now_title);
+  assert.ok(next && next !== finished, `Auto-DJ picked ${next} after ${finished}`);
+}));

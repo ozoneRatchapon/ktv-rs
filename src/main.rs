@@ -2,8 +2,10 @@ use dioxus::prelude::*;
 use std::collections::HashSet;
 use std::rc::Rc;
 
+use app::booth::{Booth, Placement, Requester};
 use app::catalog;
 use app::components;
+use app::keys::{self, KeyAction};
 use app::recommendation;
 use app::storage::{self, Session, GUIDES_KEY, SESSION_KEY, SETTINGS_KEY};
 use app::sync::SyncCommand;
@@ -78,22 +80,21 @@ fn App() -> Element {
             songs
         }
     });
-    let mut current_song = use_signal({
-        let restored = restored.clone();
-        move || restored.current.clone()
+    let mut booth = use_signal(move || Booth {
+        current: restored.current.clone(),
+        queue: restored.queue.clone(),
+        next_queue_id: restored.next_queue_id,
     });
-    let mut queue = use_signal({
-        let restored = restored.clone();
-        move || restored.queue.clone()
-    });
-    let mut next_queue_id = use_signal(move || restored.next_queue_id);
+    // Slices of the booth: readers re-render only when their part changes
+    let current_song = use_memo(move || booth.read().current.clone());
+    let queue = use_memo(move || booth.read().queue.clone());
 
     // Persist on change (effects re-run when the signals they read are written)
     use_effect(move || storage::save(SETTINGS_KEY, &*settings.read()));
     use_effect(move || storage::save(GUIDES_KEY, &*guide_overrides.read()));
     use_effect(move || {
-        let session =
-            Session::capture(current_song(), queue(), next_queue_id(), &catalog.read(), builtin_catalog());
+        let b = booth.read();
+        let session = Session::capture(b.current.clone(), b.queue.clone(), b.next_queue_id, &catalog.read(), builtin_catalog());
         storage::save(SESSION_KEY, &session);
     });
 
@@ -105,88 +106,25 @@ fn App() -> Element {
     let mut auto_dj_notice = use_signal(|| None::<String>);
     let mut search_query = use_signal(String::new);
 
-    // Global Keypress Listener (Type-to-Search & Space to Pause like authentic KTV booth)
+    // Booth keyboard: type-to-search, Space pause, arrows seek, ? help (assets/ktv_keys.js)
     use_effect(move || {
-        let mut eval = document::eval(r#"
-            if (window._ktv_remove_search_listener) {
-                window._ktv_remove_search_listener();
-            }
-            const handler = (e) => {
-                let tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
-                if (tag === 'input' || tag === 'textarea') return;
-                if (e.ctrlKey || e.metaKey || e.altKey) return;
-                if (e.key === 'Escape') {
-                    dioxus.send('ESC');
-                    return;
-                }
-                if (e.key === '?') {
-                    dioxus.send('HELP');
-                    return;
-                }
-                if (e.key === ' ' || e.code === 'Space') {
-                    e.preventDefault();
-                    dioxus.send('SPACE');
-                    return;
-                }
-                if (e.key === 'Backspace' || e.key === 'Delete') {
-                    e.preventDefault();
-                    dioxus.send('BACKSPACE');
-                    return;
-                }
-                if (e.key === 'ArrowLeft') {
-                    e.preventDefault();
-                    dioxus.send('SEEK_REL:-5');
-                    return;
-                }
-                if (e.key === 'ArrowRight') {
-                    e.preventDefault();
-                    dioxus.send('SEEK_REL:5');
-                    return;
-                }
-                if (e.key.length === 1) {
-                    dioxus.send('CHAR:' + e.key);
-                }
-            };
-            // A click inside a YouTube iframe moves keyboard focus into it, which
-            // would swallow Type-to-Search. The click has already landed by the
-            // time blur fires, so hand focus straight back to the page.
-            const reclaim = () => setTimeout(() => {
-                const el = document.activeElement;
-                if (el && el.tagName === 'IFRAME') {
-                    el.blur();
-                    window.focus();
-                }
-            }, 0);
-            window.addEventListener('keydown', handler);
-            window.addEventListener('blur', reclaim);
-            window._ktv_remove_search_listener = () => {
-                window.removeEventListener('keydown', handler);
-                window.removeEventListener('blur', reclaim);
-            };
-        "#);
-
+        let mut eval = keys::install();
         spawn(async move {
             while let Ok(msg) = eval.recv::<String>().await {
-                if let Some(ch) = msg.strip_prefix("CHAR:") {
-                    let mut curr = search_query();
-                    curr.push_str(ch);
-                    search_query.set(curr);
-                    active_tab.set(KtvTab::Catalog);
-                } else if msg == "BACKSPACE" {
-                    let mut curr = search_query();
-                    curr.pop();
-                    search_query.set(curr);
-                    active_tab.set(KtvTab::Catalog);
-                } else if msg == "ESC" {
-                    search_query.set(String::new());
-                } else if msg == "HELP" {
-                    show_help.toggle();
-                } else if msg == "SPACE" {
-                    SyncCommand::TogglePlayback.run();
-                } else if let Some(rel_str) = msg.strip_prefix("SEEK_REL:") {
-                    if let Ok(delta) = rel_str.parse::<i64>() {
-                        SyncCommand::SeekBy(delta).run();
+                let Some(action) = KeyAction::parse(&msg) else { continue };
+                match action {
+                    KeyAction::Type(c) => {
+                        search_query.write().push(c);
+                        active_tab.set(KtvTab::Catalog);
                     }
+                    KeyAction::Backspace => {
+                        search_query.write().pop();
+                        active_tab.set(KtvTab::Catalog);
+                    }
+                    KeyAction::ClearSearch => search_query.set(String::new()),
+                    KeyAction::TogglePlayback => SyncCommand::TogglePlayback.run(),
+                    KeyAction::SeekBy(secs) => SyncCommand::SeekBy(secs).run(),
+                    KeyAction::ToggleHelp => show_help.toggle(),
                 }
             }
         });
@@ -227,32 +165,15 @@ fn App() -> Element {
         // Reset timer
         song_started_at.set(js_sys::Date::now());
 
-        // Check queue
-        let mut q = queue();
-        if !q.is_empty() {
-            let next_item = q.remove(0);
-            queue.set(q);
-            current_song.set(Some(next_item));
+        // Picks computed while the finished song is still on stage, so Auto-DJ never repeats it
+        let ant_set = anticipated_set();
+        if booth.write().advance() {
             auto_dj_notice.set(None);
-        } else {
-            // Queue is empty: Trigger Auto-DJ wake_consume from katgpt anticipation set!
-            let ant_set = anticipated_set();
-            if let Some(rec) = anticipator().wake_consume(&ant_set) {
-                let qid = next_queue_id();
-                next_queue_id.set(qid + 1);
-
-                let (title, artist, reason) = (&rec.song.title, &rec.song.artist, &rec.reason);
-                auto_dj_notice.set(Some(format!("🧠 Auto-DJ: queue is empty, playing next: {title} - {artist} ({reason})")));
-
-                current_song.set(Some(QueueItem {
-                    queue_id: qid,
-                    song: rec.song,
-                    key_shift: 0,
-                    requester: "Smart Auto-DJ".to_string(),
-                }));
-            } else {
-                current_song.set(None);
-            }
+        } else if let Some(rec) = anticipator().wake_consume(&ant_set) {
+            // Queue is empty: Auto-DJ plays the top anticipated pick
+            let (title, artist, reason) = (&rec.song.title, &rec.song.artist, &rec.reason);
+            auto_dj_notice.set(Some(format!("🧠 Auto-DJ: queue is empty, playing next: {title} - {artist} ({reason})")));
+            booth.write().add(rec.song, Requester::AutoDj, Placement::Now);
         }
     };
 
@@ -274,180 +195,43 @@ fn App() -> Element {
         }
     };
 
-    // Play immediate song
-    let handle_play_song = move |song: Song| {
-        let qid = next_queue_id();
-        next_queue_id.set(qid + 1);
-        song_started_at.set(js_sys::Date::now());
-
-        current_song.set(Some(QueueItem {
-            queue_id: qid,
-            song,
-            key_shift: 0,
-            requester: "Singer".to_string(),
-        }));
-    };
-
-    // Add to queue
-    let handle_queue_song = move |song: Song| {
-        let qid = next_queue_id();
-        next_queue_id.set(qid + 1);
-
-        let new_item = QueueItem {
-            queue_id: qid,
-            song,
-            key_shift: 0,
-            requester: "Guest".to_string(),
-        };
-
-        if current_song().is_none() {
+    // Every way of requesting a song goes through here; a song that goes on stage starts a new take
+    let mut request = move |song: Song, requester: Requester, placement: Placement| {
+        if booth.write().add(song, requester, placement) {
             song_started_at.set(js_sys::Date::now());
-            current_song.set(Some(new_item));
-        } else {
-            let mut q = queue();
-            q.push(new_item);
-            queue.set(q);
         }
     };
+    let song_by_code = move |code: &str| catalog.read().iter().find(|s| s.code == code).cloned();
 
-    // Insert next in queue
-    let handle_queue_next_song = move |song: Song| {
-        let qid = next_queue_id();
-        next_queue_id.set(qid + 1);
-
-        let new_item = QueueItem {
-            queue_id: qid,
-            song,
-            key_shift: 0,
-            requester: "Priority".to_string(),
-        };
-
-        if current_song().is_none() {
-            song_started_at.set(js_sys::Date::now());
-            current_song.set(Some(new_item));
-        } else {
-            let mut q = queue();
-            q.insert(0, new_item);
-            queue.set(q);
-        }
-    };
-
-    // Play by 5-digit code
+    let handle_play_song = move |song: Song| request(song, Requester::Singer, Placement::Now);
+    let handle_queue_song = move |song: Song| request(song, Requester::Guest, Placement::Back);
+    let handle_queue_next_song = move |song: Song| request(song, Requester::Priority, Placement::Next);
     let handle_play_by_code = move |code: String| {
-        if let Some(s) = catalog().iter().find(|s| s.code == code).cloned() {
-            let qid = next_queue_id();
-            next_queue_id.set(qid + 1);
-            song_started_at.set(js_sys::Date::now());
-            current_song.set(Some(QueueItem {
-                queue_id: qid,
-                song: s,
-                key_shift: 0,
-                requester: "Remote Code".to_string(),
-            }));
+        if let Some(song) = song_by_code(&code) {
+            request(song, Requester::Keypad, Placement::Now);
         }
     };
-
-    // Queue by 5-digit code
     let handle_queue_by_code = move |code: String| {
-        if let Some(s) = catalog().iter().find(|s| s.code == code).cloned() {
-            let qid = next_queue_id();
-            next_queue_id.set(qid + 1);
-            let item = QueueItem {
-                queue_id: qid,
-                song: s,
-                key_shift: 0,
-                requester: "Remote Code".to_string(),
-            };
-            if current_song().is_none() {
-                song_started_at.set(js_sys::Date::now());
-                current_song.set(Some(item));
-            } else {
-                let mut q = queue();
-                q.push(item);
-                queue.set(q);
-            }
+        if let Some(song) = song_by_code(&code) {
+            request(song, Requester::Keypad, Placement::Back);
         }
     };
 
-    // Key shift on current song
-    let handle_key_change = move |delta: i32| {
-        if let Some(mut curr) = current_song() {
-            let new_key = (curr.key_shift + delta).clamp(-6, 6);
-            curr.key_shift = new_key;
-            current_song.set(Some(curr));
-        }
-    };
-
-    // Reset key to original
-    let handle_reset_key = move |_: ()| {
-        if let Some(mut curr) = current_song() {
-            curr.key_shift = 0;
-            current_song.set(Some(curr));
-        }
-    };
-
-    // Adjust key for a song in the queue
-    let handle_adjust_item_key = move |(qid, delta): (u64, i32)| {
-        let mut q = queue();
-        if let Some(item) = q.iter_mut().find(|it| it.queue_id == qid) {
-            item.key_shift = (item.key_shift + delta).clamp(-6, 6);
-            queue.set(q);
-        }
-    };
-
-    // Queue reordering
-    let handle_move_up = move |idx: usize| {
-        let mut q = queue();
-        if idx > 0 && idx < q.len() {
-            q.swap(idx, idx - 1);
-            queue.set(q);
-        }
-    };
-
-    let handle_move_down = move |idx: usize| {
-        let mut q = queue();
-        if idx + 1 < q.len() {
-            q.swap(idx, idx + 1);
-            queue.set(q);
-        }
-    };
-
-    let handle_remove_queue = move |qid: u64| {
-        let mut q = queue();
-        q.retain(|it| it.queue_id != qid);
-        queue.set(q);
-    };
-
-    let handle_clear_queue = move |_: ()| {
-        queue.set(Vec::new());
-    };
+    let handle_key_change = move |delta: i32| booth.write().shift_current_key(delta);
+    let handle_reset_key = move |_: ()| booth.write().reset_current_key();
+    let handle_adjust_item_key = move |(queue_id, delta): (u64, i32)| booth.write().shift_item_key(queue_id, delta);
+    let handle_move_up = move |index: usize| booth.write().move_up(index);
+    let handle_move_down = move |index: usize| booth.write().move_down(index);
+    let handle_remove_queue = move |queue_id: u64| booth.write().remove(queue_id);
+    let handle_clear_queue = move |_: ()| booth.write().clear_queue();
 
     // Add custom song from YouTube
     // Returns the stored song (with its keypad code) so the form can report success or failure
     let handle_add_custom_song = move |(new_song, play_now): (Song, bool)| -> Result<Song, catalog::CustomCodesExhausted> {
-        let mut cat = catalog();
         // Assigns a unique keypad code; re-adding the same video reuses its entry
-        let new_song = catalog::upsert_custom(&mut cat, new_song)?;
-        catalog.set(cat);
-
-        let qid = next_queue_id();
-        next_queue_id.set(qid + 1);
-
-        let item = QueueItem {
-            queue_id: qid,
-            song: new_song.clone(),
-            key_shift: 0,
-            requester: "YouTube Direct".to_string(),
-        };
-
-        if play_now || current_song().is_none() {
-            song_started_at.set(js_sys::Date::now());
-            current_song.set(Some(item));
-        } else {
-            let mut q = queue();
-            q.push(item);
-            queue.set(q);
-        }
+        let new_song = catalog::upsert_custom(&mut catalog.write(), new_song)?;
+        let placement = if play_now { Placement::Now } else { Placement::Back };
+        request(new_song.clone(), Requester::AddUrl, placement);
         Ok(new_song)
     };
 
@@ -456,12 +240,7 @@ fn App() -> Element {
         for song in catalog.write().iter_mut().filter(|s| s.id == song_id) {
             song.guide = guide.clone();
         }
-        if let Some(curr) = current_song.write().as_mut().filter(|c| c.song.id == song_id) {
-            curr.song.guide = guide.clone();
-        }
-        for item in queue.write().iter_mut().filter(|it| it.song.id == song_id) {
-            item.song.guide = guide.clone();
-        }
+        booth.write().set_guide(song_id, guide.as_ref());
     };
 
     let handle_save_guide = move |guide: GuideTrack| {
@@ -488,7 +267,6 @@ fn App() -> Element {
     };
     let current_key = current_song().map(|c| c.key_shift).unwrap_or(0);
     let ant_candidates = anticipated_set().candidates;
-    let ant_commitment = anticipated_set().commitment_hash;
 
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
@@ -564,7 +342,6 @@ fn App() -> Element {
                                 queue: queue(),
                                 current_item: current_song(),
                                 anticipated: ant_candidates,
-                                commitment_hash: ant_commitment,
                                 on_skip: handle_next_song,
                                 on_remove: handle_remove_queue,
                                 on_move_up: handle_move_up,

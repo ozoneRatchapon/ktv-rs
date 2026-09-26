@@ -43,7 +43,6 @@
 ### 7. Auto-DJ Recommendation Engine (`katgpt-rs` inspired)
 * **Dwell Telemetry**: Records active singing duration per track.
 * **Tropical $(\max, +)$ Semiring**: Hard-prunes songs skipped prematurely (< 20 seconds).
-* **BLAKE3 State Commitment**: 32-byte cryptographic hashes for instantaneous reactive change detection.
 * **Auto Fallback**: Automatically continues music playback with the top anticipated recommendation when the queue finishes.
 
 ---

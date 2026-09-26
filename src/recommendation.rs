@@ -41,12 +41,10 @@ pub struct AnticipatedRecommendation {
     pub reason: String,
 }
 
-/// Anticipated set with BLAKE3 cryptographic commitment.
+/// Top Auto-DJ candidates, best first.
 #[derive(Clone, Debug, PartialEq)]
 pub struct AnticipatedRecommendationSet {
     pub candidates: Vec<AnticipatedRecommendation>,
-    pub commitment_hash: String,
-    pub version: u64,
 }
 
 /// Sigmoid function (katgpt-rs core invariant: sigmoid, never softmax)
@@ -64,7 +62,6 @@ pub struct SleepTimeAnticipator {
     pub genre_weights: HashMap<String, f32>,
     pub artist_weights: HashMap<String, f32>,
     pub played_song_ids: HashSet<String>,
-    pub version: u64,
 }
 
 impl Default for SleepTimeAnticipator {
@@ -80,7 +77,6 @@ impl SleepTimeAnticipator {
             genre_weights: HashMap::new(),
             artist_weights: HashMap::new(),
             played_song_ids: HashSet::new(),
-            version: 0,
         }
     }
 
@@ -113,11 +109,9 @@ impl SleepTimeAnticipator {
         }
 
         self.session_history.push(telemetry);
-        self.version += 1;
     }
 
     /// Sleep-time compute: Pre-anticipates the top song recommendations from the catalog.
-    /// Emits an AnticipatedRecommendationSet committed via BLAKE3.
     pub fn sleep_compute(
         &self,
         catalog: &[Song],
@@ -188,21 +182,7 @@ impl SleepTimeAnticipator {
         });
 
         scored_slots.truncate(limit);
-
-        // Commit the anticipated set using BLAKE3 as specified in katgpt-sleep
-        let mut hasher = blake3::Hasher::new();
-        hasher.update(&self.version.to_le_bytes());
-        for slot in &scored_slots {
-            hasher.update(slot.song.id.as_bytes());
-            hasher.update(&slot.predictability.to_le_bytes());
-        }
-        let commitment_hash = hasher.finalize().to_hex().to_string();
-
-        AnticipatedRecommendationSet {
-            candidates: scored_slots,
-            commitment_hash,
-            version: self.version,
-        }
+        AnticipatedRecommendationSet { candidates: scored_slots }
     }
 
     /// Wake-time lookup: Consumes the top anticipated candidate when the queue is empty.

@@ -14,9 +14,9 @@ Legend: **(checked)** = confirmed in code on 2026-09-27; `gated:` = waits on own
 
 ## Wave 2 — safety net before big work
 - [x] 29. E2E browser tests in `tests/` (headless Chrome over CDP, no new deps): focus reclaim, type-to-search, Revert, no clipped controls at 375–1280 px; run in CI against the release build. Done: `tests/e2e/{cdp,app.test}.mjs` (9 tests, ~5 s; fresh browser context per test; fails on console errors and CSP violations). Negative check: dropping the control-row wrap fails 600/375 px naming Pause/Fullscreen/Replay/Next. CI build job serves `dist/` with `wrangler dev` and runs them.
-- [ ] 26. Split `main.rs` (590 lines **(checked)**) handlers/state into modules.
-- [ ] 27. Move the keydown/blur listener out of the `window._ktv_remove_search_listener` global into `ktv_sync.js` / typed commands.
-- [ ] 28. Review `recommendation.rs` blake3 `commitment_hash` **(checked)**: keep only if it earns its place.
+- [x] 26. Split `main.rs` (590 lines **(checked)**) handlers/state into modules. Done: `src/booth/{mod,types,ops}.rs` — pure `Booth { current, queue, next_queue_id }` with `Placement { Now, Next, Back }` / `Requester` enums replaces 5 copies of the enqueue logic; `main.rs` holds one `Signal<Booth>` + memo slices (609 → 387 lines). `tests/booth_test.rs` (7) + e2e queue and Auto-DJ tests. Auto-DJ picks are read before advancing so it never replays the finished song.
+- [x] 27. Move the keydown/blur listener out of the `window._ktv_remove_search_listener` global into `ktv_sync.js` / typed commands. Done: `assets/ktv_keys.js` (pure `key_action`, install-once + rebind like the sync core, also ignores `select`/contenteditable) + `src/keys.rs` `KeyAction::parse`; `tests/ktv_keys.test.cjs` (5) and `tests/keys_test.rs` (3, incl. JS↔Rust message contract).
+- [x] 28. Review `recommendation.rs` blake3 `commitment_hash` **(checked)**: keep only if it earns its place. Done: removed — nothing ever read it (docs claimed UI equality checks; false), only a "BLAKE3: xxxx" badge. Dropped the hash, set/anticipator `version`, the badge CSS and the `blake3` dependency. wasm size unchanged (971 KB), so item 20 needs its own look.
 
 ## Wave 3 — singing core (Phase 2)
 - [ ] 8. Mic latency calibration.

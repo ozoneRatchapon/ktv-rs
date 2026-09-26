@@ -7,7 +7,6 @@ pub fn QueueView(
     queue: Vec<QueueItem>,
     current_item: Option<QueueItem>,
     anticipated: Vec<AnticipatedRecommendation>,
-    commitment_hash: String,
     on_skip: EventHandler<()>,
     on_remove: EventHandler<u64>,
     on_move_up: EventHandler<usize>,
@@ -166,13 +165,6 @@ pub fn QueueView(
                         div {
                             h4 { class: "dj-heading", "AUTO-DJ SUGGESTIONS" }
                             p { class: "dj-sub", "Predictive queue based on listening history & dwell time" }
-                        }
-                    }
-                    if !commitment_hash.is_empty() {
-                        span {
-                            class: "blake3-badge",
-                            title: "BLAKE3 cryptographic state commitment",
-                            "BLAKE3: {&commitment_hash[..8]}"
                         }
                     }
                 }

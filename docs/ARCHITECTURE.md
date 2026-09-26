@@ -15,9 +15,8 @@ graph TD
     
     AutoDJ --> DwellTracker[Dwell-Time Telemetry]
     AutoDJ --> TropicalPrune[Tropical Max-Plus Semiring]
-    AutoDJ --> Blake3Hash[BLAKE3 State Commitment]
     
-    Remote --> Queue[FIFO Queue Signal]
+    Remote --> Queue[Booth: current song + queue, src/booth]
     Queue --> Player
 ```
 
@@ -66,11 +65,6 @@ $$a \oplus b = \max(a, b)$$
 $$a \otimes b = a + b$$
 The zero element is $-\infty$. Early skips are masked with a $-\infty$ penalty factor, strictly disqualifying recently aborted artists from upcoming auto-plays:
 $$\text{bottleneck\_penalty} = \begin{cases} -\infty & \text{if dwell} \le 20s \\ 0.0 & \text{otherwise} \end{cases}$$
-
-### C. BLAKE3 Cryptographic Commitment
-Each recommendation candidate commits its state using BLAKE3 hashing:
-$$\text{Commitment} = \text{BLAKE3}(\text{Song ID} \mathbin{\Vert} \text{Artist} \mathbin{\Vert} \text{Category})$$
-This allows the reactive UI to perform instant 32-byte equality checks without deep JSON or string comparisons.
 
 ---
 

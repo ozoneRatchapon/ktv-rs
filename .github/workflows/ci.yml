@@ -41,11 +41,11 @@ jobs:
         with:
           node-version: 24
       # Pass the file, not the directory: Node 24 treats a directory argument as a module to run
-      - run: node --test tests/ktv_sync.test.cjs
+      - run: node --test tests/ktv_sync.test.cjs tests/ktv_keys.test.cjs
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno lint assets/ktv_sync.js assets/mic_worklet.js tests/ktv_sync.test.cjs tests/e2e/
+      - run: deno lint assets/ktv_sync.js assets/ktv_keys.js assets/mic_worklet.js tests/ktv_sync.test.cjs tests/ktv_keys.test.cjs tests/e2e/
       - run: python3 -m py_compile tools/link_check.py
 
   build:
