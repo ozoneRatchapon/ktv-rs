@@ -164,13 +164,13 @@ impl SleepTimeAnticipator {
 
             // Determine explanation reason
             let reason = if artist_weight > 1.0 {
-                format!("ศิลปินที่คุณชอบ ({artist})", artist = song.artist)
+                format!("Artist you love ({artist})", artist = song.artist)
             } else if genre_weight > 1.0 {
-                format!("ตรงแนวเพลงที่คุณร้องบ่อย ({genre})", genre = song.category)
+                format!("Your usual genre ({genre})", genre = song.category)
             } else if song.is_favorite {
-                "เพลงยอดนิยมประจำห้อง".to_string()
+                "Room favourite".to_string()
             } else {
-                "แนะนำสำหรับคุณ".to_string()
+                "Recommended for you".to_string()
             };
 
             scored_slots.push(AnticipatedRecommendation {

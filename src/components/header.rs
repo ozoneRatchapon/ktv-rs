@@ -6,6 +6,7 @@ pub fn Header(
     active_tab: Signal<KtvTab>,
     queue_len: usize,
     room_name: String,
+    on_help: EventHandler<()>,
 ) -> Element {
     rsx! {
         header { class: "ktv-header",
@@ -52,6 +53,14 @@ pub fn Header(
                     class: if active_tab() == KtvTab::Settings { "nav-btn active" } else { "nav-btn" },
                     onclick: move |_| active_tab.set(KtvTab::Settings),
                     span { "Settings" }
+                }
+
+                button {
+                    class: "nav-btn",
+                    title: "Keyboard shortcuts (?)",
+                    aria_label: "Keyboard shortcuts",
+                    onclick: move |_| on_help.call(()),
+                    span { "?" }
                 }
             }
         }

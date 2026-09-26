@@ -1,4 +1,4 @@
-# NEON KTV System Architecture 📐
+# KTV-RS System Architecture 📐
 
 ## High-Level Topology
 

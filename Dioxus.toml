@@ -3,7 +3,7 @@
 [web.app]
 
 # HTML title tag content
-title = "NEON KTV - Thai Karaoke & GMM Official Feed"
+title = "KTV-RS · Thai Karaoke"
 
 # include `assets` in web platform
 [web.resource]

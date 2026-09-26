@@ -5,12 +5,12 @@ Worked top to bottom. Each finished item: tests + clippy clean, browser-verified
 Legend: **(checked)** = confirmed in code on 2026-09-27; `gated:` = waits on owner/device/external.
 
 ## Release now
-- [ ] R1. Release the 4 fixes already on `develop` (focus reclaim, favicon + input ids, narrow-screen layout, Revert wording, CI on ubuntu-26.04) as v0.3.0.
+- [x] R1. (v0.3.0, Worker `4b6f9408`, prod-verified) Release the 4 fixes already on `develop` (focus reclaim, favicon + input ids, narrow-screen layout, Revert wording, CI on ubuntu-26.04) as v0.3.0.
 
 ## Wave 1 — small, touches every user
-- [ ] 15. `<html>` has no `lang` **(checked)** → `lang="th"` (screen readers, Thai line breaking, font choice).
-- [ ] 16. UI language mix: mostly English with a few Thai messages **(checked)** → one UI language, consistent wording (TH/EN toggle later if wanted).
-- [ ] 18. Keyboard shortcut help (`?`) + first-visit hint.
+- [x] 15. `<html>` has no `lang` **(checked)** → `lang="th"` (screen readers, Thai line breaking, font choice). Done: custom `index.html` with `lang="en"` (UI language) + meta description/theme-color; song titles/artists carry `lang="th"` (88 elements on the catalog page).
+- [x] 16. UI language mix: mostly English with a few Thai messages **(checked)** → one UI language, consistent wording (TH/EN toggle later if wanted). Done: English UI; the 10 Thai messages (Add URL, Keypad, Auto-DJ, recommendation reasons) translated; app name unified to KTV-RS (was "NEON KTV" in the page title and docs).
+- [x] 18. Keyboard shortcut help (`?`) + first-visit hint. Done: `components/shortcuts.rs` panel at the top of the control column (never over a player), `?` key + header **?** button toggle it, open on every visit until closed once (`AppSettings.seen_shortcuts`, serde default; storage test).
 
 ## Wave 2 — safety net before big work
 - [ ] 29. E2E browser tests in `tests/` (headless Chrome over CDP, no new deps): focus reclaim, type-to-search, Revert, no clipped controls at 375–1280 px; run in CI against the release build.

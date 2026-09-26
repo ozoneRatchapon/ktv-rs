@@ -1,6 +1,6 @@
 # Cloudflare Workers & Pages Deployment Guide ☁️
 
-This guide outlines how to deploy NEON KTV as a distributed edge application using **Cloudflare Pages** for the WASM frontend and **Cloudflare Workers (`workers-rs`) + Durable Objects** for real-time multi-device room synchronization.
+This guide outlines how to deploy KTV-RS as a distributed edge application using **Cloudflare Pages** for the WASM frontend and **Cloudflare Workers (`workers-rs`) + Durable Objects** for real-time multi-device room synchronization.
 
 ---
 

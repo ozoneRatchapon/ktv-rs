@@ -41,7 +41,7 @@ pub fn Remote(
         let code = input_code();
         if !code.is_empty() {
             on_play_by_code.call(code.clone());
-            message_feedback.set(Some(format!("กำลังเปิดเพลงรหัส {code}!")));
+            message_feedback.set(Some(format!("Playing song {code}")));
             input_code.set(String::new());
         }
     };
@@ -50,7 +50,7 @@ pub fn Remote(
         let code = input_code();
         if !code.is_empty() {
             on_queue_by_code.call(code.clone());
-            message_feedback.set(Some(format!("จองเพลงรหัส {code} เข้าคิวแล้ว!")));
+            message_feedback.set(Some(format!("Song {code} added to the queue")));
             input_code.set(String::new());
         }
     };
@@ -83,8 +83,8 @@ pub fn Remote(
                     if let Some(s) = matched_song {
                         div { class: "preview-card",
                             div { class: "preview-text",
-                                div { class: "preview-title", "{s.title}" }
-                                div { class: "preview-artist", "{s.artist} • {s.channel}" }
+                                div { class: "preview-title", lang: "th", "{s.title}" }
+                                div { class: "preview-artist", lang: "th", "{s.artist} • {s.channel}" }
                             }
                         }
                     }

@@ -80,8 +80,8 @@ pub fn CatalogView(
                         div { class: "card-left",
                             div { class: "song-code-tag", "#{song.code}" }
                             div { class: "song-details",
-                                h3 { class: "song-title", "{song.title}" }
-                                p { class: "song-artist", "{song.artist} • {song.channel}" }
+                                h3 { class: "song-title", lang: "th", "{song.title}" }
+                                p { class: "song-artist", lang: "th", "{song.artist} • {song.channel}" }
                                 div { class: "song-badges",
                                     span { class: "genre-badge", "{song.category}" }
                                     if song.intro_skip_secs > 0 {

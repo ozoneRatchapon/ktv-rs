@@ -198,8 +198,8 @@ pub fn Player(
                             div { class: "song-info",
                                 div { class: "song-code-pill", "#{song.code}" }
                                 div { class: "song-titles",
-                                    h2 { class: "now-title", "{song.title}" }
-                                    p { class: "now-artist", "{song.artist} • {song.channel}" }
+                                    h2 { class: "now-title", lang: "th", "{song.title}" }
+                                    p { class: "now-artist", lang: "th", "{song.artist} • {song.channel}" }
                                 }
                             }
 
