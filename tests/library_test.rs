@@ -96,3 +96,17 @@ fn test_malformed_library_is_an_error_not_a_panic() {
     let songs = library::parse(one).unwrap();
     assert_eq!((songs[0].intro_skip_secs, songs[0].aliases.len()), (16, 0), "intro capped on a short song");
 }
+
+#[test]
+fn test_songbook_video_finds_curated_and_library_but_not_custom() {
+    use app::catalog::{custom_song_id, songbook_video};
+    let curated = &builtin_catalog()[0];
+    let listed = &SONGS[0];
+    let custom = Song { id: custom_song_id("zzzzzzzzzzz"), youtube_id: "zzzzzzzzzzz".to_string(), ..curated.clone() };
+    let catalog: Vec<Song> = builtin_catalog().iter().cloned().chain([custom]).collect();
+
+    assert_eq!(songbook_video(&catalog, lib(), &curated.youtube_id).map(|s| &s.id), Some(&curated.id));
+    assert_eq!(songbook_video(&catalog, lib(), &listed.youtube_id).map(|s| &s.id), Some(&listed.id));
+    assert_eq!(songbook_video(&catalog, lib(), "zzzzzzzzzzz"), None, "an Add URL song is not a songbook song");
+    assert_eq!(songbook_video(&catalog, Library::default(), &listed.youtube_id), None, "library not loaded yet");
+}

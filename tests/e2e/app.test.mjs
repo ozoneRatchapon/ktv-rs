@@ -237,6 +237,22 @@ test('full library: joins after first paint, capped list grows, alias search, a 
   await page.wait_for(`document.querySelector('.sr-only[role=status]').textContent.includes('กำก่าสกาฬสินธ์ุ')`);
 }));
 
+test('Add URL: a video already in the songbook is queued as that song, not copied', () => with_page({}, async (page) => {
+  await page.wait_for(`document.querySelector('.catalog-meta-row .count-text')?.textContent.replace(/\\D/g, '') > 5000`);
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'Add URL').click()`);
+  await page.wait_for(`!!document.getElementById('custom_url')`);
+  await page.eval(`(() => {
+    const input = document.getElementById('custom_url');
+    input.value = 'https://youtu.be/ow7Ebs5VJjo';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`);
+  await sleep(100);
+  await page.eval(`[...document.querySelectorAll('.submit-btn')].find((b) => b.textContent === 'Add to Queue').click()`);
+  await page.wait_for(`document.querySelector('.form-feedback')?.textContent === 'Already in the songbook: กำก่าสกาฬสินธ์ุ, keypad code 31008'`);
+  await page.wait_for(`JSON.parse(localStorage.getItem('ktv.session.v1')).queue.some((it) => it.song.id === 'yt_ow7Ebs5VJjo')`);
+  assert.deepEqual(await page.eval(`JSON.parse(localStorage.getItem('ktv.session.v1')).custom_songs`), [], 'no custom copy');
+}));
+
 test('favourites and recently sung shelves', () => with_page({}, async (page) => {
   const chip = (label) => `[...document.querySelectorAll('.chip')].find((c) => c.textContent === ${JSON.stringify(label)})`;
   const titles = `[...document.querySelectorAll('.song-title')].map((e) => e.textContent)`;

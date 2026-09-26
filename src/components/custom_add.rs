@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use crate::catalog::{CustomCodesExhausted, CUSTOM_CODES};
+use crate::catalog::{custom_song_id, CustomCodesExhausted, CUSTOM_CODES};
 use crate::types::Song;
 use crate::youtube::parse_video_id;
 
@@ -7,6 +7,8 @@ use crate::youtube::parse_video_id;
 #[derive(Clone, Debug, PartialEq)]
 enum Feedback {
     Added { code: String },
+    /// The video is already in the songbook, so its own entry was used
+    Known { code: String, title: String },
     Error(String),
 }
 
@@ -40,7 +42,7 @@ pub fn CustomAdd(
                 };
 
                 let new_song = Song {
-                    id: format!("custom_{vid}"),
+                    id: custom_song_id(&vid),
                     code: String::new(), // assigned on insert (catalog::upsert_custom)
                     title: song_title,
                     artist: song_artist,
@@ -54,9 +56,13 @@ pub fn CustomAdd(
                     is_favorite: false,
                 };
 
+                let custom_id = new_song.id.clone();
                 match on_add_song.call((new_song, play_now)) {
                     Ok(stored) => {
-                        feedback.set(Some(Feedback::Added { code: stored.code }));
+                        feedback.set(Some(match stored.id == custom_id {
+                            true => Feedback::Added { code: stored.code },
+                            false => Feedback::Known { code: stored.code, title: stored.title },
+                        }));
                         url_or_id.set(String::new());
                         title.set(String::new());
                         artist.set(String::new());
@@ -89,6 +95,9 @@ pub fn CustomAdd(
                 match feedback() {
                     Some(Feedback::Added { code }) => rsx! {
                         div { class: "form-feedback", role: "status", "Song added! Keypad code {code}" }
+                    },
+                    Some(Feedback::Known { code, title }) => rsx! {
+                        div { class: "form-feedback", role: "status", "Already in the songbook: {title}, keypad code {code}" }
                     },
                     Some(Feedback::Error(msg)) => rsx! {
                         div { class: "form-feedback error", role: "alert", "{msg}" }

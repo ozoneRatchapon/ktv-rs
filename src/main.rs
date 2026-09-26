@@ -258,8 +258,13 @@ fn App() -> Element {
     // Add custom song from YouTube
     // Returns the stored song (with its keypad code) so the form can report success or failure
     let handle_add_custom_song = move |(new_song, play_now): (Song, bool)| -> Result<Song, catalog::CustomCodesExhausted> {
-        // Assigns a unique keypad code; re-adding the same video reuses its entry
-        let new_song = catalog::upsert_custom(&mut catalog.write(), new_song)?;
+        // A curated or library video keeps its own entry (code, guide, intro skip); anything else
+        // gets a unique keypad code, and re-adding the same video reuses its entry
+        let known = catalog::songbook_video(&catalog.read(), song_library(), &new_song.youtube_id).cloned();
+        let new_song = match known {
+            Some(song) => song,
+            None => catalog::upsert_custom(&mut catalog.write(), new_song)?,
+        };
         let placement = if play_now { Placement::Now } else { Placement::Back };
         request(new_song.clone(), Requester::AddUrl, placement);
         Ok(new_song)
