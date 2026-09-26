@@ -1,0 +1,64 @@
+# 002 — Improvement checklist (2026-09-27)
+
+Worked top to bottom. Each finished item: tests + clippy clean, browser-verified, pushed to `develop`, CI green, then released (owner's standing approval: deploy whenever an update is ready). Record details in `.plans/001_roadmap.md`; tick here with the commit/version.
+
+Legend: **(checked)** = confirmed in code on 2026-09-27; `gated:` = waits on owner/device/external.
+
+## Release now
+- [ ] R1. Release the 4 fixes already on `develop` (focus reclaim, favicon + input ids, narrow-screen layout, Revert wording, CI on ubuntu-26.04) as v0.3.0.
+
+## Wave 1 — small, touches every user
+- [ ] 15. `<html>` has no `lang` **(checked)** → `lang="th"` (screen readers, Thai line breaking, font choice).
+- [ ] 16. UI language mix: mostly English with a few Thai messages **(checked)** → one UI language, consistent wording (TH/EN toggle later if wanted).
+- [ ] 18. Keyboard shortcut help (`?`) + first-visit hint.
+
+## Wave 2 — safety net before big work
+- [ ] 29. E2E browser tests in `tests/` (headless Chrome over CDP, no new deps): focus reclaim, type-to-search, Revert, no clipped controls at 375–1280 px; run in CI against the release build.
+- [ ] 26. Split `main.rs` (590 lines **(checked)**) handlers/state into modules.
+- [ ] 27. Move the keydown/blur listener out of the `window._ktv_remove_search_listener` global into `ktv_sync.js` / typed commands.
+- [ ] 28. Review `recommendation.rs` blake3 `commitment_hash` **(checked)**: keep only if it earns its place.
+
+## Wave 3 — singing core (Phase 2)
+- [ ] 8. Mic latency calibration.
+- [ ] 9. Noise gate so room noise / speakers don't score.
+- [ ] 6. Real score HUD + end-of-song result screen.
+- [ ] 5. Honest key transpose (shift target melody, not audio).
+- [ ] 7. Target pitch line (needs per-song melody data).
+- [ ] 10. Duet mode.
+
+## Wave 4 — content & search
+- [ ] 14. Thai-aware search: tone marks, romanised input ("rak mai wai"), typo tolerance.
+- [ ] 13. Favourites, recently sung, history (localStorage).
+- [ ] 12. Community guide timing submissions (Copy JSON → PR template / issue form).
+- [ ] 11. Grow the catalog beyond 43 songs **(checked)**.
+
+## Wave 5 — performance
+- [ ] 20. wasm 968 KB, was 846 KB **(checked)** → find the growth, try `wasm-opt -Oz`.
+- [ ] 21. Dead CSS in `main.css` (2,226 lines **(checked)**).
+- [ ] 22. Lighthouse / Core Web Vitals on prod.
+- [ ] 19. Preload the next song's video for faster song changes.
+
+## Wave 6 — accessibility
+- [ ] 30. Visible focus, keyboard navigation of song cards, contrast audit.
+- [ ] 31. `prefers-reduced-motion`; announce song changes (`aria-live`).
+
+## Wave 7 — security & privacy
+- [ ] 23. Remove CSP `'unsafe-eval'` if Dioxus allows.
+- [ ] 24. Versioned `localStorage` migrations (no data loss on schema change).
+- [ ] 25. Privacy page backing the "Zero Tracking" claim.
+
+## Wave 8 — platform (Phase 3)
+- [ ] 17. TV / booth mode (10-foot UI).
+- [ ] 32. PWA: installable, offline app shell.
+- [ ] 33. Phone remote. `gated:` Durable Objects blocked by Cloudflare `10013`/`10021`; recheck the versions API or pick another transport.
+
+## Wave 9 — ops & docs
+- [ ] 34. Deploy from CI with an approval environment.
+- [ ] 35. CHANGELOG / release notes per tag.
+- [ ] 36. Uptime check on the prod URL.
+- [ ] 37. README screenshots + "adding songs" guide.
+
+## Gated (not worked until the owner/device says so)
+- [ ] 1. Custom domain. `gated:` owner deferred (costs money).
+- [ ] 3. Real mic test on iPhone Safari / Android Chrome. `gated:` needs devices.
+- [ ] 4. YouTube pre-roll ads vs sync. `gated:` needs real playback on a device.
