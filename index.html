@@ -7,8 +7,24 @@
         <meta charset="UTF-8" />
         <meta name="description" content="Open-source Thai karaoke in the browser: official karaoke videos, original-vocal guide, live pitch meter. No tracking." />
         <meta name="theme-color" content="#0b0d13" />
+        <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+        <!-- The weights most text uses (Kanit 400/600/700, Outfit) load alongside the wasm, so text does not swap and shift after the first render -->
+        <link rel="preload" href="/fonts/kanit-400-thai.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href="/fonts/kanit-400-latin.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href="/fonts/kanit-600-thai.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href="/fonts/kanit-600-latin.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href="/fonts/kanit-700-thai.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href="/fonts/kanit-700-latin.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href="/fonts/outfit-var-latin.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preconnect" href="https://www.youtube-nocookie.com" />
     </head>
     <body>
         <div id="main"></div>
+        <!-- Shown until the app mounts into #main (styles in assets/main.css) -->
+        <div class="boot-splash" aria-hidden="true">
+            <div class="boot-title">KTV-RS</div>
+            <div class="boot-sub">Opening the booth…</div>
+            <noscript><div class="boot-sub">KTV-RS needs JavaScript and WebAssembly.</div></noscript>
+        </div>
     </body>
 </html>

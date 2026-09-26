@@ -30,6 +30,9 @@ test('page shell: lang, title, favicon, named form fields', () => with_page({}, 
   assert.ok(await page.eval(`document.querySelectorAll('.song-title[lang=th]').length > 0`), 'song titles tagged Thai');
   assert.equal(await page.eval(`fetch(document.querySelector('link[rel=icon]').href).then((r) => r.status)`), 200);
   assert.equal(await page.eval(`[...document.querySelectorAll('input, select, textarea')].filter((e) => !e.id || !e.name).length`), 0);
+  assert.equal(await page.eval(`getComputedStyle(document.querySelector('.boot-splash')).display`), 'none', 'splash hidden once mounted');
+  assert.ok(await page.eval(`fetch('/').then((r) => r.text()).then((html) => /<link rel="stylesheet" href="[^"]*main-[^"]*\.css"/.test(html))`), 'stylesheet in the static head');
+  assert.equal(await page.eval(`fetch('/robots.txt').then((r) => r.text())`), 'User-agent: *\nAllow: /\n');
 }));
 
 test('type-to-search works, including after focus moved into a player iframe', () => with_page({}, async (page) => {

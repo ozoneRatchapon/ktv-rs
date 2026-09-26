@@ -214,7 +214,7 @@
 
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
-    --text-muted: #64748b;
+    --text-muted: #8a97ab; /* >= 4.9:1 on every surface (WCAG AA) */
 
     --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-body: 'Kanit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -260,6 +260,35 @@ body {
     height: 100vh;
     max-height: 100vh;
     overflow: hidden;
+}
+
+/* Boot splash (index.html): visible until Dioxus mounts the app into #main */
+.boot-splash {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--bg-dark);
+}
+
+#main:not(:empty) ~ .boot-splash {
+    display: none;
+}
+
+.boot-title {
+    font-family: var(--font-heading);
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: #ffffff;
+}
+
+.boot-sub {
+    font-size: 14px;
+    color: var(--text-secondary);
 }
 
 /* Header */
@@ -549,14 +578,14 @@ body {
 }
 
 .intro-banner.skipped {
-    background: rgba(14, 165, 233, 0.85);
+    background: #0b76a8; /* white text 5:1 */
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .intro-banner.playing-intro {
-    background: rgba(245, 158, 11, 0.85);
-    color: white;
+    background: #f59e0b;
+    color: #111827; /* white on amber is ~2:1 */
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
