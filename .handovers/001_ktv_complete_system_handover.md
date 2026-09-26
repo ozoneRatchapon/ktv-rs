@@ -26,6 +26,7 @@ We built and perfected **KTV-RS**, an authentic, high-performance Web Karaoke pl
 - **Core Architecture & App Root:** [`src/main.rs`](file:///Users/ozone/karaoke/src/main.rs)
 - **Player & Scrubber Component:** [`src/components/player.rs`](file:///Users/ozone/karaoke/src/components/player.rs)
 - **Player Sync Core (JS) & Rust Bridge:** [`assets/ktv_sync.js`](file:///Users/ozone/karaoke/assets/ktv_sync.js), [`src/sync.rs`](file:///Users/ozone/karaoke/src/sync.rs); tests `node --test tests/ktv_sync.test.cjs` and `cargo test --test sync_test`
+- **E2E (headless Chrome, no npm deps):** [`tests/e2e/app.test.mjs`](file:///Users/ozone/karaoke/tests/e2e/app.test.mjs) + CDP driver `tests/e2e/cdp.mjs`. Run `tools/build_web.sh`, `npx wrangler@4.141.0 dev --port 8788`, then `node --test tests/e2e/app.test.mjs` (`KTV_URL` to target prod, `CHROME_BIN` for another browser). CI runs it on the release bundle.
 - **Catalog & Video ID Verification:** [`assets/catalog.json`](file:///Users/ozone/karaoke/assets/catalog.json) (data, embedded at compile time by [`src/catalog.rs`](file:///Users/ozone/karaoke/src/catalog.rs); validated by `tests/catalog_test.rs`)
 - **Add URL parsing:** [`src/youtube.rs`](file:///Users/ozone/karaoke/src/youtube.rs) `parse_video_id` (strict 11-char id; tests in `tests/youtube_test.rs`)
 - **Persistence (settings + session in `localStorage`):** [`src/storage.rs`](file:///Users/ozone/karaoke/src/storage.rs); tests `cargo test --test storage_test`

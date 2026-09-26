@@ -13,7 +13,7 @@ Legend: **(checked)** = confirmed in code on 2026-09-27; `gated:` = waits on own
 - [x] 18. Keyboard shortcut help (`?`) + first-visit hint. Done: `components/shortcuts.rs` panel at the top of the control column (never over a player), `?` key + header **?** button toggle it, open on every visit until closed once (`AppSettings.seen_shortcuts`, serde default; storage test).
 
 ## Wave 2 — safety net before big work
-- [ ] 29. E2E browser tests in `tests/` (headless Chrome over CDP, no new deps): focus reclaim, type-to-search, Revert, no clipped controls at 375–1280 px; run in CI against the release build.
+- [x] 29. E2E browser tests in `tests/` (headless Chrome over CDP, no new deps): focus reclaim, type-to-search, Revert, no clipped controls at 375–1280 px; run in CI against the release build. Done: `tests/e2e/{cdp,app.test}.mjs` (9 tests, ~5 s; fresh browser context per test; fails on console errors and CSP violations). Negative check: dropping the control-row wrap fails 600/375 px naming Pause/Fullscreen/Replay/Next. CI build job serves `dist/` with `wrangler dev` and runs them.
 - [ ] 26. Split `main.rs` (590 lines **(checked)**) handlers/state into modules.
 - [ ] 27. Move the keydown/blur listener out of the `window._ktv_remove_search_listener` global into `ktv_sync.js` / typed commands.
 - [ ] 28. Review `recommendation.rs` blake3 `commitment_hash` **(checked)**: keep only if it earns its place.
