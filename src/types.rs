@@ -68,6 +68,9 @@ pub struct AppSettings {
     /// The shortcut help was closed once; until then it opens on every visit.
     #[serde(default)]
     pub seen_shortcuts: bool,
+    /// Booth / TV screen: larger UI, wider player, "Up next" under the video.
+    #[serde(default)]
+    pub tv_mode: bool,
 }
 
 impl Default for AppSettings {
@@ -80,6 +83,7 @@ impl Default for AppSettings {
             sound_fx_enabled: true,
             show_timing_tools: false,
             seen_shortcuts: false,
+            tv_mode: false,
         }
     }
 }

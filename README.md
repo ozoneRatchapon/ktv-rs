@@ -56,7 +56,11 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 * **Early-skip pruning**: A song skipped early (under 30 seconds or 20% of its length) rules its artist and genre out of Auto-DJ picks for the session.
 * **Auto Fallback**: Automatically continues music playback with the top anticipated recommendation when the queue finishes.
 
-### 8. Mic Pitch Meter & Tuning Score
+### 8. Install as an App
+* Chrome/Edge: **Install**; iPhone/iPad Safari: **Share → Add to Home Screen**. KTV-RS then opens in its own window, which suits a booth PC or TV.
+* **TV** (header): bigger text and player, plus **Up next** under the video, readable from across the room.
+
+### 9. Mic Pitch Meter & Tuning Score
 * **Mic: On** shows the note you are singing (e.g. `A4 +12¢`), detected in Rust/wasm (McLeod pitch method) from an AudioWorklet. Mic audio never leaves the device. For its first second it measures the room, then ignores anything not clearly louder than the room.
 * **Tuning 0–100** rates how exactly your held notes land on a semitone (after 3 held notes). It does not know the song's melody, so it cannot tell whether they are the right notes; tap the badge for the full explanation.
 * When a song ends, a result card shows that take's score; **Queue → Recent scores** keeps the last 20 on this device.
