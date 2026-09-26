@@ -1,0 +1,46 @@
+name: Guide timing
+description: Share a guide (original-vocal MV) timing made with Settings → Guide Timing Tools.
+title: "Guide timing: #"
+labels: ["guide-timing"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! **Share on GitHub** in the timing panel fills this in for you. Timings are made by ear in the app, never by downloading audio.
+  - type: input
+    id: song_code
+    attributes:
+      label: Song code
+      description: 5-digit keypad code, e.g. 10004
+    validations:
+      required: true
+  - type: input
+    id: karaoke_video
+    attributes:
+      label: Karaoke video
+      description: The official karaoke video the timing was made against.
+    validations:
+      required: true
+  - type: textarea
+    id: guide_json
+    attributes:
+      label: Guide JSON
+      description: From **Copy JSON** / **Share on GitHub**.
+      render: json
+    validations:
+      required: true
+  - type: dropdown
+    id: checked_with
+    attributes:
+      label: How was it checked?
+      options:
+        - Hear both (no echo) at the start and near the end
+        - Mark in sync twice + Fit speed
+        - Nudged by ear only
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Anything odd (edited MV, long intro, drift)?

@@ -92,6 +92,9 @@ tools/build_web.sh && npx wrangler@4.141.0 dev --port 8788    # in another termi
 node --test tests/e2e/app.test.mjs                            # KTV_URL=<url> to test another deployment
 ```
 
+### Adding songs
+See [docs/ADDING_SONGS.md](docs/ADDING_SONGS.md). Requests and guide timings come in through the repo's **Song request** and **Guide timing** issue forms (the app's **Share on GitHub** button in Guide Timing Tools fills the latter in).
+
 ### Run Linting
 ```bash
 cargo clippy --fix --allow-dirty --quiet

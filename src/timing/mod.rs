@@ -2,7 +2,9 @@
 //! embedded players (no audio download). Pure math here; the UI lives in `components::guide_timing`.
 
 mod fit;
+mod share;
 mod types;
 
 pub use fit::{apply_overrides, catalog_snippet, fit, mark_at, new_guide, nudge, MIN_FIT_SPAN_SECS, RATE_RANGE};
+pub use share::{share_url, REPO_URL};
 pub use types::{FitError, GuideOverrides, SavedTiming, SyncMark};
