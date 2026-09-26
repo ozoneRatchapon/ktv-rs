@@ -1,4 +1,6 @@
 use dioxus::prelude::*;
+
+use crate::storage;
 use crate::types::AppSettings;
 
 #[component]
@@ -6,6 +8,8 @@ pub fn Settings(
     settings: Signal<AppSettings>,
 ) -> Element {
     let current_settings = settings();
+    // Two taps: a stray tap must not wipe favourites and scores
+    let mut confirm_clear = use_signal(|| false);
 
     rsx! {
         div { class: "settings-container",
@@ -136,8 +140,31 @@ pub fn Settings(
                             a {
                                 href: "https://github.com/ozoneRatchapon/ktv-rs",
                                 target: "_blank",
+                                rel: "noopener noreferrer",
                                 class: "repo-link",
                                 "github.com/ozoneRatchapon/ktv-rs"
+                            }
+                        }
+                        p {
+                            strong { "Privacy: " }
+                            "Settings, queue, favourites, scores and guide timings stay in this browser; mic audio never leaves it. "
+                            a { href: "/privacy.html", target: "_blank", class: "repo-link", "Read the privacy note" }
+                        }
+                        div { class: "clear-data-row",
+                            button {
+                                class: if confirm_clear() { "ctrl-btn danger-btn" } else { "ctrl-btn" },
+                                onclick: move |_| {
+                                    if confirm_clear() {
+                                        storage::clear_all();
+                                        storage::reload_page();
+                                    } else {
+                                        confirm_clear.set(true);
+                                    }
+                                },
+                                if confirm_clear() { "Tap again to clear everything" } else { "Clear my data on this device" }
+                            }
+                            if confirm_clear() {
+                                button { class: "ctrl-btn", onclick: move |_| confirm_clear.set(false), "Cancel" }
                             }
                         }
                     }

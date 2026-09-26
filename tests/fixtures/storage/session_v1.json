@@ -1,0 +1,110 @@
+{
+  "current": {
+    "queue_id": 2,
+    "song": {
+      "id": "gmm_003",
+      "code": "10003",
+      "title": "นกหลงรัง",
+      "artist": "เสือ ธนพล",
+      "aliases": [
+        "Nok Long Rung"
+      ],
+      "youtube_id": "qq_pRBQjrSg",
+      "guide": {
+        "video_id": "6iilLpdieOE",
+        "offset_secs": -17.89,
+        "rate": 1
+      },
+      "duration_secs": 260,
+      "intro_skip_secs": 18,
+      "category": "Rock",
+      "channel": "GMM Karaoke",
+      "is_favorite": true
+    },
+    "key_shift": 0,
+    "requester": "Table 1"
+  },
+  "queue": [
+    {
+      "queue_id": 3,
+      "song": {
+        "id": "gmm_007",
+        "code": "10007",
+        "title": "ดาวเสาร์ (Saturn)",
+        "artist": "LULA",
+        "aliases": [
+          "Daw Sao"
+        ],
+        "youtube_id": "RDTWvDDn0Bk",
+        "guide": {
+          "video_id": "hoGABRCJEvw",
+          "offset_secs": -18.15,
+          "rate": 1
+        },
+        "duration_secs": 230,
+        "intro_skip_secs": 18,
+        "category": "Pop",
+        "channel": "GMM Karaoke",
+        "is_favorite": true
+      },
+      "key_shift": 0,
+      "requester": "Table 1"
+    },
+    {
+      "queue_id": 4,
+      "song": {
+        "id": "gmm_013",
+        "code": "10013",
+        "title": "oasis",
+        "artist": "Atom ชนกันต์ feat. D Gerrard",
+        "youtube_id": "_NzrFynYFJU",
+        "guide": {
+          "video_id": "rPZIiRQNXjk",
+          "offset_secs": -16.96,
+          "rate": 1
+        },
+        "duration_secs": 240,
+        "intro_skip_secs": 18,
+        "category": "Modern",
+        "channel": "GMM Karaoke",
+        "is_favorite": true
+      },
+      "key_shift": 0,
+      "requester": "VIP"
+    },
+    {
+      "queue_id": 5,
+      "song": {
+        "id": "custom_9bZkp7q19f0",
+        "code": "90001",
+        "title": "Gangnam Style",
+        "artist": "YouTube",
+        "youtube_id": "9bZkp7q19f0",
+        "guide": null,
+        "duration_secs": 240,
+        "intro_skip_secs": 13,
+        "category": "Custom",
+        "channel": "YouTube Direct",
+        "is_favorite": false
+      },
+      "key_shift": 0,
+      "requester": "YouTube Direct"
+    }
+  ],
+  "next_queue_id": 6,
+  "custom_songs": [
+    {
+      "id": "custom_9bZkp7q19f0",
+      "code": "90001",
+      "title": "Gangnam Style",
+      "artist": "YouTube",
+      "youtube_id": "9bZkp7q19f0",
+      "guide": null,
+      "duration_secs": 240,
+      "intro_skip_secs": 13,
+      "category": "Custom",
+      "channel": "YouTube Direct",
+      "is_favorite": false
+    }
+  ]
+}

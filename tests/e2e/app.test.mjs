@@ -258,3 +258,24 @@ test('keyboard: a keyboard-focused button takes Space; after a mouse click Space
   await sleep(300);
   assert.ok(await page.eval(`${card('10001')}.querySelector('.fav-btn').classList.contains('on')`), 'still starred');
 }));
+
+test('privacy: the note is served, and Clear my data (two taps) resets this device', () => with_page({}, async (page) => {
+  assert.match(await page.eval(`fetch('/privacy.html').then((r) => r.status + ' ' + r.headers.get('content-type'))`), /^200 text\/html/);
+  await page.eval(`document.querySelectorAll('.fav-btn')[0].click()`);
+  await page.eval(`[...document.querySelectorAll('.shortcut-help button')].find((b) => b.textContent === 'Close').click()`);
+  await page.wait_for(`JSON.parse(localStorage.getItem('ktv.picks.v1') || '{}').favourites?.length === 1`);
+  await page.eval(`localStorage.setItem('_ktv_seek_lead', '0.25'); localStorage.setItem('other.site', 'keep')`);
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'Settings').click()`);
+  const clear = `[...document.querySelectorAll('.clear-data-row button')]`;
+  await page.wait_for(`${clear}.length === 1`);
+  await page.eval(`${clear}[0].click()`);
+  await page.wait_for(`${clear}[0].textContent === 'Tap again to clear everything'`);
+  assert.ok(await page.eval(`!!localStorage.getItem('ktv.picks.v1')`), 'first tap only asks');
+  await page.eval(`${clear}[0].click()`);
+  await sleep(300);
+  await page.wait_for(`!!document.querySelector('.ktv-app-wrapper')`);
+  await page.wait_for(`!!document.querySelector('.shortcut-help')`);
+  assert.equal(await page.eval(`document.querySelectorAll('.fav-btn.on').length`), 0, 'favourites gone');
+  assert.equal(await page.eval(`localStorage.getItem('_ktv_seek_lead')`), null);
+  assert.equal(await page.eval(`localStorage.getItem('other.site')`), 'keep', 'other keys untouched');
+}));

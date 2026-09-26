@@ -1,0 +1,9 @@
+{
+  "default_intro_skip_secs": 18,
+  "auto_skip_intro": true,
+  "volume": 85,
+  "room_name": "VIP ROOM 07",
+  "sound_fx_enabled": true,
+  "show_timing_tools": true,
+  "seen_shortcuts": false
+}

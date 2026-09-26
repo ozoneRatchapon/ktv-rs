@@ -48,8 +48,8 @@ The score today is tuning precision (held notes vs the semitone grid); there is 
 
 ## Wave 7 — security & privacy
 - [ ] 23. Remove CSP `'unsafe-eval'` if Dioxus allows.
-- [ ] 24. Versioned `localStorage` migrations (no data loss on schema change).
-- [ ] 25. Privacy page backing the "Zero Tracking" claim.
+- [x] 24. Versioned `localStorage` migrations (no data loss on schema change). Done as a guard, not a framework (no breaking change exists yet): `tests/storage_fixtures_test.rs` decodes values captured from the real app for all 5 keys (`tests/fixtures/storage/`), so a type change that would silently reset users' data fails CI; the test says to bump the key and migrate when that happens.
+- [x] 25. Privacy page backing the "Zero Tracking" claim. Done: `public/privacy.html` (every stored key and why, mic stays local, YouTube/Cloudflare/GitHub roles), linked from Settings; **Clear my data on this device** (two taps) removes `ktv.*` + `_ktv_*` only and reloads (`storage::clear_all`, `is_app_key`). Tests: key predicate + e2e (other sites' keys untouched).
 
 ## Wave 8 — platform (Phase 3)
 - [ ] 17. TV / booth mode (10-foot UI).

@@ -108,6 +108,7 @@ cargo clippy --fix --allow-dirty --quiet
 
 * **100% Client-Side WebAssembly**: No media or copyrighted files are stored on our servers.
 * **YouTube Embed Compliance**: Standard YouTube embedded players only, following the [YouTube API Developer Policies](https://developers.google.com/youtube/terms/developer-policies) and [Required Minimum Functionality](https://developers.google.com/youtube/terms/required-minimum-functionality): no overlays, no hidden or background playback, no audio separation, no downloading; players stay at least 200x200. All ad views, watch time, and royalties go directly to the respective record labels and artists.
+* **Privacy note**: [`/privacy.html`](public/privacy.html) lists everything stored on the device; **Settings → Clear my data on this device** removes it.
 * **Zero Tracking**: No tracking cookies, analytics pixels, or personal data collection (GDPR & PDPA compliant). Fonts (Kanit, Outfit; SIL OFL 1.1) are self-hosted from `public/fonts`, so the app itself makes no third-party requests; only the YouTube player frames (youtube-nocookie.com) and thumbnails (i.ytimg.com) load from Google.
 
 ---
