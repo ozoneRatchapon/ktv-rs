@@ -1,11 +1,11 @@
-// KTV-RS player sync core: drives the karaoke iframe and the hidden original-vocal guide iframe over the
-// YouTube postMessage API and keeps the guide locked to karaoke time.
+// KTV-RS player sync core: drives the karaoke iframe and the original-vocal guide iframe (shown beside it while
+// the original vocal is on) over the YouTube postMessage API and keeps the guide locked to karaoke time.
 // Loaded by `src/sync.rs` (include_str + eval); unit-tested in Node by `tests/ktv_sync.test.cjs`.
 // All browser access goes through the `env` passed to `create_sync`, so the core runs headless in tests.
 (function (root) {
     'use strict';
 
-    const FRAME = Object.freeze({ KARAOKE: 'ktv-youtube-player', GUIDE: 'ktv-guide-audio-player' });
+    const FRAME = Object.freeze({ KARAOKE: 'ktv-youtube-player', GUIDE: 'ktv-guide-player' });
     const YT_STATE = Object.freeze({ UNSTARTED: -1, ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERING: 3, CUED: 5 });
 
     // Seek lead: YouTube resumes slightly late after seekTo, so the guide aims ahead. Latency differs by how the
@@ -21,6 +21,8 @@
     const RESEEK_ERR_SECS = 1.0;  // beyond this, seek instead of nudging speed
     const SEEK_SETTLE_MS = 1500;  // ignore time reports right after a seek
     const CONTROL_MS = 250;
+    // Karaoke state reports this soon after our own play/pause command may predate it; don't mirror them
+    const OWN_COMMAND_MS = 1000;
     const PROGRESS_MS = 1000;
 
     // Speed nudge by error (YouTube only allows 0.05 steps). Between 0.03 and 0.08 the current rate is kept (hysteresis).
@@ -87,6 +89,7 @@
             guide_hold_until: 0,
             guide_learn: null,
             guide_error: undefined,
+            own_command_at: -Infinity,
             leads: {},
         };
         for (const kind of Object.keys(LEAD)) {
@@ -218,6 +221,16 @@
                 st.video_at = env.now();
             }
             if (data && data.info === YT_STATE.ENDED) st.send('ended');
+            const state = data && typeof data.info === 'number' ? data.info : info && info.playerState;
+            if (typeof state === 'number') on_karaoke_state(state);
+        }
+
+        // The karaoke player's own controls stay usable (YouTube forbids covering the player), so a pause or
+        // play made there is mirrored: the guide follows and karaoke time stops extrapolating
+        function on_karaoke_state(state) {
+            if (env.now() - st.own_command_at < OWN_COMMAND_MS) return;
+            if (state === YT_STATE.PAUSED && !st.paused) apply_paused(true, false);
+            else if (state === YT_STATE.PLAYING && st.paused) apply_paused(false, false);
         }
 
         // New song: apply its measured guide mapping and reset guide state (vocal starts as karaoke).
@@ -258,6 +271,11 @@
 
         function set_paused(paused) {
             if (!env.has_frame(FRAME.KARAOKE)) return;
+            apply_paused(paused, true);
+        }
+
+        // `drive_karaoke` is false when the karaoke player itself reported the change
+        function apply_paused(paused, drive_karaoke) {
             if (paused && !st.paused) {
                 // Freeze extrapolated time at the pause moment
                 st.video_time = karaoke_time();
@@ -269,7 +287,10 @@
                 st.start_sec = st.video_time || 0;
                 st.video_at = env.now();
             }
-            command(FRAME.KARAOKE, paused ? 'pauseVideo' : 'playVideo');
+            if (drive_karaoke) {
+                st.own_command_at = env.now();
+                command(FRAME.KARAOKE, paused ? 'pauseVideo' : 'playVideo');
+            }
             if (paused) {
                 command(FRAME.GUIDE, 'pauseVideo');
             } else {

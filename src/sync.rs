@@ -7,7 +7,7 @@ pub const SYNC_JS: &str = include_str!("../assets/ktv_sync.js");
 
 /// Iframe ids shared with `FRAME` in `ktv_sync.js`.
 pub const KARAOKE_FRAME_ID: &str = "ktv-youtube-player";
-pub const GUIDE_FRAME_ID: &str = "ktv-guide-audio-player";
+pub const GUIDE_FRAME_ID: &str = "ktv-guide-player";
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SyncCommand {

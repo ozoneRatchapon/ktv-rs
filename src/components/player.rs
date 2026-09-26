@@ -79,57 +79,50 @@ pub fn Player(
                 _ => "ORIGINAL KEY (±0)".to_string(),
             };
 
-            // Hidden guide player: stays loaded (muted, paused) so the vocal switch is instant
+            // Guide player stays loaded (muted, paused) so the vocal switch is instant
             let guide_iframe_src = song.guide.as_ref().map(|g| {
                 let guide_id = &g.video_id;
                 format!("https://www.youtube-nocookie.com/embed/{guide_id}?autoplay=0&mute=1&enablejsapi=1&controls=0&rel=0&iv_load_policy=3")
             });
 
+            // YouTube embed policy: nothing may be drawn in front of either player, and a player may only play
+            // while visible (>= 200x200). So the guide sits beside the karaoke video, and opens only while it plays.
             rsx! {
                 div { class: "player-container",
-                    div { class: "video-frame-wrapper",
-                        if let Some(guide_src) = guide_iframe_src {
+                    div { class: "video-stage",
+                        div { class: "video-frame-wrapper",
                             iframe {
-                                key: "guide_{song.id}",
-                                id: GUIDE_FRAME_ID,
-                                class: "ktv-guide-audio-frame",
-                                src: "{guide_src}",
-                                title: "Original singer vocal guide",
-                                aria_hidden: "true",
-                                tabindex: "-1",
-                                allow: "autoplay; encrypted-media",
+                                key: "{active_video_id}_{start_sec}_{playback_speed}",
+                                id: KARAOKE_FRAME_ID,
+                                src: "{iframe_src}",
+                                title: "{song.title}",
+                                allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
+                                allowfullscreen: true,
                             }
                         }
 
-                        iframe {
-                            key: "{active_video_id}_{start_sec}_{playback_speed}",
-                            id: KARAOKE_FRAME_ID,
-                            src: "{iframe_src}",
-                            title: "{song.title}",
-                            allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
-                            allowfullscreen: true,
-                        }
-
-                        // Full-coverage anti-redirect & focus protective shield
-                        div {
-                            class: "video-click-shield-full",
-                            title: "Click to Play/Pause",
-                            onclick: move |_| {
-                                SyncCommand::TogglePlayback.run();
-                                let _ = document::eval("window.focus();");
-                            },
-                        }
-
-                        // Guide Vocal active badge overlay with preserved timestamp cue
-                        if is_guide_vocal() {
-                            div { class: "guide-vocal-indicator-badge",
-                                span { "Original Singer Vocal" }
+                        if let Some(guide_src) = guide_iframe_src {
+                            div {
+                                class: if is_guide_vocal() { "guide-pane open" } else { "guide-pane" },
+                                aria_hidden: if !is_guide_vocal() { "true" },
+                                iframe {
+                                    key: "guide_{song.id}",
+                                    id: GUIDE_FRAME_ID,
+                                    src: "{guide_src}",
+                                    title: "Original singer vocal guide",
+                                    tabindex: if !is_guide_vocal() { "-1" },
+                                    allow: "autoplay; encrypted-media",
+                                }
+                                span { class: "guide-pane-label", "Original Singer Vocal" }
                             }
                         }
+                    }
 
-                        // Intro skip banner badge (when in karaoke mode)
+                    // Bottom Player Bar
+                    div { class: "player-bottom-bar",
+                        // Intro skip banner (karaoke mode only)
                         if !is_guide_vocal() {
-                            div { class: "intro-skip-badge-overlay",
+                            div { class: "player-status-row",
                                 if is_skipped() {
                                     div { class: "intro-banner skipped",
                                         span { "Intro Skipped ({song.intro_skip_secs}s)" }
@@ -151,10 +144,7 @@ pub fn Player(
                                 }
                             }
                         }
-                    }
 
-                    // Bottom Player Bar
-                    div { class: "player-bottom-bar",
                         // KTV Interactive Timeline Scrubber Row
                         div { class: "ktv-scrubber-container",
                             span { class: "time-text current-time", "{format_time(current_playback_sec())}" }

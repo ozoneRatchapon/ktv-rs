@@ -15,9 +15,10 @@
 * Indexed official karaoke catalogs from **GMM Grammy** and **What The Duck**.
 * Includes full verified collections for top artists like **COCKTAIL** (*คุกเข่า*, *เธอ*, *คู่ชีวิต*, *ดึงดัน*, *เธอทำให้ฉันเสียใจ*), **BOWKYLION** (*ที่คั่นหนังสือ*, *วาดไว้*), **Silly Fools** (*วัดใจ*), **Big Ass** (*เล่นของสูง*), etc.
 
-### 2. Full Video Click Shield (Kiosk Safety)
-* A full-coverage transparent shield covers the player frame, preventing users from accidentally clicking external YouTube recommendations, advertisements, or channel links.
-* Preserves top-level browser focus so Type-to-Search works uninterrupted.
+### 2. Unobstructed YouTube Players
+* Nothing is drawn over either YouTube player (YouTube Required Minimum Functionality: no overlays in front of an embedded player); banners and badges live below the video.
+* Pause/play from the YouTube player's own controls is mirrored into the app, so the guide and the timer stay in step.
+* Clicking inside a video moves keyboard focus into it; click anywhere outside the video to resume Type-to-Search.
 
 ### 3. KTV Timeline Scrubber & Quick Jumps
 * Custom HTML5 timeline scrubber slider showing formatted `current_time` and `total_time` (`mm:ss`).
@@ -26,7 +27,7 @@
 
 ### 4. Synchronized Vocal Switcher with Intro Offset Compensation
 * **Karaoke Mode**: Official backing track with lyrics.
-* **Original Vocal Mode**: Instant switch to official artist MV to hear the singer while preserving song progress.
+* **Original Vocal Mode**: Instant switch to the official artist MV, shown beside (or, on narrow screens, below) the karaoke video, to hear the singer while preserving song progress. The MV plays only while visible; it is never used as a hidden audio source.
 * **Offset Compensation**: Uses individual song offsets (`guide_offset_secs`) to align lyrics accurately between Karaoke bumpers and Official MV story intros without restarting from 0.
 
 ### 5. OG KTV "Type-to-Search" (Global Keystroke Capture)
@@ -89,7 +90,7 @@ cargo clippy --fix --allow-dirty --quiet
 ## Privacy & Legal Compliance
 
 * **100% Client-Side WebAssembly**: No media or copyrighted files are stored on our servers.
-* **YouTube Embed API Compliance**: Uses standard YouTube embedded players in accordance with YouTube Developer Policy Section 3.2. All ad views, watch time, and royalties go directly to the respective record labels and artists.
+* **YouTube Embed Compliance**: Standard YouTube embedded players only, following the [YouTube API Developer Policies](https://developers.google.com/youtube/terms/developer-policies) and [Required Minimum Functionality](https://developers.google.com/youtube/terms/required-minimum-functionality): no overlays, no hidden or background playback, no audio separation, no downloading; players stay at least 200x200. All ad views, watch time, and royalties go directly to the respective record labels and artists.
 * **Zero Tracking**: No tracking cookies, analytics pixels, or personal data collection (GDPR & PDPA compliant).
 
 ---

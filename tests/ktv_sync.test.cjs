@@ -319,3 +319,52 @@ test('restart seeks both players to the start and resumes a paused song', () => 
     assert.equal(env.commands(FRAME.KARAOKE, 'playVideo').length, 0);
     assert.deepEqual(env.commands(FRAME.KARAOKE, 'seekTo')[0].msg.args, [0, true]);
 });
+
+test('pause and play from the karaoke player itself are mirrored: guide follows, no command echoed back', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.load_song(0, 1);
+    sync.set_start(10);
+    sync.switch_vocal(true);
+    report(sync, 20, 20);
+    env.clear();
+
+    sync.on_message(false, { event: 'onStateChange', info: YT_STATE.PAUSED });
+    assert.deepEqual(env.sent, ['PAUSE_STATE:1']);
+    assert.equal(env.commands(FRAME.KARAOKE, 'pauseVideo').length, 0);
+    assert.equal(env.commands(FRAME.GUIDE, 'pauseVideo').length, 1);
+    const frozen = sync.debug().karaoke_time;
+    env.advance(5000);
+    assert.equal(sync.debug().karaoke_time, frozen);
+
+    env.clear();
+    sync.on_message(false, { event: 'infoDelivery', info: { playerState: YT_STATE.PLAYING } });
+    assert.deepEqual(env.sent, ['PAUSE_STATE:0']);
+    assert.equal(env.commands(FRAME.KARAOKE, 'playVideo').length, 0);
+    assert.equal(env.commands(FRAME.GUIDE, 'playVideo').length, 1);
+});
+
+test('karaoke state reports right after our own play/pause command are not mirrored', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.load_song(0, 1);
+    sync.set_start(0);
+    sync.set_paused(false);
+    // A stale PAUSED report still in flight when our playVideo lands must not re-pause the song
+    sync.on_message(false, { event: 'onStateChange', info: YT_STATE.PAUSED });
+    assert.equal(sync.debug().paused, false);
+    env.advance(1500);
+    sync.on_message(false, { event: 'onStateChange', info: YT_STATE.PAUSED });
+    assert.equal(sync.debug().paused, true);
+});
+
+test('buffering and cued karaoke states never change the pause state', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.load_song(0, 1);
+    for (const state of [YT_STATE.UNSTARTED, YT_STATE.BUFFERING, YT_STATE.CUED]) {
+        sync.on_message(false, { event: 'onStateChange', info: state });
+    }
+    assert.equal(sync.debug().paused, false);
+    assert.deepEqual(env.sent, []);
+});
