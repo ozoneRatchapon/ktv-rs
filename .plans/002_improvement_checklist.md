@@ -36,8 +36,8 @@ The score today is tuning precision (held notes vs the semitone grid); there is 
 - [ ] 11. Grow the catalog beyond 43 songs **(checked)**. `gated:` which songs is an owner/curation call (official uploads only; duration + intro read from the player). Tooling ready: `docs/ADDING_SONGS.md`, Song request form, `tools/title_aliases.py`, `tools/link_check.py`, `catalog_test`.
 
 ## Wave 5 — performance
-- [ ] 20. wasm 968 KB, was 846 KB **(checked)** → find the growth, try `wasm-opt -Oz`.
-- [ ] 21. Dead CSS in `main.css` (2,226 lines **(checked)**).
+- [x] 20. wasm 968 KB, was 846 KB **(checked)** → find the growth, try `wasm-opt -Oz`. Done: `lto = true` + `codegen-units = 1` → wasm 1,031 → 882 KB (gzip 403 → 340 KB) at unchanged pitch speed; opt-level "s"/"z" gave no further size after dx's wasm-opt and were 2.2× slower (`bench/002_release_profile.md`). Growth since 846 KB came from features, not one dependency.
+- [x] 21. Dead CSS in `main.css` (2,226 lines **(checked)**). Done: scripted check of all 241 class selectors against src/assets/index.html → only 6 unused icon rules, removed; search box lost the left padding kept for its long-gone icon.
 - [ ] 22. Lighthouse / Core Web Vitals on prod.
 - [ ] 19. Preload the next song's video for faster song changes.
 

@@ -49,6 +49,10 @@ mobile = ["dioxus/mobile"]
 # std ships with DWARF; binaryen's wasm-opt aborts on it (DWARFEmitter UNREACHABLE) and dx then
 # silently ships the unoptimised wasm. Stripping it lets wasm-opt run.
 strip = "debuginfo"
+# Whole-program optimisation: -14% wasm (-16% gzip) at the same speed. opt-level "s"/"z" gave no further
+# size win after dx's wasm-opt and made pitch detection 2.2x slower (bench/002_release_profile.md).
+lto = true
+codegen-units = 1
 
 [[bench]]
 name = "pitch_detector"
