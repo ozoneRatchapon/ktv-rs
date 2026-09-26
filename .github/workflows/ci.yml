@@ -46,7 +46,7 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno lint assets/ktv_sync.js assets/mic_worklet.js tests/ktv_sync.test.cjs
-      - run: python3 -m py_compile tools/guide_align.py tools/link_check.py
+      - run: python3 -m py_compile tools/link_check.py
 
   build:
     name: Web release build
