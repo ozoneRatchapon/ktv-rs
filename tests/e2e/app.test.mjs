@@ -239,3 +239,22 @@ test('favourites and recently sung shelves', () => with_page({}, async (page) =>
   await page.eval(`${chip('★ Favourites')}.click()`);
   await page.wait_for(`JSON.stringify(${titles}) === ${JSON.stringify(JSON.stringify([starred]))}`);
 }));
+
+test('keyboard: a keyboard-focused button takes Space; after a mouse click Space stays the pause key', () => with_page({}, async (page) => {
+  const card = (code) => `[...document.querySelectorAll('.song-card')].find((c) => c.querySelector('.song-code-tag').textContent === '#${code}')`;
+  // Keyboard user: focus lands on Play without a pointer press, Space plays that song
+  const title = await page.eval(`(() => { const c = ${card('10005')}; c.querySelector('.play-now').focus(); return c.querySelector('.song-title').textContent; })()`);
+  await page.key(' ');
+  await page.wait_for(`${now_title} === ${JSON.stringify(title)}`);
+  await page.wait_for(`document.querySelector('.sr-only[role=status]').textContent.startsWith('Now singing: ' + ${JSON.stringify(title)})`);
+  // Mouse user: a real click on ☆, then Space must not click it again (it would un-star the song)
+  const rect = await page.eval(`JSON.stringify(${card('10001')}.querySelector('.fav-btn').getBoundingClientRect())`);
+  const { x, y, width, height } = JSON.parse(rect);
+  for (const type of ['mousePressed', 'mouseReleased']) {
+    await page.send('Input.dispatchMouseEvent', { type, x: x + width / 2, y: y + height / 2, button: 'left', clickCount: 1 });
+  }
+  await page.wait_for(`${card('10001')}.querySelector('.fav-btn').classList.contains('on')`);
+  await page.key(' ');
+  await sleep(300);
+  assert.ok(await page.eval(`${card('10001')}.querySelector('.fav-btn').classList.contains('on')`), 'still starred');
+}));

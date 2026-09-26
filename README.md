@@ -66,6 +66,8 @@
 | **`ArrowRight`** | Jump forward 5 seconds |
 | **`?`** | Show / hide the shortcut list (also the **?** button in the header; open on a first visit) |
 
+A button reached with `Tab` keeps `Space`/`Enter`; after a mouse click `Space` is always pause.
+
 ---
 
 ## Getting Started
