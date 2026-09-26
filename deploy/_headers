@@ -2,7 +2,7 @@
 # 'unsafe-eval': Dioxus `document::eval` (used by src/sync.rs) compiles JS with `new Function`.
 # blob: in script-src: the mic AudioWorklet is loaded from a Blob URL (src/mic/web.rs).
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://i.ytimg.com; frame-src https://www.youtube-nocookie.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://i.ytimg.com; frame-src https://www.youtube-nocookie.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
   Permissions-Policy: microphone=(self), camera=(), geolocation=(), payment=(), usb=()
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
@@ -11,3 +11,7 @@
 # dx content-hashes every file under /assets/, so a name never changes meaning
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Self-hosted fonts (public/fonts) are not hashed: cache long, but revalidate after a week
+/fonts/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
