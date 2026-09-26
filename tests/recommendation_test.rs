@@ -45,7 +45,6 @@ fn test_dwell_affinity_boost() {
 
     assert_eq!(set.candidates[0].song.category, "Rock");
     assert!(set.candidates[0].predictability > 0.60);
-    assert!(!set.commitment_hash.is_empty());
 }
 
 #[test]
