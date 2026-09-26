@@ -4,6 +4,7 @@ pub mod catalog;
 pub mod components;
 pub mod js_bridge;
 pub mod keys;
+pub mod library;
 pub mod mic;
 pub mod picks;
 pub mod pitch;

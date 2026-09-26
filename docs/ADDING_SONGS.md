@@ -1,9 +1,18 @@
 # Adding songs to the built-in songbook
 
-Songs live in [`assets/catalog.json`](../assets/catalog.json), compiled into the app. Requests come in through the **Song request** issue form; guide timings through the **Guide timing** form (the app's **Share on GitHub** button fills it in).
+Two files:
+- [`assets/library.json`](../assets/library.json): the **full library**, every official karaoke upload of each label's
+  channel, generated. Refresh it (new uploads, removed videos) with `python3 tools/harvest_library.py`: it reads channel
+  metadata with `yt-dlp --flat-playlist` (nothing downloaded), parses titles, skips longplays/medleys/"with vocals"
+  uploads, checks every video is embeddable, and keeps each video's keypad code. Add a label by adding a channel
+  (URL, code range, intro skip, title parser) to `CHANNELS` in the tool. Then `cargo test --test library_test`.
+- [`assets/catalog.json`](../assets/catalog.json): the **curated catalog**, hand-picked songs with a genre, measured
+  intro and optionally a guide timing, compiled into the app. A video in the catalog is left out of the library.
+
+The rest of this page is about the curated catalog. Requests come in through the **Song request** issue form; guide timings through the **Guide timing** form (the app's **Share on GitHub** button fills it in).
 
 ## Rules
-- **Official uploads only**: the label's own karaoke channel (today: GMM Karaoke, Whattheduck). No fan re-uploads.
+- **Official uploads only**: the label's own karaoke channel (today: GMM Karaoke, Whattheduck, Muzik Move Karaoke). No fan re-uploads.
 - **Nothing downloaded**: durations, intros and guide timings are read or judged from the embedded players (YouTube's terms forbid downloading or separating audio).
 
 ## Entry

@@ -1,12 +1,18 @@
 use dioxus::prelude::*;
 use crate::catalog::CATEGORIES;
+use crate::library::Library;
 use crate::picks::{Picks, Shelf};
 use crate::search;
 use crate::types::Song;
 
+/// Song cards rendered at first, and added per "Show more".
+const PAGE_SIZE: usize = 60;
+
 #[component]
 pub fn CatalogView(
     catalog: Vec<Song>,
+    /// The full library (empty until it has loaded).
+    library: Library,
     mut search_query: Signal<String>,
     on_play_song: EventHandler<Song>,
     on_queue_song: EventHandler<Song>,
@@ -20,8 +26,17 @@ pub fn CatalogView(
         .chain(CATEGORIES.into_iter().map(Shelf::Category))
         .collect();
 
-    let hits = search::search(&picks.shelf(&catalog, &shelf()), &search_query());
-    let filtered_songs = hits.songs;
+    // Cards rendered: the library has thousands of songs, so the list grows on demand
+    let mut limit = use_signal(|| PAGE_SIZE);
+    use_effect(move || {
+        let _ = (search_query.read(), shelf.read());
+        limit.set(PAGE_SIZE);
+    });
+
+    let on_shelf = picks.shelf(&catalog, library, &shelf());
+    let hits = search::search(on_shelf.iter().copied(), library, &search_query());
+    let total = hits.songs.len();
+    let shown = total.min(limit());
 
     rsx! {
         div { class: "catalog-container",
@@ -67,12 +82,12 @@ pub fn CatalogView(
             // Song list count
             div { class: "catalog-meta-row",
                 span { class: "count-text",
-                    match filtered_songs.len() {
+                    match total {
                         1 => "1 Song".to_string(),
                         n => format!("{n} Songs"),
                     }
                 }
-                if filtered_songs.is_empty() && search_query().is_empty() {
+                if total == 0 && search_query().is_empty() {
                     match shelf() {
                         Shelf::Favourites => rsx! { span { class: "shelf-hint", "Tap ☆ on a song to keep it here." } },
                         Shelf::Recent => rsx! { span { class: "shelf-hint", "Songs you sing for 30 seconds or more show up here." } },
@@ -89,7 +104,7 @@ pub fn CatalogView(
 
             // Song list grid
             div { class: "songs-grid",
-                for song in filtered_songs {
+                for song in hits.songs.iter().copied().take(shown) {
                     div { key: "{song.id}", class: "song-card",
                         div { class: "card-left",
                             div { class: "song-code-tag", "#{song.code}" }
@@ -97,7 +112,9 @@ pub fn CatalogView(
                                 h3 { class: "song-title", lang: "th", "{song.title}" }
                                 p { class: "song-artist", lang: "th", "{song.artist} • {song.channel}" }
                                 div { class: "song-badges",
-                                    span { class: "genre-badge", "{song.category}" }
+                                    if !song.category.is_empty() {
+                                        span { class: "genre-badge", "{song.category}" }
+                                    }
                                     if song.intro_skip_secs > 0 {
                                         span { class: "intro-badge", "Intro: {song.intro_skip_secs}s" }
                                     }
@@ -145,6 +162,16 @@ pub fn CatalogView(
                                 span { "Queue" }
                             }
                         }
+                    }
+                }
+            }
+            if shown < total {
+                div { class: "catalog-more-row",
+                    span { class: "count-text", "Showing {shown} of {total}. Type to narrow it down, or" }
+                    button {
+                        class: "chip",
+                        onclick: move |_| limit += PAGE_SIZE,
+                        "Show {PAGE_SIZE.min(total - shown)} more"
                     }
                 }
             }

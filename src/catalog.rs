@@ -1,5 +1,6 @@
 use std::sync::LazyLock;
 
+use crate::library::Library;
 use crate::types::Song;
 
 /// Song data lives in `assets/catalog.json` (edited by hand; guide timings come from the in-app
@@ -17,6 +18,11 @@ pub fn builtin_catalog() -> &'static [Song] {
 
 pub fn get_initial_catalog() -> Vec<Song> {
     CATALOG.to_vec()
+}
+
+/// First song in the booth's catalog (curated + Add URL), then the full library, that `matches`.
+pub fn find_song(catalog: &[Song], library: Library, matches: impl Fn(&Song) -> bool) -> Option<&Song> {
+    catalog.iter().chain(library.songs()).find(|s| matches(s))
 }
 
 /// Genre names used by `category` in `assets/catalog.json`.

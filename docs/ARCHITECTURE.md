@@ -77,3 +77,22 @@ $$\text{bottleneck\_penalty} = \begin{cases} -\infty & \text{if dwell} \le 20s \
   `'unsafe-eval'`. The core reports back `TIME:<sec>`, `PAUSE_STATE:0|1`, `GUIDE_ERROR:<code>` and `ended`
   (`SyncEvent::parse`). On `ended`, `on_video_ended` pops the next song from the queue or falls back to the top Auto-DJ
   recommendation.
+
+---
+
+## 4. Songbook: curated catalog + full library
+
+* **Curated catalog** (`assets/catalog.json`, `src/catalog.rs`): ~40 hand-checked songs with genres and guide
+  timings, compiled into the wasm (`include_str!`), so the booth works on first paint.
+* **Full library** (`assets/library.json`, `src/library/`): every official karaoke upload of each label
+  (GMM Karaoke, Whattheduck, Muzik Move Karaoke; ~8,200 songs), written by `tools/harvest_library.py` from
+  channel metadata (no media downloaded; every video oEmbed-checked as embeddable). It is ~900 KB raw / ~300 KB
+  gzip, so it is a content-hashed asset (`asset!`, cached `immutable`) fetched after the first paint
+  (`browser::fetch_text`) and set once (`library::install`, a `OnceLock`). Until it lands, only the curated songs list.
+* **`Library`** is a `Copy` handle compared by identity, so props holding it never diff 8,000 songs. Its `Songbook`
+  keeps a normalised search key per song (`search::search_key`), looked up in O(1) from the entry's address:
+  search over the whole songbook takes ~0.2 ms per keystroke instead of ~20 ms (release build, M-series host).
+* **Rendering**: `CatalogView` renders 60 cards and adds 60 per **Show more**; the count shows the full total.
+* **Ids and codes**: library ids are `yt_<video id>`; codes are 5 digits in per-channel ranges (GMM 30001+,
+  Whattheduck 50001+, Muzik Move 55001+), kept stable across re-harvests. `catalog::find_song` looks up the booth's
+  catalog first, then the library (keypad, Remote). Queued library songs are saved in the session as full songs.

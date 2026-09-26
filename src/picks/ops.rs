@@ -1,4 +1,5 @@
 use super::types::{Picks, Shelf};
+use crate::library::Library;
 use crate::types::Song;
 
 /// Recently sung songs kept (older ones drop off).
@@ -30,14 +31,15 @@ impl Picks {
         self.recent.truncate(MAX_RECENT);
     }
 
-    /// Songs on a shelf: catalog order, except Recent which is newest first. Unknown ids are skipped.
-    pub fn shelf(&self, catalog: &[Song], shelf: &Shelf) -> Vec<Song> {
-        let by_id = |id: &String| catalog.iter().find(|s| &s.id == id).cloned();
+    /// Songs on a shelf: catalog then library order, except Recent which is newest first.
+    /// Unknown ids (e.g. a library song before the library has loaded) are skipped.
+    pub fn shelf<'a>(&self, catalog: &'a [Song], library: Library, shelf: &Shelf) -> Vec<&'a Song> {
+        let songs = catalog.iter().chain(library.songs());
         match shelf {
-            Shelf::All => catalog.to_vec(),
-            Shelf::Category(name) => catalog.iter().filter(|s| s.category == *name).cloned().collect(),
-            Shelf::Favourites => catalog.iter().filter(|s| self.is_favourite(&s.id)).cloned().collect(),
-            Shelf::Recent => self.recent.iter().filter_map(by_id).collect(),
+            Shelf::All => songs.collect(),
+            Shelf::Category(name) => songs.filter(|s| s.category == *name).collect(),
+            Shelf::Favourites => songs.filter(|s| self.is_favourite(&s.id)).collect(),
+            Shelf::Recent => self.recent.iter().filter_map(|id| songs.clone().find(|s| &s.id == id)).collect(),
         }
     }
 }
