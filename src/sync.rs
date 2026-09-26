@@ -1,7 +1,9 @@
-//! Typed bridge to the JS player-sync core (`assets/ktv_sync.js`).
-//! Rust sends [`SyncCommand`]s; the core reports back [`SyncEvent`]s over the `dioxus.send` channel.
+//! Typed bridge to the JS player-sync core (`assets/ktv_sync.js`, a classic script in the static `<head>`).
+//! Rust sends [`SyncCommand`]s; the core reports back [`SyncEvent`]s. No `eval` (see [`crate::js_bridge`]).
 
-use dioxus::prelude::*;
+use futures_channel::mpsc::UnboundedReceiver;
+
+use crate::js_bridge::{self, JsArg};
 
 pub const SYNC_JS: &str = include_str!("../assets/ktv_sync.js");
 
@@ -27,24 +29,33 @@ pub enum SyncCommand {
     SetMonitor(bool),
 }
 
+/// The installed core (`window.KtvSync`) and its loader (`window.KtvSyncCore`).
+const CORE: &str = "KtvSync";
+const LOADER: &str = "KtvSyncCore";
+
 impl SyncCommand {
-    pub fn to_js(self) -> String {
-        let call = match self {
-            Self::LoadSong { offset_secs, rate } => format!("load_song({offset_secs}, {rate})"),
-            Self::SetStart(sec) => format!("set_start({sec})"),
-            Self::TogglePlayback => "toggle_playback()".to_string(),
-            Self::SeekTo(sec) => format!("seek_all({sec})"),
-            Self::SeekBy(delta) => format!("seek_by({delta})"),
-            Self::Restart(sec) => format!("restart({sec})"),
-            Self::SwitchVocal { original } => format!("switch_vocal({original})"),
-            Self::SetMapping { offset_secs, rate } => format!("set_mapping({offset_secs}, {rate})"),
-            Self::SetMonitor(both) => format!("set_monitor({both})"),
-        };
-        format!("if (window.KtvSync) {{ window.KtvSync.{call}; }}")
+    /// Core method and arguments this command calls.
+    pub fn call(self) -> (&'static str, Vec<JsArg>) {
+        let num = |n: f64| JsArg::Num(n);
+        // Shortest decimal of the f32 (what the timing panel shows), not its widened binary value: -18.24, not -18.2399997
+        let exact = |x: f32| JsArg::Num(x.to_string().parse().unwrap_or(f64::from(x)));
+        match self {
+            Self::LoadSong { offset_secs, rate } => ("load_song", vec![exact(offset_secs), exact(rate)]),
+            Self::SetStart(sec) => ("set_start", vec![num(sec as f64)]),
+            Self::TogglePlayback => ("toggle_playback", vec![]),
+            Self::SeekTo(sec) => ("seek_all", vec![num(sec as f64)]),
+            Self::SeekBy(delta) => ("seek_by", vec![num(delta as f64)]),
+            Self::Restart(sec) => ("restart", vec![num(sec as f64)]),
+            Self::SwitchVocal { original } => ("switch_vocal", vec![JsArg::Bool(original)]),
+            Self::SetMapping { offset_secs, rate } => ("set_mapping", vec![exact(offset_secs), exact(rate)]),
+            Self::SetMonitor(both) => ("set_monitor", vec![JsArg::Bool(both)]),
+        }
     }
 
+    /// No-op until the core is installed.
     pub fn run(self) {
-        let _ = document::eval(&self.to_js());
+        let (method, args) = self.call();
+        let _ = js_bridge::call(CORE, method, &args);
     }
 }
 
@@ -78,18 +89,12 @@ impl SyncEvent {
 
 /// Karaoke playback position with sub-second precision (`Time` events are whole seconds).
 /// `None` before the sync core is installed.
-pub async fn karaoke_time() -> Option<f64> {
-    document::eval("return window.KtvSync ? window.KtvSync.debug().karaoke_time : null;")
-        .join::<Option<f64>>()
-        .await
-        .ok()
-        .flatten()
+pub fn karaoke_time() -> Option<f64> {
+    js_bridge::call(CORE, "debug", &[])?.f64("karaoke_time")
 }
 
-/// Load the sync core (once per page) and bind its event channel to the returned eval.
+/// Wire the sync core (once per page; a remount only rebinds the channel) and return its event messages.
 /// Call during render, before any effect issues a [`SyncCommand`].
-pub fn install() -> document::Eval {
-    document::eval(&format!(
-        "{SYNC_JS}\nwindow.KtvSyncCore.install(window, (msg) => dioxus.send(msg));"
-    ))
+pub fn install() -> UnboundedReceiver<String> {
+    js_bridge::install(LOADER)
 }

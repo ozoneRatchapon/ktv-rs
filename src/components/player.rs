@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use futures_util::StreamExt;
 use crate::sync::{self, SyncCommand, SyncEvent, GUIDE_FRAME_ID, KARAOKE_FRAME_ID};
 use crate::components::guide_timing::GuideTiming;
 use crate::components::pitch_meter::PitchMeter;
@@ -35,9 +36,9 @@ pub fn Player(
 
     // Sync core must exist before the effects below issue commands, so install during the first render
     use_hook(move || {
-        let mut eval = sync::install();
+        let mut events = sync::install();
         spawn(async move {
-            while let Ok(msg) = eval.recv::<String>().await {
+            while let Some(msg) = events.next().await {
                 match SyncEvent::parse(&msg) {
                     Some(SyncEvent::Ended) => on_video_ended.call(()),
                     Some(SyncEvent::Time(sec)) => current_playback_sec.set(sec),
@@ -295,16 +296,7 @@ pub fn Player(
                                 button {
                                     class: "ctrl-btn action-btn",
                                     title: "Toggle Fullscreen Cinema Mode",
-                                    onclick: move |_| {
-                                        let _ = document::eval(r#"
-                                            let elem = document.querySelector('.stage-player-side');
-                                            if (!document.fullscreenElement) {
-                                                if (elem && elem.requestFullscreen) elem.requestFullscreen();
-                                            } else {
-                                                if (document.exitFullscreen) document.exitFullscreen();
-                                            }
-                                        "#);
-                                    },
+                                    onclick: move |_| crate::browser::toggle_fullscreen(".stage-player-side"),
                                     span { "Fullscreen" }
                                 }
 

@@ -17,26 +17,32 @@ fn test_parse_rejects_malformed_events() {
 }
 
 #[test]
-fn test_commands_call_guarded_core_methods() {
+fn test_commands_call_core_methods_with_typed_args() {
+    use app::js_bridge::JsArg::{Bool, Num};
     let cases = [
-        (SyncCommand::LoadSong { offset_secs: -12.5, rate: 1.0 }, "load_song(-12.5, 1)"),
-        (SyncCommand::SetStart(18), "set_start(18)"),
-        (SyncCommand::TogglePlayback, "toggle_playback()"),
-        (SyncCommand::SeekTo(95), "seek_all(95)"),
-        (SyncCommand::SeekBy(-5), "seek_by(-5)"),
-        (SyncCommand::Restart(18), "restart(18)"),
-        (SyncCommand::SwitchVocal { original: true }, "switch_vocal(true)"),
-        (SyncCommand::SetMapping { offset_secs: -18.24, rate: 1.0012 }, "set_mapping(-18.24, 1.0012)"),
-        (SyncCommand::SetMonitor(true), "set_monitor(true)"),
+        (SyncCommand::LoadSong { offset_secs: -12.5, rate: 1.0 }, "load_song", vec![Num(-12.5), Num(1.0)]),
+        (SyncCommand::SetStart(18), "set_start", vec![Num(18.0)]),
+        (SyncCommand::TogglePlayback, "toggle_playback", vec![]),
+        (SyncCommand::SeekTo(95), "seek_all", vec![Num(95.0)]),
+        (SyncCommand::SeekBy(-5), "seek_by", vec![Num(-5.0)]),
+        (SyncCommand::Restart(18), "restart", vec![Num(18.0)]),
+        (SyncCommand::SwitchVocal { original: true }, "switch_vocal", vec![Bool(true)]),
+        (SyncCommand::SetMapping { offset_secs: -18.24, rate: 1.0012 }, "set_mapping", vec![Num(-18.24), Num(1.0012)]),
+        (SyncCommand::SetMonitor(true), "set_monitor", vec![Bool(true)]),
     ];
-    for (cmd, call) in cases {
-        assert_eq!(cmd.to_js(), format!("if (window.KtvSync) {{ window.KtvSync.{call}; }}"));
-        let method = call.split('(').next().unwrap_or_default();
-        assert!(
-            SYNC_JS.contains(&format!("function {method}(")),
-            "ktv_sync.js must define {method} for {cmd:?}"
-        );
+    for (cmd, method, args) in cases {
+        assert_eq!(cmd.call(), (method, args), "{cmd:?}");
+        assert!(SYNC_JS.contains(&format!("function {method}(")), "ktv_sync.js must define {method} for {cmd:?}");
     }
+}
+
+#[test]
+fn test_core_is_reachable_without_eval() {
+    // Rust calls window.KtvSyncCore.install(window, send) and window.KtvSync.<method>(...) through Reflect
+    assert!(SYNC_JS.contains("root.KtvSyncCore = api"));
+    assert!(SYNC_JS.contains("win.KtvSync = sync"));
+    assert!(SYNC_JS.contains("function install(win, send)"));
+    assert!(SYNC_JS.contains("karaoke_time"), "debug() exposes karaoke_time for sync::karaoke_time");
 }
 
 #[test]

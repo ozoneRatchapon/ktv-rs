@@ -60,15 +60,13 @@ pub fn GuideTiming(
 
     let mark = move |_| {
         let Some(guide) = draft() else { return };
-        spawn(async move {
-            match sync::karaoke_time().await {
-                Some(secs) => {
-                    marks.write().push(timing::mark_at(&guide, secs));
-                    notice.set(None);
-                }
-                None => notice.set(Some("Player is not ready yet".to_string())),
+        match sync::karaoke_time() {
+            Some(secs) => {
+                marks.write().push(timing::mark_at(&guide, secs));
+                notice.set(None);
             }
-        });
+            None => notice.set(Some("Player is not ready yet".to_string())),
+        }
     };
 
     let fit_speed = move |_| {
@@ -86,8 +84,7 @@ pub fn GuideTiming(
 
     let copy_json = move |_| {
         let Some(guide) = draft() else { return };
-        let text = serde_json::to_string(&timing::catalog_snippet(&guide)).unwrap_or_default();
-        let _ = document::eval(&format!("navigator.clipboard && navigator.clipboard.writeText({text});"));
+        crate::browser::copy_text(&timing::catalog_snippet(&guide));
         notice.set(Some("Copied: paste it into this song's entry in assets/catalog.json".to_string()));
     };
 

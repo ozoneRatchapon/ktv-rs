@@ -1,5 +1,6 @@
 // KTV booth keyboard: type-to-search, Space pause, arrows seek, ? help.
-// Loaded by `src/keys.rs` (include_str + eval); unit-tested in Node by `tests/ktv_keys.test.cjs`.
+// Classic script in the static <head> (asset! in src/main.rs); Rust calls `KtvKeysCore.install` via src/js_bridge.rs.
+// Unit-tested in Node by `tests/ktv_keys.test.cjs`.
 // Messages to Rust are parsed by `KeyAction::parse` in `src/keys.rs`: keep the two in step.
 (function (root) {
     'use strict';

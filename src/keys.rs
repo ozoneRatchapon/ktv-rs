@@ -1,6 +1,9 @@
-//! Booth keyboard bridge: `assets/ktv_keys.js` turns keydowns into messages, [`KeyAction::parse`] types them.
+//! Booth keyboard bridge: `assets/ktv_keys.js` (a classic script in the static `<head>`) turns keydowns into
+//! messages, [`KeyAction::parse`] types them.
 
-use dioxus::prelude::*;
+use futures_channel::mpsc::UnboundedReceiver;
+
+use crate::js_bridge;
 
 pub const KEYS_JS: &str = include_str!("../assets/ktv_keys.js");
 
@@ -43,7 +46,7 @@ impl KeyAction {
     }
 }
 
-/// Load the key listener (once per page) and bind its messages to the returned eval.
-pub fn install() -> document::Eval {
-    document::eval(&format!("{KEYS_JS}\nwindow.KtvKeysCore.install(window, (msg) => dioxus.send(msg));"))
+/// Wire the key listener (once per page; a remount only rebinds the channel) and return its messages.
+pub fn install() -> UnboundedReceiver<String> {
+    js_bridge::install("KtvKeysCore")
 }

@@ -44,7 +44,7 @@ The web app is an **assets-only Worker**: no Worker script, just the static Diox
 ```
 
 Notes:
-* CSP needs `'unsafe-eval'` (Dioxus `document::eval` uses `new Function`) and `blob:` in `script-src` (mic AudioWorklet from a Blob URL).
+* CSP `script-src 'self' 'wasm-unsafe-eval' blob:`: no `'unsafe-eval'` (the app never uses `document::eval`; see `src/js_bridge.rs`), `blob:` for the mic AudioWorklet (Blob URL). A new `document::eval` would break under this CSP, and the e2e suite (which fails on CSP violations) would catch it.
 * Local preview of the exact prod bundle + headers: `npx wrangler@4.141.0 dev` after `tools/build_web.sh`.
 * "Pushed to main" is not "deployed": check `npx wrangler@4.141.0 deployments list`.
 * The room server below is **not built yet**. Durable Object bindings are currently blocked by the Cloudflare versions-API `10013` / PUT `10021` issue, so the phone remote should start with WebRTC or KV polling.

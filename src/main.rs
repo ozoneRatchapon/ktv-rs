@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use futures_util::StreamExt;
 use std::collections::HashSet;
 use std::rc::Rc;
 
@@ -31,6 +32,9 @@ use types::{AppSettings, GuideTrack, KtvTab, QueueItem, Song};
 
 // In the static <head> at build time: the stylesheet loads alongside the wasm instead of after it has run
 const _: Asset = asset!("/assets/main.css", AssetOptions::css().with_static_head(true));
+// Classic scripts in the static <head>: they run before the wasm, so Rust calls them directly (no eval, see js_bridge)
+const _: Asset = asset!("/assets/ktv_sync.js", AssetOptions::js().with_static_head(true));
+const _: Asset = asset!("/assets/ktv_keys.js", AssetOptions::js().with_static_head(true));
 
 fn main() {
     dioxus::launch(App);
@@ -118,9 +122,9 @@ fn App() -> Element {
 
     // Booth keyboard: type-to-search, Space pause, arrows seek, ? help (assets/ktv_keys.js)
     use_effect(move || {
-        let mut eval = keys::install();
+        let mut messages = keys::install();
         spawn(async move {
-            while let Ok(msg) = eval.recv::<String>().await {
+            while let Some(msg) = messages.next().await {
                 let Some(action) = KeyAction::parse(&msg) else { continue };
                 match action {
                     KeyAction::Type(c) => {
