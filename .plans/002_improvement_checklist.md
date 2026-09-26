@@ -2,6 +2,9 @@
 
 Worked top to bottom. Each finished item: tests + clippy clean, browser-verified, pushed to `develop`, CI green, then released (owner's standing approval: deploy whenever an update is ready). Record details in `.plans/001_roadmap.md`; tick here with the commit/version.
 
+**Status 2026-09-27 (v0.14.0 live):** every ungated item is done. Left, all gated on the owner or a device: domain (1), real-device mic + ad checks (3, 4), melody-data source (7, which also unblocks 5, 8, 10), which songs to add (11), phone remote (33), CI deploy token (34/34b), LICENSE (L1).
+Note for 33: every `wrangler deploy` this session (14 releases, versions API with `--tag`) succeeded, so the Cloudflare `10013` versions-API bug may be fixed; the remote still adds a server component (a Worker script + Durable Object relay), so it needs an owner go and a privacy-note update.
+
 Legend: **(checked)** = confirmed in code on 2026-09-27; `gated:` = waits on owner/device/external.
 
 ## Release now
