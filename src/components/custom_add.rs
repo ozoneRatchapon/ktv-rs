@@ -64,13 +64,13 @@ pub fn CustomAdd(
                     Err(CustomCodesExhausted) => {
                         let (first, last) = (CUSTOM_CODES.start(), CUSTOM_CODES.end());
                         feedback.set(Some(Feedback::Error(format!(
-                            "เพิ่มเพลงไม่ได้: รหัสเพลงสำหรับเพลงที่เพิ่มเอง ({first}-{last}) ถูกใช้หมดแล้ว"
+                            "Could not add the song: all custom song codes ({first}-{last}) are in use"
                         ))));
                     }
                 }
             }
             None => {
-                feedback.set(Some(Feedback::Error("กรุณากรอก YouTube URL หรือ Video ID ให้ถูกต้อง".to_string())));
+                feedback.set(Some(Feedback::Error("Enter a valid YouTube URL or 11-character video ID".to_string())));
             }
         }
     };
@@ -87,7 +87,7 @@ pub fn CustomAdd(
 
                 match feedback() {
                     Some(Feedback::Added { code }) => rsx! {
-                        div { class: "form-feedback", role: "status", "เพิ่มเพลงสำเร็จ! รหัสเพลง {code}" }
+                        div { class: "form-feedback", role: "status", "Song added! Keypad code {code}" }
                     },
                     Some(Feedback::Error(msg)) => rsx! {
                         div { class: "form-feedback error", role: "alert", "{msg}" }

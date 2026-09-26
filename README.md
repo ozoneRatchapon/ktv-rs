@@ -58,6 +58,7 @@
 | **`Space`** | Toggle Play / Pause |
 | **`ArrowLeft`** | Jump backward 5 seconds |
 | **`ArrowRight`** | Jump forward 5 seconds |
+| **`?`** | Show / hide the shortcut list (also the **?** button in the header; open on a first visit) |
 
 ---
 

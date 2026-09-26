@@ -62,6 +62,9 @@ pub struct AppSettings {
     /// Curator tools: line up original-vocal MVs by ear (added later, so older saved settings lack it).
     #[serde(default)]
     pub show_timing_tools: bool,
+    /// The shortcut help was closed once; until then it opens on every visit.
+    #[serde(default)]
+    pub seen_shortcuts: bool,
 }
 
 impl Default for AppSettings {
@@ -73,6 +76,7 @@ impl Default for AppSettings {
             room_name: "VIP ROOM 07".to_string(),
             sound_fx_enabled: true,
             show_timing_tools: false,
+            seen_shortcuts: false,
         }
     }
 }

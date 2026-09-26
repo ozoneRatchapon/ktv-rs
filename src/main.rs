@@ -19,6 +19,7 @@ use components::{
     queue_view::QueueView,
     remote::Remote,
     settings::Settings,
+    shortcuts::ShortcutHelp,
 };
 use recommendation::{SleepTimeAnticipator, SongTelemetry};
 use types::{AppSettings, GuideTrack, KtvTab, QueueItem, Song};
@@ -53,7 +54,9 @@ fn demo_session() -> Session {
 
 #[component]
 fn App() -> Element {
-    let settings = use_signal(|| storage::load::<AppSettings>(SETTINGS_KEY).unwrap_or_default());
+    let mut settings = use_signal(|| storage::load::<AppSettings>(SETTINGS_KEY).unwrap_or_default());
+    // Open on every visit until closed once
+    let mut show_help = use_signal(move || !settings.peek().seen_shortcuts);
     let mut active_tab = use_signal(|| KtvTab::Catalog);
 
     // Guide timings set in timing mode on this device; they win over the catalog's
@@ -116,6 +119,10 @@ fn App() -> Element {
                     dioxus.send('ESC');
                     return;
                 }
+                if (e.key === '?') {
+                    dioxus.send('HELP');
+                    return;
+                }
                 if (e.key === ' ' || e.code === 'Space') {
                     e.preventDefault();
                     dioxus.send('SPACE');
@@ -172,6 +179,8 @@ fn App() -> Element {
                     active_tab.set(KtvTab::Catalog);
                 } else if msg == "ESC" {
                     search_query.set(String::new());
+                } else if msg == "HELP" {
+                    show_help.toggle();
                 } else if msg == "SPACE" {
                     SyncCommand::TogglePlayback.run();
                 } else if let Some(rel_str) = msg.strip_prefix("SEEK_REL:") {
@@ -232,10 +241,8 @@ fn App() -> Element {
                 let qid = next_queue_id();
                 next_queue_id.set(qid + 1);
 
-                auto_dj_notice.set(Some(format!(
-                    "🧠 Auto-DJ: เพลงในคิวหมดแล้ว! เล่นต่ออัตโนมัติ: {} - {} ({})",
-                    rec.song.title, rec.song.artist, rec.reason
-                )));
+                let (title, artist, reason) = (&rec.song.title, &rec.song.artist, &rec.reason);
+                auto_dj_notice.set(Some(format!("🧠 Auto-DJ: queue is empty, playing next: {title} - {artist} ({reason})")));
 
                 current_song.set(Some(QueueItem {
                     queue_id: qid,
@@ -493,6 +500,7 @@ fn App() -> Element {
                 active_tab,
                 queue_len: queue().len(),
                 room_name: settings().room_name.clone(),
+                on_help: move |_| show_help.toggle(),
             }
 
             // Auto-DJ Toast Notification
@@ -531,6 +539,16 @@ fn App() -> Element {
 
                 // Right / Tabbed Controller Panel
                 section { class: "stage-control-side",
+                    if show_help() {
+                        ShortcutHelp {
+                            on_close: move |_| {
+                                show_help.set(false);
+                                if !settings.peek().seen_shortcuts {
+                                    settings.write().seen_shortcuts = true;
+                                }
+                            },
+                        }
+                    }
                     match active_tab() {
                         KtvTab::Catalog => rsx! {
                             CatalogView {

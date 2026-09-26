@@ -23,6 +23,7 @@ fn test_settings_saved_before_timing_tools_still_load() {
     let settings = decode::<AppSettings>(Some(old)).expect("pre-timing-tools settings must decode");
     assert_eq!(settings.room_name, "Room 9");
     assert!(!settings.show_timing_tools);
+    assert!(!settings.seen_shortcuts, "old settings must still show the shortcut help once");
 }
 
 #[test]

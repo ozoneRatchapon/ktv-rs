@@ -7,3 +7,4 @@ pub mod player;
 pub mod queue_view;
 pub mod remote;
 pub mod settings;
+pub mod shortcuts;

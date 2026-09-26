@@ -44,8 +44,8 @@ pub fn QueueView(
                             }
                             div { class: "now-meta",
                                 div { class: "now-code", "#{curr.song.code}" }
-                                h3 { class: "now-song-title", "{curr.song.title}" }
-                                p { class: "now-song-artist", "{curr.song.artist} • {curr.song.channel}" }
+                                h3 { class: "now-song-title", lang: "th", "{curr.song.title}" }
+                                p { class: "now-song-artist", lang: "th", "{curr.song.artist} • {curr.song.channel}" }
                             }
                         }
                         div { class: "now-actions",
@@ -93,8 +93,8 @@ pub fn QueueView(
 
                             div { class: "item-info",
                                 div { class: "item-code", "#{item.song.code}" }
-                                div { class: "item-title", "{item.song.title}" }
-                                div { class: "item-artist", "{item.song.artist} • {item.song.channel}" }
+                                div { class: "item-title", lang: "th", "{item.song.title}" }
+                                div { class: "item-artist", lang: "th", "{item.song.artist} • {item.song.channel}" }
                             }
 
                             // Pre-set key for this song
@@ -186,8 +186,8 @@ pub fn QueueView(
                                     span { class: "score-lbl", "match" }
                                 }
                                 div { class: "antic-meta",
-                                    div { class: "antic-title", "{rec.song.title}" }
-                                    div { class: "antic-artist", "{rec.song.artist} • {rec.song.category}" }
+                                    div { class: "antic-title", lang: "th", "{rec.song.title}" }
+                                    div { class: "antic-artist", lang: "th", "{rec.song.artist} • {rec.song.category}" }
                                     div { class: "antic-reason", "{rec.reason}" }
                                 }
                             }
