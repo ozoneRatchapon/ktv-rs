@@ -282,6 +282,12 @@ fn App() -> Element {
     rsx! {
 
         div { class: "ktv-app-wrapper",
+            // Song changes announced to screen readers
+            div { class: "sr-only", role: "status", aria_live: "polite",
+                if let Some(curr) = current_song() {
+                    span { lang: "th", "Now singing: {curr.song.title} by {curr.song.artist}" }
+                }
+            }
             // Header Bar
             Header {
                 active_tab,

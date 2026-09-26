@@ -4,7 +4,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const keys = require('../assets/ktv_keys.js');
 
-const press = (key, mods = {}, typing = false) => keys.key_action({ key, ...mods }, typing);
+const { FOCUS } = keys;
+const press = (key, mods = {}, focus = FOCUS.OTHER) => keys.key_action({ key, ...mods }, focus);
 
 test('booth keys map to messages', () => {
     assert.deepEqual(press('Escape'), { msg: 'ESC', prevent: false });
@@ -19,20 +20,30 @@ test('booth keys map to messages', () => {
 });
 
 test('keys are left alone while typing, with modifiers, or when not printable', () => {
-    assert.equal(press('a', {}, true), null);
-    assert.equal(press(' ', {}, true), null, 'space in a text field types a space');
+    assert.equal(press('a', {}, FOCUS.TEXT), null);
+    assert.equal(press(' ', {}, FOCUS.TEXT), null, 'space in a text field types a space');
     assert.equal(press('c', { metaKey: true }), null, 'copy');
     assert.equal(press('r', { ctrlKey: true }), null, 'reload');
     assert.equal(press('a', { altKey: true }), null);
     for (const key of ['Shift', 'Tab', 'Enter', 'F5', 'ArrowUp']) assert.equal(press(key), null, key);
 });
 
-test('is_typing covers text fields and contenteditable only', () => {
-    assert.equal(keys.is_typing(null), false);
-    for (const tagName of ['INPUT', 'TEXTAREA', 'SELECT']) assert.equal(keys.is_typing({ tagName }), true, tagName);
-    assert.equal(keys.is_typing({ tagName: 'DIV', isContentEditable: true }), true);
-    assert.equal(keys.is_typing({ tagName: 'BUTTON' }), false);
-    assert.equal(keys.is_typing({ tagName: 'IFRAME' }), false);
+test('focus_kind: text fields, keyboard-focused controls, everything else', () => {
+    const el = (tagName, extra = {}) => ({ tagName, getAttribute: () => null, ...extra });
+    assert.equal(keys.focus_kind(null, true), FOCUS.OTHER);
+    for (const tag of ['INPUT', 'TEXTAREA', 'SELECT']) assert.equal(keys.focus_kind(el(tag), false), FOCUS.TEXT, tag);
+    assert.equal(keys.focus_kind(el('DIV', { isContentEditable: true }), false), FOCUS.TEXT);
+    for (const tag of ['BUTTON', 'A', 'SUMMARY']) assert.equal(keys.focus_kind(el(tag), true), FOCUS.CONTROL, tag);
+    assert.equal(keys.focus_kind(el('BUTTON'), false), FOCUS.OTHER, 'mouse-clicked button');
+    assert.equal(keys.focus_kind(el('DIV', { getAttribute: () => 'button' }), true), FOCUS.CONTROL, 'role=button');
+    assert.equal(keys.focus_kind(el('IFRAME'), true), FOCUS.OTHER);
+});
+
+test('keyboard-focused controls keep Space and Enter, but still type into search', () => {
+    assert.equal(press(' ', {}, FOCUS.CONTROL), null);
+    assert.equal(press('Enter', {}, FOCUS.CONTROL), null);
+    assert.deepEqual(press('a', {}, FOCUS.CONTROL), { msg: 'CHAR:a', prevent: false });
+    assert.deepEqual(press(' ', {}, FOCUS.OTHER), { msg: 'SPACE', prevent: true }, 'after a mouse click Space still pauses');
 });
 
 // Fake window: records listeners, runs timers at once
@@ -57,6 +68,7 @@ test('install wires listeners once, rebinds the channel on remount', () => {
     keys.install(win, (m) => first.push(m));
     keys.install(win, (m) => second.push(m));
     assert.equal(win.count('keydown'), 1);
+    assert.equal(win.count('keyup'), 1);
     assert.equal(win.count('blur'), 1);
     let prevented = false;
     win.fire('keydown', { key: ' ', preventDefault: () => { prevented = true; } });
@@ -74,4 +86,26 @@ test('focus comes back from an iframe, not from anything else', () => {
     win.document.activeElement = { tagName: 'BODY', blur: () => { blurred += 1; } };
     win.fire('blur');
     assert.deepEqual([blurred, win.focused], [1, 1], 'switching apps leaves focus alone');
+});
+
+test('a Space the booth handled has its keyup cancelled (no click on a mouse-focused button)', () => {
+    const win = fake_win();
+    keys.install(win, () => {});
+    const up = () => { let prevented = false; win.fire('keyup', { key: ' ', preventDefault: () => { prevented = true; } }); return prevented; };
+    win.fire('keydown', { key: ' ', preventDefault: () => {} });
+    assert.equal(up(), true);
+    // Mouse-clicked button: Space is the booth's
+    win.document.activeElement = { tagName: 'BUTTON', getAttribute: () => null };
+    win.fire('pointerdown');
+    win.fire('focusin');
+    win.fire('keydown', { key: ' ', preventDefault: () => {} });
+    assert.equal(up(), true);
+    // Button reached with Tab: Space activates it, keyup left alone
+    win.fire('focusin');
+    win.fire('keydown', { key: ' ', preventDefault: () => {} });
+    assert.equal(up(), false);
+    // Typing a space in a field: keydown ignored, keyup left alone
+    win.document.activeElement = { tagName: 'INPUT' };
+    win.fire('keydown', { key: ' ', preventDefault: () => {} });
+    assert.equal(up(), false);
 });
