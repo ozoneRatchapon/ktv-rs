@@ -19,6 +19,8 @@ pub fn QueueView(
     on_queue_song: EventHandler<Song>,
     on_play_song: EventHandler<Song>,
     on_simulate_end: EventHandler<()>,
+    /// Curator mode (Settings → Guide Timing Tools): shows the "End Song" test control.
+    show_dev_tools: bool,
 ) -> Element {
     rsx! {
         div { class: "queue-container",
@@ -26,7 +28,7 @@ pub fn QueueView(
             div { class: "now-playing-section",
                 div { class: "now-playing-header-row",
                     div { class: "section-badge", "NOW SINGING" }
-                    if current_item.is_some() {
+                    if show_dev_tools && current_item.is_some() {
                         button {
                             class: "test-end-btn",
                             title: "Simulate video ending to test auto-advance to next song",

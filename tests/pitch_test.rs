@@ -98,3 +98,54 @@ fn test_note_readings() {
     assert_eq!(reading(435.0), NoteReading { midi: 69, cents: -20 });
     assert_eq!(NoteReading::from_midi(0.0).name(), "C-1");
 }
+
+mod gate {
+    use app::pitch::{rms, NoiseGate, MAX_GATE_RMS, MIN_GATE_RMS, ROOM_CHECK_FRAMES};
+
+    fn checked(room: &[f32]) -> NoiseGate {
+        let mut gate = NoiseGate::new();
+        for (i, level) in room.iter().cycle().take(ROOM_CHECK_FRAMES).enumerate() {
+            assert!(gate.is_checking(), "frame {i}");
+            assert!(!gate.pass(*level), "nothing passes during the room check");
+        }
+        assert!(!gate.is_checking());
+        gate
+    }
+
+    #[test]
+    fn test_rms() {
+        assert_eq!(rms(&[]), 0.0);
+        assert!((rms(&[0.5, -0.5, 0.5, -0.5]) - 0.5).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_gate_is_twice_the_room_median() {
+        let mut gate = checked(&[0.02, 0.03, 0.025]);
+        assert_eq!(gate.threshold(), Some(0.05));
+        assert!(!gate.pass(0.04), "room chatter");
+        assert!(gate.pass(0.06), "singer above the room");
+    }
+
+    #[test]
+    fn test_a_cough_during_the_check_does_not_raise_the_gate() {
+        let mut room = vec![0.02; ROOM_CHECK_FRAMES];
+        room[5] = 0.8;
+        room[6] = 0.8;
+        assert_eq!(checked(&room).threshold(), Some(0.04));
+    }
+
+    #[test]
+    fn test_gate_stays_within_bounds() {
+        assert_eq!(checked(&[0.0]).threshold(), Some(MIN_GATE_RMS), "silent room");
+        assert_eq!(checked(&[0.3]).threshold(), Some(MAX_GATE_RMS), "singing through the check cannot mute the mic");
+    }
+
+    #[test]
+    fn test_gate_never_drifts_while_singing() {
+        let mut gate = checked(&[0.02]);
+        for _ in 0..10_000 {
+            assert!(gate.pass(0.2), "a long held note keeps passing");
+        }
+        assert_eq!(gate.threshold(), Some(0.04));
+    }
+}

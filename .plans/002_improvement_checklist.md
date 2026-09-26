@@ -21,13 +21,13 @@ Legend: **(checked)** = confirmed in code on 2026-09-27; `gated:` = waits on own
 ## Wave 3 — singing core (Phase 2)
 The score today is tuning precision (held notes vs the semitone grid); there is no melody to compare against.
 - [x] 6. Real score HUD + end-of-song result screen. Done: `PitchMeter` reports each finished take (`score::TakeResult`, only if a held note was judged); result card at the top of the control column (score, verdict, song, notes, average ¢); Queue tab "Recent scores" (last 20, `ktv.scores.v1`). Tests: 3 in `score_test.rs`; e2e with an oscillator mic (score ≥ 90, card names the finished song, history survives reload).
-- [ ] 9. Noise gate so room noise / speakers don't score: adaptive to the room's noise floor (fixed `min_rms` 0.01 today).
+- [x] 9. Noise gate so room noise / speakers don't score: adaptive to the room's noise floor (fixed `min_rms` 0.01 today). Done: `pitch::NoiseGate` — 1 s room check when the mic opens (median RMS, so a cough doesn't count), then a fixed gate at 2× the room, clamped 0.01–0.1 RMS. Deliberately not continuously adaptive: a creeping floor would shut out a singer who never pauses. UI shows "Room check…"; the Tuning explanation says so. Tests: 5 in `pitch_test.rs`; e2e plays a room-level tone during the check and shows a louder-than-0.01 but under-2×-room tone is ignored. Real-room tuning of the ratio: with the gated device tests (item 3).
 - [ ] 7. Target pitch line. `gated:` needs per-song melody data. Extracting it from YouTube audio breaks YouTube's terms and published melodies are copyrighted, so the source is an owner decision (options: hand-entered/licensed MIDI, or a reference learned from the singer's own best take).
 - [ ] 5. Honest key transpose (shift target melody, not audio). Blocked by 7 (with no melody, key shift changes nothing the app measures).
 - [ ] 8. Mic latency calibration. Blocked by 7 (only matters when pitch is compared to a melody in time).
 - [ ] 10. Duet mode. `gated:` needs two mic devices to test; blocked by 7 for per-part scoring.
 
-- [ ] 6b. Queue tab "End Song" button ("Simulate video ending") is a debug control shipped to users: hide it behind the Guide Timing Tools setting or remove.
+- [x] 6b. Queue tab "End Song" button ("Simulate video ending") is a debug control shipped to users: hide it behind the Guide Timing Tools setting or remove. Done: shown only with Guide Timing Tools on (it records a natural finish, which would skew Auto-DJ).
 
 ## Wave 4 — content & search
 - [ ] 14. Thai-aware search: tone marks, romanised input ("rak mai wai"), typo tolerance.

@@ -11,15 +11,17 @@ const chrome_bin = process.env.CHROME_BIN ??
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// A steady sawtooth "voice" instead of a microphone (headless Chrome has none)
+// A sawtooth "voice" instead of a microphone (headless Chrome has none). Starts silent so the
+// app's room check measures a quiet room; set `window.__mic_gain.gain.value` to sing.
 const FAKE_MIC = `navigator.mediaDevices.getUserMedia = async () => {
   const ctx = new AudioContext();
   const osc = new OscillatorNode(ctx, { type: 'sawtooth', frequency: 220 });
-  const gain = new GainNode(ctx, { gain: 0.3 });
+  const gain = new GainNode(ctx, { gain: 0 });
   const out = ctx.createMediaStreamDestination();
   osc.connect(gain).connect(out);
   osc.start();
   window.__mic = osc;
+  window.__mic_gain = gain;
   return out.stream;
 };`;
 
@@ -41,7 +43,7 @@ export async function launch() {
   });
   const browser = await connect(ws_url);
 
-  /** `fake_mic`: getUserMedia returns an oscillator; set its pitch with `window.__mic.frequency.value = hz`. */
+  /** `fake_mic`: getUserMedia returns an oscillator: `window.__mic.frequency.value = hz`, `window.__mic_gain.gain.value = level`. */
   async function new_page({ width = 1280, height = 900, fake_mic = false } = {}) {
     const { browserContextId } = await browser.send('Target.createBrowserContext');
     const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank', browserContextId });

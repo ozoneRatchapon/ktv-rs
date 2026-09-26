@@ -164,10 +164,20 @@ test('empty queue: Next Song hands over to Auto-DJ with a different song', () =>
   assert.ok(next && next !== finished, `Auto-DJ picked ${next} after ${finished}`);
 }));
 
-test('mic score: held notes give a Tuning score, the finished song shows a result card and joins Recent scores', () => with_page({ fake_mic: true }, async (page) => {
+test('mic: room check, noise gate, held notes give a Tuning score, the finished song shows a result card and joins Recent scores', () => with_page({ fake_mic: true }, async (page) => {
   const sung = await page.eval(now_title);
   await page.eval(`[...document.querySelectorAll('.pitch-meter button')].find((b) => b.textContent.startsWith('Mic')).click()`);
-  await page.wait_for(`document.querySelector('.pitch-meter button')?.textContent === 'Mic: On' && !!window.__mic`);
+  await page.wait_for(`!!window.__mic_gain`);
+  // Noisy room during the check: sawtooth RMS = gain / sqrt(3), so 0.03 -> ~0.017 RMS -> gate ~0.035
+  await page.eval(`window.__mic_gain.gain.value = 0.03`);
+  await page.wait_for(`document.querySelector('.pitch-note')?.textContent === 'Room check…'`);
+  await page.wait_for(`document.querySelector('.pitch-note')?.textContent !== 'Room check…'`, 5000);
+  // ~0.023 RMS: above the detector's fixed 0.01 floor, below twice the room -> ignored
+  await page.eval(`window.__mic_gain.gain.value = 0.04`);
+  await sleep(400);
+  assert.equal(await page.eval(`document.querySelector('.pitch-note').textContent`), '—', 'room-level sound is gated');
+  await page.eval(`window.__mic_gain.gain.value = 0.3`);
+  await page.wait_for(`document.querySelector('.pitch-note')?.textContent === 'A3'`);
   // Four in-tune held notes (A3, B3, C4, D4), ~0.5 s each
   for (const hz of [220, 246.94, 261.63, 293.66]) {
     await page.eval(`window.__mic.frequency.value = ${hz}`);

@@ -365,6 +365,7 @@ fn App() -> Element {
                                 on_queue_song: handle_queue_song,
                                 on_play_song: handle_play_song,
                                 on_simulate_end: handle_video_ended,
+                                show_dev_tools: settings().show_timing_tools,
                             }
                         },
                         KtvTab::Remote => rsx! {

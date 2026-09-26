@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 
 use crate::mic::{Mic, MicError};
-use crate::pitch::{Mpm, MpmConfig, NoteReading};
+use crate::pitch::{rms, Mpm, MpmConfig, NoiseGate, NoteReading};
 use crate::score::{TakeResult, TuningScorer, TuningSummary, MIN_SCORED_NOTES, PERFECT_CENTS, RANDOM_CENTS};
 use crate::types::Song;
 
@@ -22,6 +22,8 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
     let mut session = use_signal(|| None::<Mic>);
     let mut state = use_signal(|| MicState::Off);
     let mut reading = use_signal(|| None::<NoteReading>);
+    // First second after the mic opens: measuring the room for the noise gate
+    let mut room_check = use_signal(|| false);
     let mut summary = use_signal(TuningSummary::default);
     let mut current_take = use_signal(|| take);
     // Song of the take being scored: guide edits change `song` without starting a new take
@@ -48,13 +50,19 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
         }
         state.set(MicState::Starting);
         summary.set(TuningSummary::default());
+        room_check.set(true);
         spawn(async move {
             let started = Mic::start(move |sample_rate| {
                 let mut detector = Mpm::new(MpmConfig::singing(sample_rate));
                 let mut scorer = TuningScorer::new();
+                let mut gate = NoiseGate::new();
                 let mut scored_take = *current_take.peek();
                 move |frame: &[f32]| {
-                    let estimate = detector.detect(frame);
+                    let singing = gate.pass(rms(frame));
+                    if *room_check.peek() != gate.is_checking() {
+                        room_check.set(gate.is_checking());
+                    }
+                    let estimate = if singing { detector.detect(frame) } else { None };
                     if *current_take.peek() != scored_take {
                         scored_take = *current_take.peek();
                         scorer = TuningScorer::new();
@@ -101,12 +109,15 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
                     class: "pitch-readout",
                     title: "Detected pitch of your voice (not a score)",
                     aria_live: "polite",
-                    match reading() {
-                        Some(note) => rsx! {
+                    match (room_check(), reading()) {
+                        (true, _) => rsx! {
+                            span { class: "pitch-note idle", title: "Stay quiet for a second: measuring the room so its noise is ignored", "Room check…" }
+                        },
+                        (false, Some(note)) => rsx! {
                             span { class: "pitch-note", "{note.name()}" }
                             span { class: "pitch-cents", "{note.cents:+}¢" }
                         },
-                        None => rsx! { span { class: "pitch-note idle", "—" } },
+                        (false, None) => rsx! { span { class: "pitch-note idle", "—" } },
                     }
                 }
                 TuningBadge { summary: summary() }
@@ -141,6 +152,7 @@ fn TuningBadge(summary: TuningSummary) -> Element {
                 p { strong { "Tuning 0-100: " } "how exactly your held notes (sung steadily for about ⅕ s) land on a semitone. 100 = within {PERFECT_CENTS}¢ on average, 0 = {RANDOM_CENTS}¢ or more off. It appears after {MIN_SCORED_NOTES} held notes and restarts with each song or Replay." }
                 p { "{progress}" }
                 p { class: "tuning-caveat", "It does not know the song's melody, so it cannot tell whether they are the right notes. Loud speakers leaking into the mic can also move it." }
+                p { class: "tuning-caveat", "When the mic turns on it listens to the room for a second; anything not clearly louder than the room (about twice its level) is ignored. Turn the mic off and on to check again." }
             }
         }
     }
