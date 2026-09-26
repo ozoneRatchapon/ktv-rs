@@ -1,6 +1,7 @@
 // KTV-RS player sync core: drives the karaoke iframe and the original-vocal guide iframe (shown beside it while
 // the original vocal is on) over the YouTube postMessage API and keeps the guide locked to karaoke time.
-// Loaded by `src/sync.rs` (include_str + eval); unit-tested in Node by `tests/ktv_sync.test.cjs`.
+// Classic script in the static <head> (asset! in src/main.rs); Rust calls it via src/js_bridge.rs (no eval).
+// Unit-tested in Node by `tests/ktv_sync.test.cjs`.
 // All browser access goes through the `env` passed to `create_sync`, so the core runs headless in tests.
 (function (root) {
     'use strict';

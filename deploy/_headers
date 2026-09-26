@@ -1,8 +1,9 @@
 # Cloudflare Workers static assets: response headers (copied into dist/ by tools/build_web.sh)
-# 'unsafe-eval': Dioxus `document::eval` (used by src/sync.rs) compiles JS with `new Function`.
+# No 'unsafe-eval': the app never uses Dioxus `document::eval`; Rust calls the sync/keys scripts (static <head>)
+# through Reflect (src/js_bridge.rs). 'wasm-unsafe-eval' is only for compiling the wasm module.
 # blob: in script-src: the mic AudioWorklet is loaded from a Blob URL (src/mic/web.rs).
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://i.ytimg.com; frame-src https://www.youtube-nocookie.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://i.ytimg.com; frame-src https://www.youtube-nocookie.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
   Permissions-Policy: microphone=(self), camera=(), geolocation=(), payment=(), usb=()
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff

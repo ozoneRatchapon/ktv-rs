@@ -71,13 +71,9 @@ $$\text{bottleneck\_penalty} = \begin{cases} -\infty & \text{if dwell} \le 20s \
 ## 3. YouTube Iframe & Audio Bridge
 
 * **Intro Bumper Skipping**: Appends `&start={intro_skip_secs}` to the embed URL.
-* **Auto-Advance Event**: The player injects a postMessage listener via `document::eval`:
-  ```javascript
-  window.addEventListener('message', (event) => {
-      let data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-      if (data && (data.event === 'onStateChange' && data.info === 0 || data.info === 0)) {
-          dioxus.send('ended');
-      }
-  });
-  ```
-  On `"ended"`, Dioxus triggers `on_video_ended`, popping the next song from queue or falling back to the top Auto-DJ recommendation.
+* **Sync core** (`assets/ktv_sync.js`): a classic script in the static `<head>` that listens to both players'
+  postMessage events and keeps the guide in step. Rust wires it with `window.KtvSyncCore.install(window, send)` and
+  calls `window.KtvSync.<method>(...)` through `Reflect` (`src/js_bridge.rs`); there is no `eval`, so the CSP has no
+  `'unsafe-eval'`. The core reports back `TIME:<sec>`, `PAUSE_STATE:0|1`, `GUIDE_ERROR:<code>` and `ended`
+  (`SyncEvent::parse`). On `ended`, `on_video_ended` pops the next song from the queue or falls back to the top Auto-DJ
+  recommendation.
