@@ -1840,3 +1840,32 @@ body {
     color: #ffffff;
 }
 
+
+/* Reference-free tuning score beside the live pitch readout */
+.tuning-score {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    font-variant-numeric: tabular-nums;
+    cursor: help;
+}
+
+.tuning-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.tuning-value {
+    min-width: 2ch;
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+}
+
+.tuning-value.idle {
+    color: var(--text-muted);
+}

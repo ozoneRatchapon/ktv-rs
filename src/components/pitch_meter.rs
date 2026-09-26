@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 
 use crate::mic::{Mic, MicError};
 use crate::pitch::{Mpm, MpmConfig, NoteReading};
+use crate::score::{TuningScorer, TuningSummary};
 
 #[derive(Debug, Clone, PartialEq)]
 enum MicState {
@@ -11,13 +12,21 @@ enum MicState {
     Failed(MicError),
 }
 
-/// Live pitch of the singer's mic (note name + cents). Display only: no scoring yet.
+/// Live pitch of the singer's mic (note name + cents) and a tuning score for the current take.
+/// `take` changes on every song start or replay, which restarts the score.
 #[component]
-pub fn PitchMeter() -> Element {
+pub fn PitchMeter(take: f64) -> Element {
     // Owns the device; dropping the session (toggle off or unmount) releases the mic
     let mut session = use_signal(|| None::<Mic>);
     let mut state = use_signal(|| MicState::Off);
     let mut reading = use_signal(|| None::<NoteReading>);
+    let mut summary = use_signal(TuningSummary::default);
+    let mut current_take = use_signal(|| take);
+
+    use_effect(use_reactive!(|take| {
+        current_take.set(take);
+        summary.set(TuningSummary::default());
+    }));
 
     let toggle = move |_| {
         if session.write().take().is_some() {
@@ -26,12 +35,23 @@ pub fn PitchMeter() -> Element {
             return;
         }
         state.set(MicState::Starting);
+        summary.set(TuningSummary::default());
         spawn(async move {
             let started = Mic::start(move |sample_rate| {
                 let mut detector = Mpm::new(MpmConfig::singing(sample_rate));
+                let mut scorer = TuningScorer::new();
+                let mut scored_take = *current_take.peek();
                 move |frame: &[f32]| {
-                    let next = detector.detect(frame).map(|est| est.reading());
-                    // ~47 frames/s: only re-render when the shown note actually changes
+                    let estimate = detector.detect(frame);
+                    if *current_take.peek() != scored_take {
+                        scored_take = *current_take.peek();
+                        scorer = TuningScorer::new();
+                    }
+                    // ~47 frames/s: only re-render when the shown note changes or a held note is judged
+                    if scorer.push(estimate.map(|est| est.midi())).is_some() {
+                        summary.set(scorer.summary());
+                    }
+                    let next = estimate.map(|est| est.reading());
                     if *reading.peek() != next {
                         reading.set(next);
                     }
@@ -77,6 +97,30 @@ pub fn PitchMeter() -> Element {
                         None => rsx! { span { class: "pitch-note idle", "—" } },
                     }
                 }
+                TuningBadge { summary: summary() }
+            }
+        }
+    }
+}
+
+/// Reference-free score: says what it measures, and what it cannot know.
+#[component]
+fn TuningBadge(summary: TuningSummary) -> Element {
+    let detail = match summary.mean_abs_cents {
+        Some(cents) => format!("{} held notes, on average {cents:.0}¢ off the nearest semitone", summary.notes),
+        None => "Hold a few notes to get a score".to_string(),
+    };
+    let title = format!(
+        "Tuning: how close your held notes sit to exact semitones ({detail}). \
+         Without the song's melody it cannot tell whether they are the right notes; \
+         loud speakers leaking into the mic can also raise it."
+    );
+    rsx! {
+        span { class: "tuning-score", title: "{title}",
+            span { class: "tuning-label", "Tuning" }
+            match summary.score() {
+                Some(score) => rsx! { span { class: "tuning-value", "{score}" } },
+                None => rsx! { span { class: "tuning-value idle", "—" } },
             }
         }
     }

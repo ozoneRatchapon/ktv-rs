@@ -450,6 +450,7 @@ fn App() -> Element {
                 section { class: "stage-player-side",
                     Player {
                         current_item: current_song(),
+                        take_started_at: song_started_at(),
                         auto_skip_intro: settings().auto_skip_intro,
                         is_skipped: intro_skipped,
                         playback_speed: playback_speed(),

@@ -9,6 +9,8 @@ pub fn Player(
     auto_skip_intro: bool,
     mut is_skipped: Signal<bool>,
     playback_speed: f32,
+    /// Changes on every song start or replay (restarts the tuning score).
+    take_started_at: f64,
     on_next_song: EventHandler<()>,
     on_replay_song: EventHandler<()>,
     on_key_change: EventHandler<i32>,
@@ -245,7 +247,7 @@ pub fn Player(
                                     }
                                 }
 
-                                PitchMeter {}
+                                PitchMeter { take: take_started_at }
 
                                 // Play / Pause Toggle Button
                                 button {
