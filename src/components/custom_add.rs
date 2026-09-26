@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 use crate::catalog::{CustomCodesExhausted, CUSTOM_CODES};
 use crate::types::Song;
+use crate::youtube::parse_video_id;
 
 /// Outcome shown above the form after a submit.
 #[derive(Clone, Debug, PartialEq)]
@@ -20,33 +21,12 @@ pub fn CustomAdd(
     let mut intro_skip = use_signal(|| 13u32);
     let mut feedback = use_signal(|| None::<Feedback>);
 
-    let parse_youtube_id = |input: &str| -> Option<String> {
-        let trimmed = input.trim();
-        if trimmed.is_empty() {
-            return None;
-        }
-
-        if let Some(pos) = trimmed.find("v=") {
-            let rest = &trimmed[pos + 2..];
-            let id = rest.split('&').next().unwrap_or(rest);
-            return Some(id.to_string());
-        }
-
-        if let Some(pos) = trimmed.find("youtu.be/") {
-            let rest = &trimmed[pos + 9..];
-            let id = rest.split('?').next().unwrap_or(rest);
-            return Some(id.to_string());
-        }
-
-        Some(trimmed.to_string())
-    };
-
     let submit_action = move |play_now: bool| {
         let raw_url = url_or_id();
-        let maybe_id = parse_youtube_id(&raw_url);
+        let maybe_id = parse_video_id(&raw_url);
 
         match maybe_id {
-            Some(vid) if !vid.is_empty() => {
+            Some(vid) => {
                 let song_title = if title().trim().is_empty() {
                     format!("Custom YouTube Video ({vid})")
                 } else {
@@ -89,7 +69,7 @@ pub fn CustomAdd(
                     }
                 }
             }
-            _ => {
+            None => {
                 feedback.set(Some(Feedback::Error("กรุณากรอก YouTube URL หรือ Video ID ให้ถูกต้อง".to_string())));
             }
         }

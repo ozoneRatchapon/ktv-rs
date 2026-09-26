@@ -6,3 +6,4 @@ pub mod recommendation;
 pub mod storage;
 pub mod sync;
 pub mod types;
+pub mod youtube;
