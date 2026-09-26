@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy · KTV-RS</title>
+    <meta name="description" content="What KTV-RS stores, where, and what it never collects." />
+    <link rel="icon" href="/favicon.ico" />
+    <style>
+        body { margin: 0; background: #0b0d13; color: #e2e8f0; font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        main { max-width: 720px; margin: 0 auto; padding: 32px 20px 64px; }
+        h1 { font-size: 28px; margin: 0 0 4px; }
+        h2 { font-size: 18px; margin: 32px 0 8px; color: #ffffff; }
+        p, li { color: #cbd5e1; }
+        code { background: #1e2433; padding: 1px 6px; border-radius: 4px; font-size: 14px; }
+        table { border-collapse: collapse; width: 100%; font-size: 14px; }
+        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #2a3142; vertical-align: top; }
+        a { color: #00f5d4; }
+        .muted { color: #8a97ab; font-size: 14px; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Privacy</h1>
+    <p class="muted">KTV-RS · last updated 2026-09-27</p>
+
+    <h2>In short</h2>
+    <ul>
+        <li>No accounts, no cookies of our own, no analytics or trackers.</li>
+        <li>Everything the app remembers stays in <strong>your browser</strong> (localStorage), not on a server.</li>
+        <li>The microphone is analysed inside this browser tab to show your pitch. Audio is never recorded, stored or sent anywhere.</li>
+    </ul>
+
+    <h2>What is stored on your device</h2>
+    <table>
+        <tr><th>Key</th><th>What for</th></tr>
+        <tr><td><code>ktv.settings.v1</code></td><td>Your settings (intro skip, room name, timing tools, shortcut help seen)</td></tr>
+        <tr><td><code>ktv.session.v1</code></td><td>Current song, queue, and songs you added by URL</td></tr>
+        <tr><td><code>ktv.picks.v1</code></td><td>Favourites and recently sung songs</td></tr>
+        <tr><td><code>ktv.scores.v1</code></td><td>Tuning scores of your last 20 songs (song, notes held, average cents off)</td></tr>
+        <tr><td><code>ktv.guides.v1</code></td><td>Guide timings you saved in Guide Timing Tools</td></tr>
+        <tr><td><code>_ktv_*_lead</code></td><td>How long this device's players take to start, so the original-vocal guide stays in sync</td></tr>
+    </table>
+    <p>Remove all of it at any time: <strong>Settings → Clear my data on this device</strong>. Clearing your browser's site data does the same.</p>
+
+    <h2>Third parties</h2>
+    <ul>
+        <li><strong>YouTube (Google)</strong>: videos play in YouTube's embedded player in privacy-enhanced mode
+            (<code>youtube-nocookie.com</code>). Inside those players Google's
+            <a href="https://policies.google.com/privacy" rel="noopener noreferrer">privacy policy</a> applies, and YouTube may store
+            data in your browser once a video plays. Song thumbnails load from <code>i.ytimg.com</code>.</li>
+        <li><strong>Cloudflare</strong> serves the app's files. Like any web host it sees your IP address to deliver them;
+            we have not added any logging or analytics of our own.</li>
+        <li><strong>GitHub</strong>: only if you use <em>Share on GitHub</em> in Guide Timing Tools, which opens a pre-filled issue
+            in your browser. Nothing is sent until you submit it there.</li>
+    </ul>
+
+    <h2>Fonts</h2>
+    <p>Fonts (Kanit, Outfit) are served from this site, not from Google Fonts.</p>
+
+    <h2>Contact</h2>
+    <p>Questions or corrections: open an issue at
+        <a href="https://github.com/ozoneRatchapon/ktv-rs/issues" rel="noopener noreferrer">github.com/ozoneRatchapon/ktv-rs</a>.</p>
+
+    <p><a href="/">← Back to KTV-RS</a></p>
+</main>
+</body>
+</html>

@@ -1032,6 +1032,17 @@ body {
     white-space: nowrap;
 }
 
+.clear-data-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.ctrl-btn.danger-btn {
+    background: #b91c1c;
+    color: #ffffff;
+}
+
 /* Catalog View */
 .shelf-hint {
     margin-left: 12px;

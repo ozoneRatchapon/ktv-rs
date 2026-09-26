@@ -106,3 +106,14 @@ fn test_reconcile_renumbers_legacy_duplicate_custom_codes() {
     assert_eq!(session.current.unwrap().song.code, "90001");
     assert_eq!(session.queue[0].song.code, "99999");
 }
+
+#[test]
+fn test_only_this_apps_keys_are_cleared() {
+    use app::storage::is_app_key;
+    for key in ["ktv.settings.v1", "ktv.session.v1", "ktv.picks.v1", "_ktv_seek_lead", "_ktv_cold_lead", "_ktv_pair_lead"] {
+        assert!(is_app_key(key), "{key}");
+    }
+    for key in ["yt-player-quality", "ytidb::LAST_RESULT_ENTRY_KEY", "ktv", "my.ktv.key"] {
+        assert!(!is_app_key(key), "{key}");
+    }
+}

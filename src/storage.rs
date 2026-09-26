@@ -105,6 +105,31 @@ pub fn load<T: DeserializeOwned>(key: &str) -> Option<T> {
     }
 }
 
+/// This app's entries: `ktv.*` (Rust, above) and `_ktv_*` (sync core's learned seek leads, assets/ktv_sync.js).
+pub fn is_app_key(key: &str) -> bool {
+    key.starts_with("ktv.") || key.starts_with("_ktv_")
+}
+
+/// Remove everything this app stored on the device (other sites' and YouTube's data are not ours to touch).
+pub fn clear_all() {
+    #[cfg(target_arch = "wasm32")]
+    if let Some(store) = storage() {
+        let len = store.length().unwrap_or(0);
+        let keys: Vec<String> = (0..len).filter_map(|i| store.key(i).ok().flatten()).filter(|k| is_app_key(k)).collect();
+        for key in keys {
+            let _ = store.remove_item(&key);
+        }
+    }
+}
+
+/// Reload the page (after [`clear_all`], so no in-memory state writes the data back).
+pub fn reload_page() {
+    #[cfg(target_arch = "wasm32")]
+    if let Some(window) = web_sys::window() {
+        let _ = window.location().reload();
+    }
+}
+
 /// Best effort: a full or disabled storage must never break playback.
 pub fn save<T: Serialize>(key: &str, value: &T) {
     #[cfg(target_arch = "wasm32")]
