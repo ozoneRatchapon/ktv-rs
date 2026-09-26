@@ -1,0 +1,37 @@
+name: Song request
+description: Suggest an official karaoke video for the built-in songbook.
+title: "Song request: "
+labels: ["song-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Only **official** karaoke uploads (the label's own channel, e.g. GMM Karaoke or What The Duck) can be added.
+  - type: input
+    id: video
+    attributes:
+      label: Karaoke video link
+      placeholder: https://www.youtube.com/watch?v=...
+    validations:
+      required: true
+  - type: input
+    id: title
+    attributes:
+      label: Song title
+    validations:
+      required: true
+  - type: input
+    id: artist
+    attributes:
+      label: Artist
+    validations:
+      required: true
+  - type: input
+    id: original_mv
+    attributes:
+      label: Original MV (optional)
+      description: The artist's official music video, for the original-vocal guide.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes

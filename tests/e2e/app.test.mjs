@@ -97,6 +97,8 @@ for (const [kind, custom, notice, status] of [
     await page.eval(seed_saved_timing(custom));
     await page.reload();
     await page.wait_for(`document.querySelector('.timing-status')?.textContent === 'saved on this device'`);
+    const share = await page.eval(`[...document.querySelectorAll('.guide-timing-panel a')].find((a) => a.textContent === 'Share on GitHub')?.href`);
+    assert.match(share, /^https:\/\/github\.com\/ozoneRatchapon\/ktv-rs\/issues\/new\?template=guide_timing\.yml&/);
     await page.eval(`[...document.querySelectorAll('.guide-timing-panel button')].find((b) => b.textContent === 'Revert').click()`);
     await page.wait_for(`document.querySelector('.timing-notice')?.textContent === ${JSON.stringify(notice)}`);
     assert.equal(await page.eval(`document.querySelector('.timing-status').textContent`), status);

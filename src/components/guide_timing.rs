@@ -229,6 +229,14 @@ pub fn GuideTiming(
                         }
                     }
                     button { class: "ctrl-btn", onclick: copy_json, "Copy JSON" }
+                    a {
+                        class: "ctrl-btn",
+                        href: "{timing::share_url(&song, &guide)}",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        title: "Open a pre-filled GitHub issue so the timing can go into the built-in catalog",
+                        "Share on GitHub"
+                    }
                 }
                 pre { class: "timing-snippet", "{timing::catalog_snippet(&guide)}" }
             }

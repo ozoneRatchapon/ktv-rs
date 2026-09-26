@@ -111,3 +111,16 @@ fn snippet_is_valid_catalog_json() {
     let back: GuideTrack = serde_json::from_value(parsed["guide"].clone()).expect("GuideTrack");
     assert_eq!(back, g);
 }
+
+#[test]
+fn test_share_url_prefills_the_guide_timing_form() {
+    let song = app::catalog::builtin_catalog()[3].clone(); // #10004 รักไม่ไหวแล้วโว้ย
+    let guide = GuideTrack { video_id: "abcDEF12345".to_string(), offset_secs: -12.5, rate: 1.0 };
+    let url = app::timing::share_url(&song, &guide);
+    assert!(url.starts_with(&format!("{}/issues/new?template=guide_timing.yml&", app::timing::REPO_URL)));
+    assert!(url.contains("&song_code=10004&"));
+    assert!(url.contains(&format!("karaoke_video=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D{}", song.youtube_id)));
+    assert!(url.contains("%22video_id%22%3A%20%22abcDEF12345%22"), "guide JSON encoded");
+    assert!(url.contains("title=Guide%20timing%3A%20%2310004%20%E0%B8%A3"), "Thai title as UTF-8 percent-encoding");
+    assert!(url.bytes().all(|b| b.is_ascii_graphic()), "no raw spaces, newlines or Thai bytes");
+}
