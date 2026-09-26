@@ -18,7 +18,9 @@
 - WCAG AA contrast: `--text-muted` #64748b → #8a97ab (≥ 4.9:1 on every surface); intro banners solid colours.
 
 ## Open
-- CLS 0.208, attributed by Lighthouse to the first-visit shortcut list. Not reproducible in a PerformanceObserver trace
-  with the same viewport, DPR, slow-4G and 4× CPU emulation (only a 0.000 shift from the nav buttons when Kanit 500
-  arrives). Needs a trace/filmstrip from the Lighthouse run itself.
+- CLS 0.208 comes from **inside the YouTube player iframe**, not our layout. The Lighthouse trace (`--save-assets`)
+  has one real shift: score 0.614 in a sub-frame (not the main frame), weighted to 0.208 by frame size; the moving
+  node is a 410×231 element (the embed's poster) that collapses to 0×0 when the player takes over. Lighthouse maps it
+  onto the main-frame element at that spot (the shortcut list). Main-frame shifts: 0.0001 (nav buttons, Kanit 500).
+  Not fixable from our side short of not embedding at load; accepted.
 - Best practices 96: third-party cookie issues raised inside the YouTube player frames (not ours).

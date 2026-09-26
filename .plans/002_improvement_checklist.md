@@ -39,7 +39,7 @@ The score today is tuning precision (held notes vs the semitone grid); there is 
 - [x] 20. wasm 968 KB, was 846 KB **(checked)** → find the growth, try `wasm-opt -Oz`. Done: `lto = true` + `codegen-units = 1` → wasm 1,031 → 882 KB (gzip 403 → 340 KB) at unchanged pitch speed; opt-level "s"/"z" gave no further size after dx's wasm-opt and were 2.2× slower (`bench/002_release_profile.md`). Growth since 846 KB came from features, not one dependency.
 - [x] 21. Dead CSS in `main.css` (2,226 lines **(checked)**). Done: scripted check of all 241 class selectors against src/assets/index.html → only 6 unused icon rules, removed; search box lost the left padding kept for its long-gone icon.
 - [x] 22. Lighthouse / Core Web Vitals on prod. Done (v0.9.0): Perf 54 → 88, A11y 95 → 100, SEO 91 → 100, FCP 4.3 → 1.4 s, LCP 4.9 → 2.2 s (`bench/003_lighthouse_prod.md`): stylesheet in the static head, boot splash, font preloads, 15 KB favicon, robots.txt, AA contrast.
-- [ ] 22b. CLS 0.208 on a first visit, attributed to the shortcut list; not reproducible in own traces (see bench 003). Capture the Lighthouse trace/filmstrip and fix.
+- [x] 22b. CLS 0.208 on a first visit, attributed to the shortcut list. Root cause (Lighthouse trace): the shift is inside the YouTube player iframe (its poster collapsing when the player starts), weighted into page CLS; our main frame shifts 0.0001. Not ours to fix; documented in bench 003.
 - [ ] 19. Preload the next song's video for faster song changes.
 
 ## Wave 6 — accessibility
