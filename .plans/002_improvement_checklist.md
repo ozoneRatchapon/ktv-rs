@@ -57,12 +57,14 @@ The score today is tuning precision (held notes vs the semitone grid); there is 
 - [ ] 33. Phone remote. `gated:` Durable Objects blocked by Cloudflare `10013`/`10021`; recheck the versions API or pick another transport.
 
 ## Wave 9 — ops & docs
-- [ ] 34. Deploy from CI with an approval environment.
-- [ ] 35. CHANGELOG / release notes per tag.
-- [ ] 36. Uptime check on the prod URL.
-- [ ] 37. README screenshots + "adding songs" guide. (Adding-songs guide done: `docs/ADDING_SONGS.md`; screenshots still to do.)
+- [ ] 34. Deploy from CI with an approval environment. `gated:` see 34b (Cloudflare token as a GitHub secret).
+- [x] 35. CHANGELOG / release notes per tag. Done: `CHANGELOG.md` (Keep a Changelog, v0.1.0–v0.12.0 with Worker version ids). Release flow now: add the entry, tag with `-m "vX.Y.Z: <summary>"`.
+- [x] 36. Uptime check on the prod URL. Done: `.github/workflows/prod-check.yml` every 6 h — HTTP + CSP header + the full e2e suite against prod; opens/comments one `prod-check` issue on failure. First run 36270832447: 16/16.
+- [x] 37. README screenshots + "adding songs" guide. Done: `docs/ADDING_SONGS.md`; `docs/screenshots/` (desktop standby + songbook, mobile romanised search, recent scores; standby so no video frames in the repo); README badges now real CI / prod-check status. Fixed "1 Songs".
 
 ## Gated (not worked until the owner/device says so)
+- [ ] L1. No `LICENSE` file, but README shows an MIT badge linking to one (and `Cargo.toml` has no `license`). `gated:` owner picks the license and copyright holder.
+- [ ] 34b. Deploy from CI (item 34). `gated:` needs a Cloudflare API token stored as a GitHub secret (owner) plus an approval environment.
 - [ ] 1. Custom domain. `gated:` owner deferred (costs money).
 - [ ] 3. Real mic test on iPhone Safari / Android Chrome. `gated:` needs devices.
 - [ ] 4. YouTube pre-roll ads vs sync. `gated:` needs real playback on a device.

@@ -1,0 +1,52 @@
+name: Prod check
+
+# Every 6 hours: the live site is up, serves its security headers, and passes the e2e suite in headless Chrome.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  KTV_URL: https://ktv-rs.solana-thailand.workers.dev/
+
+jobs:
+  prod:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - id: check
+        continue-on-error: true
+        run: |
+          status=0
+          headers=$(curl -sSI --max-time 20 "$KTV_URL") || status=1
+          echo "$headers" | grep -qi '^content-security-policy:.*wasm-unsafe-eval' || status=1
+          node --test tests/e2e/app.test.mjs > e2e.log 2>&1 || status=1
+          {
+            echo "## Prod check $( [ $status = 0 ] && echo passed || echo failed ) ($(date -u +%FT%TZ))"
+            echo
+            echo '```'
+            echo "$headers" | grep -i -E '^(HTTP|content-security-policy|permissions-policy|cross-origin-opener-policy)' || echo "no response / missing headers"
+            grep -E '^(✔|✖|ℹ (pass|fail))|actual|expected|Error' e2e.log | head -60
+            echo '```'
+          } | tee report.md
+          exit $status
+      # One open issue per outage: comment on it instead of opening duplicates
+      - if: steps.check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create prod-check --color B60205 --description "Live site check failed" --force
+          open=$(gh issue list --label prod-check --state open --json number --jq '.[0].number')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body-file report.md
+          else
+            gh issue create --title "Prod check failed" --label prod-check --body-file report.md
+          fi
+          exit 1
