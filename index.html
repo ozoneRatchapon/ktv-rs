@@ -8,6 +8,12 @@
         <meta name="description" content="Open-source Thai karaoke in the browser: official karaoke videos, original-vocal guide, live pitch meter. No tracking." />
         <meta name="theme-color" content="#0b0d13" />
         <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+        <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <!-- Installable: opens in its own window from the home screen / desktop (booth mode) -->
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="KTV-RS" />
         <!-- The weights most text uses (Kanit 400/600/700, Outfit) load alongside the wasm, so text does not swap and shift after the first render -->
         <link rel="preload" href="/fonts/kanit-400-thai.woff2" as="font" type="font/woff2" crossorigin />
         <link rel="preload" href="/fonts/kanit-400-latin.woff2" as="font" type="font/woff2" crossorigin />

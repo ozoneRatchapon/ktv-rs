@@ -279,3 +279,16 @@ test('privacy: the note is served, and Clear my data (two taps) resets this devi
   assert.equal(await page.eval(`localStorage.getItem('_ktv_seek_lead')`), null);
   assert.equal(await page.eval(`localStorage.getItem('other.site')`), 'keep', 'other keys untouched');
 }));
+
+test('installable: manifest parses, icons load, Chrome reports no installability errors', () => with_page({}, async (page) => {
+  const manifest = await page.send('Page.getAppManifest');
+  assert.deepEqual(manifest.errors, [], 'manifest parse errors');
+  const parsed = JSON.parse(manifest.data);
+  assert.equal(parsed.display, 'standalone');
+  for (const icon of parsed.icons) {
+    assert.equal(await page.eval(`fetch(${JSON.stringify(icon.src)}).then((r) => r.status + ' ' + r.headers.get('content-type'))`), '200 image/png', icon.src);
+  }
+  const { installabilityErrors } = await page.send('Page.getInstallabilityErrors');
+  // Each test runs in a fresh (incognito-like) browser context, where Chrome never offers install
+  assert.deepEqual(installabilityErrors.map((e) => e.errorId).filter((id) => id !== 'in-incognito'), []);
+}));
