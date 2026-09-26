@@ -214,3 +214,23 @@ test('search: romanised alias and wrong keyboard layout both find Thai songs', (
   assert.equal(await page.eval(`document.querySelector('.retyped-text strong').textContent`), 'รัก');
   assert.ok(await page.eval(`${titles}.length > 0 && ${titles}.every((t) => t.includes('รัก'))`));
 }));
+
+test('favourites and recently sung shelves', () => with_page({}, async (page) => {
+  const chip = (label) => `[...document.querySelectorAll('.chip')].find((c) => c.textContent === ${JSON.stringify(label)})`;
+  const titles = `[...document.querySelectorAll('.song-title')].map((e) => e.textContent)`;
+  const starred = await page.eval(`(() => {
+    const card = [...document.querySelectorAll('.song-card')].find((c) => c.querySelector('.song-code-tag').textContent === '#10005');
+    card.querySelector('.fav-btn').click();
+    return card.querySelector('.song-title').textContent;
+  })()`);
+  await page.eval(`${chip('★ Favourites')}.click()`);
+  await page.wait_for(`JSON.stringify(${titles}) === ${JSON.stringify(JSON.stringify([starred]))}`);
+  // Recently sung: newest first (seeded; a real entry needs 30 s on stage)
+  await page.eval(`localStorage.setItem('ktv.picks.v1', JSON.stringify({ favourites: ['gmm_005'], recent: ['gmm_003', 'gmm_001'] }))`);
+  await page.reload();
+  await page.eval(`${chip('Recently sung')}.click()`);
+  await page.wait_for(`${titles}.length === 2`);
+  assert.deepEqual(await page.eval(`[...document.querySelectorAll('.song-code-tag')].map((e) => e.textContent)`), ['#10003', '#10001']);
+  await page.eval(`${chip('★ Favourites')}.click()`);
+  await page.wait_for(`JSON.stringify(${titles}) === ${JSON.stringify(JSON.stringify([starred]))}`);
+}));

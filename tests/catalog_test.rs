@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use app::catalog::{builtin_catalog, get_categories, get_initial_catalog, upsert_custom, CustomCodesExhausted, CUSTOM_CODES};
+use app::catalog::{builtin_catalog, get_initial_catalog, CATEGORIES, upsert_custom, CustomCodesExhausted, CUSTOM_CODES};
 
 #[test]
 fn test_guide_is_a_different_video_than_karaoke() {
@@ -42,7 +42,7 @@ fn is_youtube_id(id: &str) -> bool {
 fn test_catalog_json_loads_and_is_well_formed() {
     let catalog = get_initial_catalog();
     assert!(!catalog.is_empty(), "assets/catalog.json is empty");
-    let categories: HashSet<&str> = get_categories().into_iter().filter(|c| *c != "All").collect();
+    let categories: HashSet<&str> = CATEGORIES.into_iter().collect();
     let mut ids = HashSet::new();
     let mut codes = HashSet::new();
     for song in &catalog {

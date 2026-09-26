@@ -3,6 +3,7 @@ pub mod catalog;
 pub mod components;
 pub mod keys;
 pub mod mic;
+pub mod picks;
 pub mod pitch;
 pub mod recommendation;
 pub mod score;

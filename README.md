@@ -34,6 +34,7 @@
 ### 5. OG KTV "Type-to-Search" (Global Keystroke Capture)
 * Type any song title, artist, or 5-digit code anywhere on your keyboard to instantly filter the catalog.
 * Native support for `Backspace`, `Delete`, and `Escape` for both English and Thai scripts.
+* ☆ a song to keep it under **★ Favourites**; songs you sing for 30 seconds or more appear under **Recently sung** (both stay on this device).
 * Thai-friendly matching: tone marks and spaces are optional (`รักไมไหว` finds `รักไม่ไหว`), romanised titles work (`rak mai wai`), and a query typed with the keyboard on the wrong layout (`l;ylfu` for `สวัสดี`) is retried on the other one. Aliases come from the official karaoke video titles: `python3 tools/title_aliases.py --write`.
 
 ### 6. 10-Key KTV Keypad Remote & On-Screen Play/Pause

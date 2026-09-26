@@ -19,9 +19,8 @@ pub fn get_initial_catalog() -> Vec<Song> {
     CATALOG.to_vec()
 }
 
-pub fn get_categories() -> Vec<&'static str> {
-    vec!["All", "Rock", "Pop", "Indie", "Modern", "Luk Thung", "Classic 90s"]
-}
+/// Genre names used by `category` in `assets/catalog.json`.
+pub const CATEGORIES: [&str; 6] = ["Rock", "Pop", "Indie", "Modern", "Luk Thung", "Classic 90s"];
 
 /// Keypad codes reserved for songs added by URL; built-in songs stay below this range.
 pub const CUSTOM_CODES: std::ops::RangeInclusive<u32> = 90001..=99999;

@@ -7,8 +7,9 @@ use app::catalog;
 use app::components;
 use app::keys::{self, KeyAction};
 use app::recommendation;
+use app::picks::Picks;
 use app::score::{self, TakeResult};
-use app::storage::{self, Session, GUIDES_KEY, SCORES_KEY, SESSION_KEY, SETTINGS_KEY};
+use app::storage::{self, Session, GUIDES_KEY, PICKS_KEY, SCORES_KEY, SESSION_KEY, SETTINGS_KEY};
 use app::sync::SyncCommand;
 use app::timing::{self, GuideOverrides, SavedTiming};
 use app::types;
@@ -98,6 +99,9 @@ fn App() -> Element {
     let mut score_history = use_signal(|| storage::load::<Vec<TakeResult>>(SCORES_KEY).unwrap_or_default());
     let mut last_result = use_signal(|| None::<TakeResult>);
     use_effect(move || storage::save(SCORES_KEY, &*score_history.read()));
+    // Favourites and recently sung songs on this device
+    let mut picks = use_signal(|| storage::load::<Picks>(PICKS_KEY).unwrap_or_default());
+    use_effect(move || storage::save(PICKS_KEY, &*picks.read()));
     use_effect(move || {
         let b = booth.read();
         let session = Session::capture(b.current.clone(), b.queue.clone(), b.next_queue_id, &catalog.read(), builtin_catalog());
@@ -153,6 +157,7 @@ fn App() -> Element {
 
         // Record telemetry for the finished/skipped song
         if let Some(curr) = current_song() {
+            picks.write().record_sung(&curr.song.id, elapsed_secs);
             let tele = SongTelemetry {
                 song_id: curr.song.id.clone(),
                 code: curr.song.code.clone(),
@@ -348,6 +353,8 @@ fn App() -> Element {
                                 on_play_song: handle_play_song,
                                 on_queue_song: handle_queue_song,
                                 on_queue_next_song: handle_queue_next_song,
+                                picks: picks(),
+                                on_toggle_favourite: move |id: String| picks.write().toggle_favourite(&id),
                             }
                         },
                         KtvTab::Queue => rsx! {
