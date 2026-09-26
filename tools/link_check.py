@@ -54,8 +54,8 @@ def main():
         for (song, kind, video_id), code in dead:
             print(f"| {song['code']} | {song['title']} — {song['artist']} | {kind} | "
                   f"[{video_id}](https://www.youtube.com/watch?v={video_id}) | {code} {REASONS.get(code, '')} |")
-        print("\nFix: replace the video in `assets/catalog.json` (guide: re-measure with "
-              "`tools/guide_align.py --write`, or remove `guide` so the song falls back to karaoke audio).")
+        print("\nFix: replace the video in `assets/catalog.json` (guide: re-time it with the in-app "
+              "Guide Timing Tools and paste its Copy JSON, or remove `guide` so the song falls back to karaoke audio).")
     for song, kind, video_id in unknown:
         print(f"unreachable (network): {song['code']} {kind} {video_id}", file=sys.stderr)
     sys.exit(1 if dead else 0)

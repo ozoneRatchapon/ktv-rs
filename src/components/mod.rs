@@ -1,5 +1,6 @@
 pub mod catalog_view;
 pub mod custom_add;
+pub mod guide_timing;
 pub mod header;
 pub mod pitch_meter;
 pub mod player;

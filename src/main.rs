@@ -5,8 +5,9 @@ use std::rc::Rc;
 use app::catalog;
 use app::components;
 use app::recommendation;
-use app::storage::{self, Session, SESSION_KEY, SETTINGS_KEY};
+use app::storage::{self, Session, GUIDES_KEY, SESSION_KEY, SETTINGS_KEY};
 use app::sync::SyncCommand;
+use app::timing::{self, GuideOverrides};
 use app::types;
 
 use catalog::builtin_catalog;
@@ -20,7 +21,7 @@ use components::{
     settings::Settings,
 };
 use recommendation::{SleepTimeAnticipator, SongTelemetry};
-use types::{AppSettings, KtvTab, QueueItem, Song};
+use types::{AppSettings, GuideTrack, KtvTab, QueueItem, Song};
 
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 
@@ -54,13 +55,24 @@ fn App() -> Element {
     let settings = use_signal(|| storage::load::<AppSettings>(SETTINGS_KEY).unwrap_or_default());
     let mut active_tab = use_signal(|| KtvTab::Catalog);
 
+    // Guide timings set in timing mode on this device; they win over the catalog's
+    let mut guide_overrides = use_signal(|| storage::load::<GuideOverrides>(GUIDES_KEY).unwrap_or_default());
+
     // Resume the last session (reconciled with this build's catalog), or start with the demo queue
     let restored = use_hook(|| {
-        Rc::new(storage::load::<Session>(SESSION_KEY).map_or_else(demo_session, |s| s.reconcile(builtin_catalog())))
+        let mut session =
+            storage::load::<Session>(SESSION_KEY).map_or_else(demo_session, |s| s.reconcile(builtin_catalog()));
+        let songs = session.current.iter_mut().chain(&mut session.queue).map(|it| &mut it.song);
+        timing::apply_overrides(songs, &guide_overrides.peek());
+        Rc::new(session)
     });
     let mut catalog = use_signal({
         let restored = restored.clone();
-        move || builtin_catalog().iter().chain(&restored.custom_songs).cloned().collect::<Vec<_>>()
+        move || {
+            let mut songs: Vec<Song> = builtin_catalog().iter().chain(&restored.custom_songs).cloned().collect();
+            timing::apply_overrides(songs.iter_mut(), &guide_overrides.peek());
+            songs
+        }
     });
     let mut current_song = use_signal({
         let restored = restored.clone();
@@ -74,6 +86,7 @@ fn App() -> Element {
 
     // Persist on change (effects re-run when the signals they read are written)
     use_effect(move || storage::save(SETTINGS_KEY, &*settings.read()));
+    use_effect(move || storage::save(GUIDES_KEY, &*guide_overrides.read()));
     use_effect(move || {
         let session =
             Session::capture(current_song(), queue(), next_queue_id(), &catalog.read(), builtin_catalog());
@@ -416,6 +429,34 @@ fn App() -> Element {
         Ok(new_song)
     };
 
+    // Put a guide on every copy of a song: catalog, current song, queue
+    let mut set_song_guide = move |song_id: &str, guide: Option<GuideTrack>| {
+        for song in catalog.write().iter_mut().filter(|s| s.id == song_id) {
+            song.guide = guide.clone();
+        }
+        if let Some(curr) = current_song.write().as_mut().filter(|c| c.song.id == song_id) {
+            curr.song.guide = guide.clone();
+        }
+        for item in queue.write().iter_mut().filter(|it| it.song.id == song_id) {
+            item.song.guide = guide.clone();
+        }
+    };
+
+    let handle_save_guide = move |guide: GuideTrack| {
+        let Some(song_id) = current_song().map(|c| c.song.id) else { return };
+        guide_overrides.write().insert(song_id.clone(), guide.clone());
+        set_song_guide(&song_id, Some(guide));
+    };
+
+    // Back to the catalog timing (custom songs have none, so their guide is dropped)
+    let handle_revert_guide = move |_: ()| {
+        let Some(song_id) = current_song().map(|c| c.song.id) else { return };
+        guide_overrides.write().remove(&song_id);
+        let builtin = builtin_catalog().iter().find(|s| s.id == song_id).and_then(|s| s.guide.clone());
+        set_song_guide(&song_id, builtin);
+    };
+
+    let guide_overridden = current_song().is_some_and(|c| guide_overrides.read().contains_key(&c.song.id));
     let current_key = current_song().map(|c| c.key_shift).unwrap_or(0);
     let ant_candidates = anticipated_set().candidates;
     let ant_commitment = anticipated_set().commitment_hash;
@@ -458,6 +499,10 @@ fn App() -> Element {
                         on_replay_song: handle_replay_song,
                         on_key_change: handle_key_change,
                         on_video_ended: handle_video_ended,
+                        show_timing_tools: settings().show_timing_tools,
+                        guide_overridden,
+                        on_save_guide: handle_save_guide,
+                        on_revert_guide: handle_revert_guide,
                     }
                 }
 

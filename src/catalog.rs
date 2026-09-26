@@ -2,9 +2,10 @@ use std::sync::LazyLock;
 
 use crate::types::Song;
 
-/// Song data lives in `assets/catalog.json` (edited by hand or by `tools/guide_align.py --write`).
+/// Song data lives in `assets/catalog.json` (edited by hand; guide timings come from the in-app
+/// Guide Timing Tools' "Copy JSON").
 /// Embedded at compile time: no startup fetch, and `cargo test` rejects a malformed file.
-/// Guide timing is measured, not guessed: MV time = offset_secs + rate * karaoke time.
+/// Guide timing is lined up by ear, not guessed: MV time = offset_secs + rate * karaoke time.
 pub const CATALOG_JSON: &str = include_str!("../assets/catalog.json");
 
 static CATALOG: LazyLock<Vec<Song>> =

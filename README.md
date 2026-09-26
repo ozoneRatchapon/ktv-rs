@@ -28,7 +28,8 @@
 ### 4. Synchronized Vocal Switcher with Intro Offset Compensation
 * **Karaoke Mode**: Official backing track with lyrics.
 * **Original Vocal Mode**: Instant switch to the official artist MV, shown beside (or, on narrow screens, below) the karaoke video, to hear the singer while preserving song progress. The MV plays only while visible; it is never used as a hidden audio source.
-* **Offset Compensation**: Uses individual song offsets (`guide_offset_secs`) to align lyrics accurately between Karaoke bumpers and Official MV story intros without restarting from 0.
+* **Offset Compensation**: Each song's `guide` maps karaoke time to MV time (`MV = offset_secs + rate × karaoke`), so the switch lands on the same lyric without restarting from 0.
+* **Guide Timing Tools** (Settings → Guide Timing Tools): line up an original-vocal MV by ear with the embedded players only (no audio download). Nudge ±1 s / ±0.1 s while *Hear both* plays the karaoke music under the guide (misalignment is heard as an echo); for an MV that drifts, *Mark in sync* early and late and *Fit speed*. *Save* keeps the timing on this device; *Copy JSON* gives the `guide` entry for `assets/catalog.json`.
 
 ### 5. OG KTV "Type-to-Search" (Global Keystroke Capture)
 * Type any song title, artist, or 5-digit code anywhere on your keyboard to instantly filter the catalog.

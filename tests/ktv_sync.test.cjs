@@ -368,3 +368,70 @@ test('buffering and cued karaoke states never change the pause state', () => {
     assert.equal(sync.debug().paused, false);
     assert.deepEqual(env.sent, []);
 });
+
+test('set_mapping: re-aims a running guide at once, keeps the vocal on', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.load_song(-10, 1);
+    sync.set_start(60);
+    report(sync, 60, 50);
+    sync.switch_vocal(true);
+    env.clear();
+
+    sync.set_mapping(-9.9, 1);
+    const [seek] = env.commands(FRAME.GUIDE, 'seekTo');
+    assert.equal(seek.msg.args[0], 60 - 9.9 + LEAD.RESEEK.fallback);
+    assert.equal(env.commands(FRAME.GUIDE, 'playVideo').length, 0, 'guide is already playing');
+    const d = sync.debug();
+    assert.equal(d.original, true);
+    assert.equal(d.guide_offset, -9.9);
+
+    // Same mapping again (e.g. Save after nudging): no re-seek
+    env.clear();
+    sync.set_mapping(-9.9, 1);
+    assert.equal(env.posts.length, 0);
+});
+
+test('set_mapping: karaoke vocal only stores the mapping; intro target waits for tick', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.load_song(-10, 1);
+    sync.set_start(60);
+    env.clear();
+    sync.set_mapping(-12, 1.001);
+    assert.equal(env.posts.length, 0);
+    assert.equal(sync.debug().guide_rate, 1.001);
+
+    sync.set_start(2);
+    sync.switch_vocal(true);
+    env.clear();
+    sync.set_mapping(-11, 1);
+    assert.equal(env.commands(FRAME.GUIDE, 'seekTo').length, 0);
+});
+
+test('set_monitor: karaoke audio stays on under the guide until turned off or a new song', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.load_song(0, 1);
+    sync.set_start(30);
+    sync.switch_vocal(true);
+    env.clear();
+
+    sync.set_monitor(true);
+    assert.equal(env.commands(FRAME.KARAOKE, 'unMute').length, 1);
+    env.clear();
+    sync.progress();
+    assert.equal(env.commands(FRAME.KARAOKE, 'mute').length, 0, 'progress must not re-mute while monitoring');
+
+    sync.switch_vocal(false);
+    env.clear();
+    sync.switch_vocal(true);
+    assert.equal(env.commands(FRAME.KARAOKE, 'mute').length, 0, 'monitor survives a vocal toggle');
+
+    sync.set_monitor(false);
+    assert.equal(env.commands(FRAME.KARAOKE, 'mute').length, 1);
+
+    sync.set_monitor(true);
+    sync.load_song(0, 1);
+    assert.equal(sync.debug().monitor, false);
+});

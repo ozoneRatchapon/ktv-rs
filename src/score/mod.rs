@@ -4,4 +4,4 @@ mod tuning;
 mod types;
 
 pub use tuning::TuningScorer;
-pub use types::{HeldNote, TuningSummary};
+pub use types::{HeldNote, TuningSummary, MIN_SCORED_NOTES, PERFECT_CENTS, RANDOM_CENTS};

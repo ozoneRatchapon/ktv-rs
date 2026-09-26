@@ -76,6 +76,8 @@
             guide_offset: 0,
             guide_rate: 1,
             original: false,
+            // Timing mode: karaoke audio stays on under the guide, so any misalignment is heard as an echo
+            monitor: false,
             paused: false,
             video_time: 0,
             video_at: null,
@@ -194,7 +196,7 @@
             env.post(FRAME.KARAOKE, '{"event":"listening"}');
             env.post(FRAME.GUIDE, '{"event":"listening"}');
             // Re-assert mute in case the karaoke iframe was remounted
-            if (st.original) command(FRAME.KARAOKE, 'mute');
+            if (st.original && !st.monitor) command(FRAME.KARAOKE, 'mute');
             st.send('TIME:' + Math.floor(karaoke_time()));
         }
 
@@ -239,6 +241,7 @@
             st.guide_offset = offset_secs;
             st.guide_rate = rate;
             st.original = false;
+            st.monitor = false;
             st.guide_waiting = false;
             st.guide_time = undefined;
             st.guide_at = null;
@@ -249,6 +252,25 @@
                 st.paused = false;
                 st.send('PAUSE_STATE:0');
             }
+        }
+
+        // Same song, new timing (timing mode nudge or saved override): re-aim a running guide at once
+        // instead of waiting for the controller, so the curator hears the change immediately
+        function set_mapping(offset_secs, rate) {
+            // Saving the timing already heard (or an unrelated song update) must not jolt the guide
+            if (st.guide_offset === offset_secs && st.guide_rate === rate) return;
+            st.guide_offset = offset_secs;
+            st.guide_rate = rate;
+            if (!st.original || st.guide_waiting) return;
+            const target = guide_target(karaoke_time());
+            if (target < 0) return; // still in the karaoke-only intro: tick() holds the guide
+            seek_guide(target, st.paused ? 'PAIR' : 'RESEEK', false);
+        }
+
+        function set_monitor(both) {
+            st.monitor = both;
+            if (!st.original) return;
+            command(FRAME.KARAOKE, both ? 'unMute' : 'mute');
         }
 
         // Karaoke iframe (re)mounted at `sec`
@@ -314,7 +336,7 @@
             st.guide_waiting = false;
             if (original) {
                 // Mute karaoke backing audio (video and lyrics stay visible), unmute and sync the guide
-                command(FRAME.KARAOKE, 'mute');
+                if (!st.monitor) command(FRAME.KARAOKE, 'mute');
                 command(FRAME.GUIDE, 'unMute');
                 command(FRAME.GUIDE, 'setVolume', [100]);
                 if (st.paused) {
@@ -343,13 +365,16 @@
                 guide_state: st.guide_state,
                 guide_rate_now: st.guide_rate_now,
                 original: st.original,
+                monitor: st.monitor,
                 paused: st.paused,
+                guide_offset: st.guide_offset,
+                guide_rate: st.guide_rate,
                 leads: Object.assign({}, st.leads),
             };
         }
 
         return {
-            bind, load_song, set_start, seek_all, seek_by, restart, set_paused, toggle_playback, switch_vocal,
+            bind, load_song, set_mapping, set_monitor, set_start, seek_all, seek_by, restart, set_paused, toggle_playback, switch_vocal,
             tick, progress, on_message, debug,
         };
     }

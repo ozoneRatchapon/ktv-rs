@@ -26,6 +26,8 @@ fn test_commands_call_guarded_core_methods() {
         (SyncCommand::SeekBy(-5), "seek_by(-5)"),
         (SyncCommand::Restart(18), "restart(18)"),
         (SyncCommand::SwitchVocal { original: true }, "switch_vocal(true)"),
+        (SyncCommand::SetMapping { offset_secs: -18.24, rate: 1.0012 }, "set_mapping(-18.24, 1.0012)"),
+        (SyncCommand::SetMonitor(true), "set_monitor(true)"),
     ];
     for (cmd, call) in cases {
         assert_eq!(cmd.to_js(), format!("if (window.KtvSync) {{ window.KtvSync.{call}; }}"));
