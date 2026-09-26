@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- KTV-RS app icon (original artwork): microphone with sound waves, inside the maskable safe zone (r = 204 px).
+       PNGs in this folder are rendered from it at 512/192/180 px; favicon.ico at 16/32/48. -->
+  <defs>
+    <linearGradient id="mic" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#00f5d4"/>
+      <stop offset="1" stop-color="#00b4d8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0b0d13"/>
+  <rect x="196" y="100" width="120" height="196" rx="60" fill="url(#mic)"/>
+  <g stroke="#0b0d13" stroke-width="10" stroke-linecap="round" opacity="0.35">
+    <line x1="222" y1="152" x2="290" y2="152"/>
+    <line x1="222" y1="192" x2="290" y2="192"/>
+    <line x1="222" y1="232" x2="290" y2="232"/>
+  </g>
+  <g fill="none" stroke="#e2e8f0" stroke-width="24" stroke-linecap="round">
+    <path d="M160 232 a96 96 0 0 0 192 0"/>
+    <line x1="256" y1="328" x2="256" y2="384"/>
+    <line x1="204" y1="396" x2="308" y2="396"/>
+  </g>
+  <g fill="none" stroke-width="18" stroke-linecap="round">
+    <path d="M378 156 a100 100 0 0 1 0 104" stroke="#ff4d8d"/>
+    <path d="M134 156 a100 100 0 0 0 0 104" stroke="#f59e0b"/>
+  </g>
+</svg>

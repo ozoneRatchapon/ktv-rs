@@ -53,7 +53,7 @@ The score today is tuning precision (held notes vs the semitone grid); there is 
 
 ## Wave 8 — platform (Phase 3)
 - [ ] 17. TV / booth mode (10-foot UI).
-- [ ] 32. PWA: installable, offline app shell.
+- [x] 32. PWA: installable, offline app shell. Done (installable part): `manifest.webmanifest` (standalone, theme/background colours), original mic icon (`public/icons/icon.svg` → 512/192/180 PNG + maskable; also replaces the Dioxus-template DNA favicon, 2 KB). Chrome reports no installability errors (normal context); e2e checks manifest + icons. No service worker: playback needs YouTube online anyway, and a SW cache risks serving stale app files after a release; revisit only if an offline songbook is wanted.
 - [ ] 33. Phone remote. `gated:` Durable Objects blocked by Cloudflare `10013`/`10021`; recheck the versions API or pick another transport.
 
 ## Wave 9 — ops & docs
