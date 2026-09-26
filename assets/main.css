@@ -440,8 +440,6 @@ body {
     padding: 1px 6px;
     border-radius: 10px;
 }
-    box-shadow: 0 0 8px rgba(255, 0, 127, 0.5);
-}
 
 /* Main Split Stage */
 .ktv-split-stage {
@@ -453,17 +451,86 @@ body {
     padding: 16px 20px;
 }
 
+/* Narrow screens: player and controller stack and the page scrolls (each section at its natural height) */
 @media (max-width: 1080px) {
     .ktv-split-stage {
-        grid-template-columns: 1fr;
-        grid-template-rows: 400px 1fr;
-        overflow-y: auto;
+        display: block;
+        overflow: visible;
     }
     .ktv-app-wrapper {
         height: auto;
         max-height: none;
         overflow-y: auto;
     }
+}
+
+/* TV mode: readable from across the room; the player gets most of the width */
+.ktv-app-wrapper.tv-mode {
+    zoom: 1.25;
+}
+
+/* zoom scales vh too: 80vh x 1.25 = exactly one screen */
+@media (min-width: 1081px) {
+    .ktv-app-wrapper.tv-mode {
+        height: 80vh;
+        max-height: 80vh;
+    }
+}
+
+@media (min-width: 1081px) {
+    .tv-mode .ktv-split-stage {
+        grid-template-columns: 1.6fr 0.8fr;
+    }
+}
+
+.up-next {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border-glass);
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.up-next-label {
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--accent-cyan);
+    flex-shrink: 0;
+}
+
+.up-next-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    flex-shrink: 0;
+    padding-right: 14px;
+    border-right: 1px solid var(--border-glass);
+}
+
+.up-next-code {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-amber);
+}
+
+.up-next-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.up-next-artist,
+.up-next-empty,
+.up-next-more {
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
 }
 
 /* Player Stage */

@@ -26,6 +26,7 @@ use components::{
     settings::Settings,
     score_card::ScoreCard,
     shortcuts::ShortcutHelp,
+    up_next::UpNext,
 };
 use recommendation::{SleepTimeAnticipator, SongTelemetry};
 use types::{AppSettings, GuideTrack, KtvTab, QueueItem, Song};
@@ -285,7 +286,7 @@ fn App() -> Element {
 
     rsx! {
 
-        div { class: "ktv-app-wrapper",
+        div { class: if settings().tv_mode { "ktv-app-wrapper tv-mode" } else { "ktv-app-wrapper" },
             // Song changes announced to screen readers
             div { class: "sr-only", role: "status", aria_live: "polite",
                 if let Some(curr) = current_song() {
@@ -298,6 +299,11 @@ fn App() -> Element {
                 queue_len: queue().len(),
                 room_name: settings().room_name.clone(),
                 on_help: move |_| show_help.toggle(),
+                tv_mode: settings().tv_mode,
+                on_toggle_tv: move |_| {
+                    let on = !settings.peek().tv_mode;
+                    settings.write().tv_mode = on;
+                },
             }
 
             // Auto-DJ Toast Notification
@@ -335,6 +341,9 @@ fn App() -> Element {
                             score::record(&mut score_history.write(), result.clone());
                             last_result.set(Some(result));
                         },
+                    }
+                    if settings().tv_mode {
+                        UpNext { queue: queue() }
                     }
                 }
 

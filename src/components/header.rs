@@ -7,6 +7,8 @@ pub fn Header(
     queue_len: usize,
     room_name: String,
     on_help: EventHandler<()>,
+    tv_mode: bool,
+    on_toggle_tv: EventHandler<()>,
 ) -> Element {
     rsx! {
         header { class: "ktv-header",
@@ -53,6 +55,14 @@ pub fn Header(
                     class: if active_tab() == KtvTab::Settings { "nav-btn active" } else { "nav-btn" },
                     onclick: move |_| active_tab.set(KtvTab::Settings),
                     span { "Settings" }
+                }
+
+                button {
+                    class: if tv_mode { "nav-btn active" } else { "nav-btn" },
+                    title: "TV mode: bigger text and player for a booth or TV screen",
+                    aria_pressed: "{tv_mode}",
+                    onclick: move |_| on_toggle_tv.call(()),
+                    span { "TV" }
                 }
 
                 button {

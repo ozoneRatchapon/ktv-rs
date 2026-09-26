@@ -58,6 +58,7 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 
 ### 8. Install as an App
 * Chrome/Edge: **Install**; iPhone/iPad Safari: **Share → Add to Home Screen**. KTV-RS then opens in its own window, which suits a booth PC or TV.
+* **TV** (header): bigger text and player, plus **Up next** under the video, readable from across the room.
 
 ### 9. Mic Pitch Meter & Tuning Score
 * **Mic: On** shows the note you are singing (e.g. `A4 +12¢`), detected in Rust/wasm (McLeod pitch method) from an AudioWorklet. Mic audio never leaves the device. For its first second it measures the room, then ignores anything not clearly louder than the room.

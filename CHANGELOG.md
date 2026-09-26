@@ -3,6 +3,12 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.14.0] - 2026-09-27
+### Added
+- **TV** mode (header button): bigger text and player for a booth or TV screen, with **Up next** under the video.
+### Fixed
+- Desktop layout: player and songbook now sit side by side on one screen as designed (a broken CSS rule had stacked them since the first release). Phones are unchanged.
+
 ## [0.13.0] - 2026-09-27
 ### Added
 - Install as an app (Add to Home Screen / Install): opens in its own window, handy for a karaoke booth or TV.
@@ -79,6 +85,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 ## [0.1.0] - 2026-09-26 (`f1fb63c8`)
 - First public release.
 
+[0.14.0]: https://github.com/ozoneRatchapon/ktv-rs/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/ozoneRatchapon/ktv-rs/compare/v0.12.1...v0.13.0
 [0.12.1]: https://github.com/ozoneRatchapon/ktv-rs/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/ozoneRatchapon/ktv-rs/compare/v0.11.0...v0.12.0

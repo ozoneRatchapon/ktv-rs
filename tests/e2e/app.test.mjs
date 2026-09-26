@@ -292,3 +292,20 @@ test('installable: manifest parses, icons load, Chrome reports no installability
   // Each test runs in a fresh (incognito-like) browser context, where Chrome never offers install
   assert.deepEqual(installabilityErrors.map((e) => e.errorId).filter((id) => id !== 'in-incognito'), []);
 }));
+
+test('desktop: player and songbook side by side in one screen (no page scroll)', () => with_page({ width: 1280, height: 800 }, async (page) => {
+  assert.equal(await page.eval(`getComputedStyle(document.querySelector('.ktv-split-stage')).display`), 'grid');
+  assert.equal(await page.eval(`document.documentElement.scrollHeight <= innerHeight`), true);
+  const [player, songbook] = JSON.parse(await page.eval(`JSON.stringify(['.stage-player-side', '.stage-control-side'].map((s) => document.querySelector(s).getBoundingClientRect().left))`));
+  assert.ok(songbook > player + 400, 'songbook column to the right of the player');
+}));
+
+test('TV mode: toggle is remembered, shows Up next, still fits one 1080p screen', () => with_page({ width: 1920, height: 1080 }, async (page) => {
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'TV').click()`);
+  await page.wait_for(`document.querySelector('.ktv-app-wrapper').classList.contains('tv-mode')`);
+  assert.equal(await page.eval(`document.querySelectorAll('.up-next-item').length`), 3);
+  assert.equal(await page.eval(`document.documentElement.scrollHeight <= innerHeight`), true, 'fits the screen');
+  assert.equal(await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].filter((b) => b.getBoundingClientRect().bottom > innerHeight).length`), 0, 'controls on screen');
+  await page.reload();
+  await page.wait_for(`document.querySelector('.ktv-app-wrapper').classList.contains('tv-mode')`);
+}));
