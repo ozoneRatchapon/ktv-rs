@@ -112,9 +112,9 @@ fn parabolic_peak(left: f32, mid: f32, right: f32) -> (f32, f32) {
 fn dot(a: &[f32], b: &[f32]) -> f32 {
     const LANES: usize = 8;
     let mut acc = [0.0f32; LANES];
-    let (a_chunks, b_chunks) = (a.chunks_exact(LANES), b.chunks_exact(LANES));
-    let tail: f32 = a_chunks.remainder().iter().zip(b_chunks.remainder()).map(|(x, y)| x * y).sum();
-    for (ca, cb) in a_chunks.zip(b_chunks) {
+    let ((a_chunks, a_tail), (b_chunks, b_tail)) = (a.as_chunks::<LANES>(), b.as_chunks::<LANES>());
+    let tail: f32 = a_tail.iter().zip(b_tail).map(|(x, y)| x * y).sum();
+    for (ca, cb) in a_chunks.iter().zip(b_chunks) {
         for i in 0..LANES {
             acc[i] += ca[i] * cb[i];
         }
