@@ -96,8 +96,10 @@ pub fn CustomAdd(
                 }
 
                 div { class: "form-group",
-                    label { "YouTube URL or Video ID *" }
+                    label { r#for: "custom_url", "YouTube URL or Video ID *" }
                     input {
+                        id: "custom_url",
+                        name: "custom_url",
                         class: "form-input",
                         r#type: "text",
                         placeholder: "e.g. https://www.youtube.com/watch?v=9aCUDQ8SPcA or 9aCUDQ8SPcA",
@@ -108,8 +110,10 @@ pub fn CustomAdd(
 
                 div { class: "form-row",
                     div { class: "form-group flex-1",
-                        label { "Song Title" }
+                        label { r#for: "custom_title", "Song Title" }
                         input {
+                            id: "custom_title",
+                            name: "custom_title",
                             class: "form-input",
                             r#type: "text",
                             placeholder: "Title",
@@ -119,8 +123,10 @@ pub fn CustomAdd(
                     }
 
                     div { class: "form-group flex-1",
-                        label { "Artist" }
+                        label { r#for: "custom_artist", "Artist" }
                         input {
+                            id: "custom_artist",
+                            name: "custom_artist",
                             class: "form-input",
                             r#type: "text",
                             placeholder: "Artist",
@@ -131,7 +137,7 @@ pub fn CustomAdd(
                 }
 
                 div { class: "form-group",
-                    label { "Intro Skip Offset (Seconds)" }
+                    label { r#for: "custom_intro_skip", "Intro Skip Offset (Seconds)" }
                     div { class: "intro-preset-row",
                         button {
                             class: if intro_skip() == 0 { "preset-btn active" } else { "preset-btn" },
@@ -155,6 +161,8 @@ pub fn CustomAdd(
                         }
                     }
                     input {
+                        id: "custom_intro_skip",
+                        name: "custom_intro_skip",
                         class: "form-input mt-2",
                         r#type: "number",
                         min: "0",

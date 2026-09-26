@@ -18,7 +18,7 @@
 ### 2. Unobstructed YouTube Players
 * Nothing is drawn over either YouTube player (YouTube Required Minimum Functionality: no overlays in front of an embedded player); banners and badges live below the video.
 * Pause/play from the YouTube player's own controls is mirrored into the app, so the guide and the timer stay in step.
-* Clicking inside a video moves keyboard focus into it; click anywhere outside the video to resume Type-to-Search.
+* Clicking inside a video still leaves Type-to-Search working: the app takes keyboard focus back from the player right after the click.
 
 ### 3. KTV Timeline Scrubber & Quick Jumps
 * Custom HTML5 timeline scrubber slider showing formatted `current_time` and `total_time` (`mm:ss`).

@@ -62,3 +62,6 @@ Browser-measured sync error after switch: 0.00–0.12s (settled ~0.03–0.08s), 
 
 ## Update 2026-09-26 (later): measuring without downloads
 `tools/guide_align.py` downloaded karaoke and MV audio with yt-dlp, which YouTube's terms forbid, so it was removed (owner decision). New guides are timed by ear in the app: Settings → Guide Timing Tools (`src/timing/`, `src/components/guide_timing.rs`). *Hear both* plays the karaoke music under the guide so an offset is heard as an echo; *Mark in sync* early and late + *Fit speed* recovers `rate` for drifting MVs. The measured `guide` values already in `assets/catalog.json` stay. The edited-MV trap above still applies: if marks early and late disagree beyond a plausible speed (outside 0.9–1.1), Fit speed refuses; pick another upload.
+
+## Update 2026-09-26 (focus without a shield)
+The click shield (fix 1 above) was removed for YouTube policy, which brought back issue 1. Now a window `blur` listener in `main.rs` (next to the keydown listener, removed with it) checks on the next tick whether focus went into an iframe and, if so, blurs it and calls `window.focus()`. The click itself already reached the player, so its controls still work; only keystrokes come back to Type-to-Search.

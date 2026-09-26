@@ -24,6 +24,7 @@ use recommendation::{SleepTimeAnticipator, SongTelemetry};
 use types::{AppSettings, GuideTrack, KtvTab, QueueItem, Song};
 
 const MAIN_CSS: Asset = asset!("/assets/main.css");
+const FAVICON: Asset = asset!("/assets/favicon.ico");
 
 fn main() {
     dioxus::launch(App);
@@ -139,8 +140,22 @@ fn App() -> Element {
                     dioxus.send('CHAR:' + e.key);
                 }
             };
+            // A click inside a YouTube iframe moves keyboard focus into it, which
+            // would swallow Type-to-Search. The click has already landed by the
+            // time blur fires, so hand focus straight back to the page.
+            const reclaim = () => setTimeout(() => {
+                const el = document.activeElement;
+                if (el && el.tagName === 'IFRAME') {
+                    el.blur();
+                    window.focus();
+                }
+            }, 0);
             window.addEventListener('keydown', handler);
-            window._ktv_remove_search_listener = () => window.removeEventListener('keydown', handler);
+            window.addEventListener('blur', reclaim);
+            window._ktv_remove_search_listener = () => {
+                window.removeEventListener('keydown', handler);
+                window.removeEventListener('blur', reclaim);
+            };
         "#);
 
         spawn(async move {
@@ -462,6 +477,7 @@ fn App() -> Element {
     let ant_commitment = anticipated_set().commitment_hash;
 
     rsx! {
+        document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
 
         div { class: "ktv-app-wrapper",

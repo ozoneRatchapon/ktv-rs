@@ -174,6 +174,9 @@ pub fn Player(
                             span { class: "time-text current-time", "{format_time(current_playback_sec())}" }
                             div { class: "slider-wrapper",
                                 input {
+                                    id: "playback_scrubber",
+                                    name: "playback_scrubber",
+                                    aria_label: "Playback position",
                                     class: "ktv-scrubber-slider",
                                     r#type: "range",
                                     min: "0",

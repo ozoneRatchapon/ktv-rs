@@ -110,6 +110,9 @@ pub fn GuideTiming(
 
             div { class: "timing-row",
                 input {
+                    id: "guide_video",
+                    name: "guide_video",
+                    aria_label: "Guide video link or ID",
                     class: "text-input timing-video-input",
                     r#type: "text",
                     placeholder: "Original MV link or video ID",
