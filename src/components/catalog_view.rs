@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use crate::search;
 use crate::types::Song;
 
 #[component]
@@ -13,23 +14,12 @@ pub fn CatalogView(
 
     let categories = crate::catalog::get_categories();
 
-    let filtered_songs = {
-        let q = search_query().trim().to_lowercase();
+    let hits = {
         let cat = selected_category();
-
-        catalog
-            .iter()
-            .filter(|s| {
-                let matches_cat = cat == "All" || s.category == cat;
-                let matches_query = q.is_empty()
-                    || s.title.to_lowercase().contains(&q)
-                    || s.artist.to_lowercase().contains(&q)
-                    || s.code.contains(&q);
-                matches_cat && matches_query
-            })
-            .cloned()
-            .collect::<Vec<Song>>()
+        let in_category: Vec<Song> = catalog.iter().filter(|s| cat == "All" || s.category == cat).cloned().collect();
+        search::search(&in_category, &search_query())
     };
+    let filtered_songs = hits.songs;
 
     rsx! {
         div { class: "catalog-container",
@@ -71,6 +61,12 @@ pub fn CatalogView(
             // Song list count
             div { class: "catalog-meta-row",
                 span { class: "count-text", "{filtered_songs.len()} Songs" }
+                if let Some(retyped) = &hits.retyped {
+                    span { class: "retyped-text", role: "status",
+                        "Keyboard was on the other layout: showing results for "
+                        strong { lang: "th", "{retyped}" }
+                    }
+                }
             }
 
             // Song list grid

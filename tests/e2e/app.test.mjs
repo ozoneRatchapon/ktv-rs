@@ -201,3 +201,16 @@ test('mic: room check, noise gate, held notes give a Tuning score, the finished 
   })()`);
   assert.deepEqual(rows, [sung], 'history survives reload');
 }));
+
+test('search: romanised alias and wrong keyboard layout both find Thai songs', () => with_page({}, async (page) => {
+  const titles = `[...document.querySelectorAll('.song-title')].map((e) => e.textContent)`;
+  for (const key of 'rak mai wai'.replace(/ /g, '')) await page.key(key);
+  await page.wait_for(`${titles}.length === 1`);
+  assert.deepEqual(await page.eval(titles), ['รักไม่ไหวแล้วโว้ย']);
+  await page.key('Escape');
+  // "รัก" typed with the keyboard left on English
+  for (const key of 'iyd') await page.key(key);
+  await page.wait_for(`!!document.querySelector('.retyped-text')`);
+  assert.equal(await page.eval(`document.querySelector('.retyped-text strong').textContent`), 'รัก');
+  assert.ok(await page.eval(`${titles}.length > 0 && ${titles}.every((t) => t.includes('รัก'))`));
+}));
