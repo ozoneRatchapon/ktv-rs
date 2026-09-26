@@ -15,3 +15,6 @@
 # Self-hosted fonts (public/fonts) are not hashed: cache long, but revalidate after a week
 /fonts/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/favicon.ico
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400

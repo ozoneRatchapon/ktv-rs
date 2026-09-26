@@ -29,8 +29,8 @@ use components::{
 use recommendation::{SleepTimeAnticipator, SongTelemetry};
 use types::{AppSettings, GuideTrack, KtvTab, QueueItem, Song};
 
-const MAIN_CSS: Asset = asset!("/assets/main.css");
-const FAVICON: Asset = asset!("/assets/favicon.ico");
+// In the static <head> at build time: the stylesheet loads alongside the wasm instead of after it has run
+const _: Asset = asset!("/assets/main.css", AssetOptions::css().with_static_head(true));
 
 fn main() {
     dioxus::launch(App);
@@ -280,8 +280,6 @@ fn App() -> Element {
     let ant_candidates = anticipated_set().candidates;
 
     rsx! {
-        document::Link { rel: "icon", href: FAVICON }
-        document::Link { rel: "stylesheet", href: MAIN_CSS }
 
         div { class: "ktv-app-wrapper",
             // Header Bar
