@@ -1,7 +1,9 @@
 use dioxus::prelude::*;
 
 use crate::storage;
+use crate::browser;
 use crate::tip;
+use crate::mc::McVoice;
 use crate::types::AppSettings;
 
 #[component]
@@ -153,6 +155,27 @@ pub fn Settings(
                             s.tip.rpc_url = evt.value().trim().to_string();
                             settings.set(s);
                         }
+                    }
+                }
+
+                div { class: "setting-row",
+                    div { class: "setting-desc",
+                        div { class: "setting-title", "MC Voice" }
+                        div { class: "setting-sub", "Announces each song as it starts and the tuning score when it ends, with a voice on this device only (nothing is sent anywhere; silent if the device has no Thai / English voice)" }
+                    }
+                    button {
+                        id: "mc_voice",
+                        class: if current_settings.mc_voice == McVoice::Off { "toggle-btn" } else { "toggle-btn active" },
+                        onclick: move |_| {
+                            let mut s = settings();
+                            s.mc_voice = s.mc_voice.next();
+                            match s.mc_voice {
+                                McVoice::Off => browser::stop_speaking(),
+                                _ => browser::load_voices(),
+                            }
+                            settings.set(s);
+                        },
+                        "{current_settings.mc_voice.label()}"
                     }
                 }
 

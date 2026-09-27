@@ -11,6 +11,7 @@ const chrome_bin = process.env.CHROME_BIN ??
 
 /** Longest a single DevTools call may take (well under node --test's per-test timeout). */
 const CALL_TIMEOUT_MS = 30000;
+const CLEANUP_TIMEOUT_MS = 5000;
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -70,7 +71,13 @@ export async function launch({ real_autoplay = false } = {}) {
       await page.send('Page.addScriptToEvaluateOnNewDocument', { source: FAKE_MIC });
     }
     await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
-    page.close = () => browser.send('Target.disposeBrowserContext', { browserContextId });
+    // Cleanup never fails a test: on CI runners Chrome has stalled disposing a context (with YouTube frames) for
+    // 30 s+ after the test body passed. Close the tab first, then give the context a few seconds; a leaked context
+    // lives only until the browser closes after the file.
+    page.close = async () => {
+      await browser.send('Target.closeTarget', { targetId }, undefined, CLEANUP_TIMEOUT_MS).catch((e) => console.warn(e.message));
+      await browser.send('Target.disposeBrowserContext', { browserContextId }, undefined, CLEANUP_TIMEOUT_MS).catch((e) => console.warn(e.message));
+    };
     return page;
   }
 
@@ -100,12 +107,12 @@ async function connect(ws_url) {
   };
   // A call Chrome never answers (hung renderer, a navigation swallowing an evaluate) fails with its name and
   // params instead of stalling the whole test until --test-timeout, so a CI log says which step stuck
-  const send = (method, params = {}, sessionId) => new Promise((resolve, reject) => {
+  const send = (method, params = {}, sessionId, timeout_ms = CALL_TIMEOUT_MS) => new Promise((resolve, reject) => {
     const id = ++next_id;
     const timer = setTimeout(() => {
       pending.delete(id);
-      reject(new Error(`CDP ${method} got no answer in ${CALL_TIMEOUT_MS} ms: ${JSON.stringify(params).slice(0, 300)}`));
-    }, CALL_TIMEOUT_MS);
+      reject(new Error(`CDP ${method} got no answer in ${timeout_ms} ms: ${JSON.stringify(params).slice(0, 300)}`));
+    }, timeout_ms);
     const settle = (fn) => (value) => { clearTimeout(timer); fn(value); };
     pending.set(id, { resolve: settle(resolve), reject: settle(reject) });
     ws.send(JSON.stringify({ id, method, params, ...(sessionId && { sessionId }) }));

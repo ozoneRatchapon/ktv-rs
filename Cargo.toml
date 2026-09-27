@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.27.0"
+version = "0.28.0"
 authors = ["ozoneRatchapon <ratchapon.poc@gmail.com>"]
 edition = "2021"
 license = "AGPL-3.0-only"
@@ -48,6 +48,9 @@ web-sys = { version = "0.3", features = [
     "Location",
     "RequestInit",
     "Response",
+    "SpeechSynthesis",
+    "SpeechSynthesisUtterance",
+    "SpeechSynthesisVoice",
     "Storage",
     "Url",
     "Window",

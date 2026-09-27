@@ -660,7 +660,7 @@ test('tip request: the room QR opens the phone page; a paid request plays next a
   await set_tip_wallet(page, tip_wallet);
   await page.wait_for(`!!document.querySelector('.tip-request-qr')`);
   const request_page = await page.eval(`document.querySelector('.tip-request').href`);
-  assert.ok(request_page.startsWith(`${await page.eval('location.origin')}/request.html#to=${tip_wallet}&c=devnet&ref=`), request_page);
+  assert.ok(request_page.startsWith(`${await page.eval('location.origin')}/request#to=${tip_wallet}&c=devnet&ref=`), request_page);
   const room_reference = new URLSearchParams(new URL(request_page).hash.slice(1)).get('ref');
   assert.equal(await page.eval(`document.documentElement.scrollHeight <= innerHeight`), true, 'both QRs fit 1080p');
 
@@ -690,4 +690,59 @@ test('tip request: the room QR opens the phone page; a paid request plays next a
     `solana:${tip_wallet}?amount=2&spl-token=4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU&reference=${room_reference}`
     + `&label=${encodeURIComponent('VIP ROOM 07')}&message=Request%20%23${code}&memo=ktv%3Areq%3A${code}`);
   assert.equal(await page.eval(`document.getElementById('test_badge').hidden`), false, 'devnet is marked');
+  // Or find the song by name: the index loads on first search, with the booth's codes
+  await page.eval(`(() => { const i = document.getElementById('song_search'); i.value = 'รักไมไหวแลว'; i.dispatchEvent(new Event('input')); })()`);
+  await page.wait_for(`document.querySelectorAll('#results button').length > 0`);
+  assert.match(await page.eval(`document.querySelector('#results button').textContent`), /^10004รักไม่ไหวแล้วโว้ย/);
+  await page.eval(`document.querySelector('#results button').click()`);
+  assert.equal(await page.eval(`document.getElementById('code').value`), '10004');
+  assert.match(await page.eval(`document.getElementById('pay').getAttribute('href')`), /&memo=ktv%3Areq%3A10004$/);
+  assert.equal(await page.eval(`document.querySelectorAll('#results li').length`), 0, 'results close on pick');
+}));
+
+test('MC voice: off by default; when on, each new song is announced once in the chosen language', () => with_page({}, async (page) => {
+  // Record instead of speaking; headless Chrome has no voices, so the test supplies them (network-only at first)
+  await page.eval(`(() => {
+    const voice = (lang, localService) => Object.defineProperties(Object.create(SpeechSynthesisVoice.prototype), {
+      lang: { value: lang }, localService: { value: localService }, name: { value: lang }, voiceURI: { value: lang }, default: { value: false } });
+    window.__voices = [voice('en-US', false)];
+    window.__local_voices = () => { window.__voices = [voice('en-US', false), voice('th-TH', true), voice('en-US', true)]; };
+    speechSynthesis.getVoices = () => window.__voices;
+    // The real utterance only takes a real voice; a plain one takes the stub
+    window.SpeechSynthesisUtterance = class { constructor(text) { this.text = text; } };
+    window.__spoken = [];
+    speechSynthesis.speak = (u) => window.__spoken.push({ lang: u.lang, text: u.text, local: u.voice?.localService });
+  })()`);
+  await page.eval(`[...document.querySelectorAll('.shortcut-help button')].find((b) => b.textContent === 'Close').click()`);
+  const next_song = `[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`;
+  await page.eval(next_song);
+  await sleep(1000);
+  assert.deepEqual(await page.eval('window.__spoken'), [], 'silent until chosen');
+
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'Settings').click()`);
+  await page.wait_for(`!!document.getElementById('mc_voice')`);
+  await page.click('#mc_voice');
+  await page.wait_for(`document.getElementById('mc_voice').textContent === 'ไทย'`);
+  // No Thai voice on the device: silent, never a network voice
+  await page.eval(next_song);
+  await sleep(1000);
+  assert.deepEqual(await page.eval('window.__spoken'), [], 'no local voice, nothing said');
+  await page.eval('window.__local_voices()');
+  await page.eval(next_song);
+  await page.wait_for('window.__spoken.length === 1');
+  const title = await page.eval(`document.querySelector('.now-title').textContent`);
+  const [said] = await page.eval('window.__spoken');
+  assert.equal(said.lang, 'th-TH');
+  assert.equal(said.local, true, 'an on-device voice');
+  assert.ok(said.text.includes(title), `"${said.text}" names the song on stage, "${title}"`);
+  // A replay is the same song: not announced again
+  await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Replay').click()`);
+  await sleep(1000);
+  assert.equal(await page.eval('window.__spoken.length'), 1, 'replay is not re-announced');
+
+  await page.click('#mc_voice');
+  await page.wait_for(`document.getElementById('mc_voice').textContent === 'English'`);
+  await page.eval(next_song);
+  await page.wait_for('window.__spoken.length === 2');
+  assert.equal(await page.eval('window.__spoken[1].lang'), 'en-US');
 }));

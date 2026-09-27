@@ -39,25 +39,58 @@ fn close<'a>(songs: impl IntoIterator<Item = &'a Song>, library: Library, query:
     found.into_iter().map(|(_, s)| s).collect()
 }
 
+/// How well a song matched, best first: its code, then the title (whole, start, inside), the artist (start,
+/// inside), an alias, and last a query whose words match separately ("artist title" typed in one box).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum Rank {
+    Code,
+    TitleWhole,
+    TitleStart,
+    TitleInside,
+    ArtistStart,
+    ArtistInside,
+    Alias,
+    Words,
+}
+
+/// `key` is [`search_key`]: title, artist, then aliases, one per line.
+fn rank(key: &str, needle: &str, words: &[String]) -> Option<Rank> {
+    let mut fields = key.split('\n');
+    let (title, artist) = (fields.next().unwrap_or_default(), fields.next().unwrap_or_default());
+    let rank = match () {
+        _ if title == needle => Rank::TitleWhole,
+        _ if title.starts_with(needle) => Rank::TitleStart,
+        _ if title.contains(needle) => Rank::TitleInside,
+        _ if artist.starts_with(needle) => Rank::ArtistStart,
+        _ if artist.contains(needle) => Rank::ArtistInside,
+        _ if fields.any(|alias| alias.contains(needle)) => Rank::Alias,
+        _ if words.len() > 1 && words.iter().all(|w| key.contains(w.as_str())) => Rank::Words,
+        _ => return None,
+    };
+    Some(rank)
+}
+
 fn matching<'a>(songs: impl IntoIterator<Item = &'a Song>, library: Library, query: &str) -> Vec<&'a Song> {
     let needle = normalize(query);
     let code = query.trim();
     if needle.is_empty() {
         return songs.into_iter().collect();
     }
-    songs
+    let words: Vec<String> = query.split_whitespace().map(normalize).filter(|w| !w.is_empty()).collect();
+    let mut scratch = String::new();
+    let mut ranked: Vec<(Rank, &Song)> = songs
         .into_iter()
-        .filter(|s| {
-            s.code.contains(code)
-                || match library.search_key(s) {
-                    Some(key) => key.contains(&needle),
-                    None => search_key(s).contains(&needle),
-                }
+        .filter_map(|s| match s.code.contains(code) {
+            true => Some((Rank::Code, s)),
+            false => rank(key_of(library, s, &mut scratch), &needle, &words).map(|r| (r, s)),
         })
-        .collect()
+        .collect();
+    // Stable: equal ranks keep the given order (curated catalog first, then the library)
+    ranked.sort_by_key(|(r, _)| *r);
+    ranked.into_iter().map(|(_, s)| s).collect()
 }
 
-/// Search titles, artists, aliases and keypad codes; when nothing matches, retries on the other keyboard layout,
+/// Search titles, artists, aliases and keypad codes, best match first; when nothing matches, retries on the other keyboard layout,
 /// then allows a typo or two ([`super::fuzzy`]).
 /// `library` supplies precomputed keys for its own songs (others are normalised on the fly).
 pub fn search<'a, I>(songs: I, library: Library, query: &str) -> SearchHits<'a>

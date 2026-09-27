@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use crate::mc::McVoice;
 use crate::tip::TipConfig;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -75,6 +76,9 @@ pub struct AppSettings {
     /// Plan 003: Solana Pay tip QR under the player (off until a wallet is set).
     #[serde(default)]
     pub tip: TipConfig,
+    /// Plan 003 A3: spoken MC between songs (off until chosen).
+    #[serde(default)]
+    pub mc_voice: McVoice,
 }
 
 impl Default for AppSettings {
@@ -89,6 +93,7 @@ impl Default for AppSettings {
             seen_shortcuts: false,
             tv_mode: false,
             tip: TipConfig::default(),
+            mc_voice: McVoice::Off,
         }
     }
 }

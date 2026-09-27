@@ -208,3 +208,18 @@ fn test_auto_timed_guides_are_gmm_official_audio_at_the_intro_offset() {
         assert!(song.guide.is_some(), "{karaoke_id}: an auto-timed song has its Vocal button");
     }
 }
+
+#[test]
+fn test_song_index_for_the_phone_page_has_every_song_once_with_four_fields() {
+    use app::catalog::builtin_catalog;
+    let library = app::library::parse(include_str!("../assets/library.json")).expect("library parses");
+    let lib = app::library::Library::new(Box::leak(Box::new(app::library::Songbook::new(library))));
+    let songs: Vec<_> = builtin_catalog().iter().chain(lib.songs()).collect();
+    let index = app::library::song_index(songs.iter().copied());
+    let lines: Vec<&str> = index.lines().collect();
+    assert_eq!(lines.len(), songs.len());
+    assert!(lines.iter().all(|line| line.split('\t').count() == 4), "four fields per line");
+    let codes: std::collections::HashSet<&str> = lines.iter().map(|l| l.split('\t').next().unwrap_or_default()).collect();
+    assert_eq!(codes.len(), lines.len(), "codes are unique, so a tapped result requests one song");
+    assert!(index.contains("10004\tรักไม่ไหวแล้วโว้ย\tโจอี้ ภูวศิษฐ์\t"), "booth codes and titles");
+}

@@ -26,6 +26,10 @@
 /og-image.png
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 
+# Phone request page song index (tools/build_web.sh): changes only with a release
+/songs.txt
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
 /manifest.webmanifest
   Content-Type: application/manifest+json
   Cache-Control: public, max-age=3600

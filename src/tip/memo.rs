@@ -38,5 +38,5 @@ pub fn tip_action(tip: &ConfirmedTip) -> TipAction {
 /// (not even this one) sees the wallet or room in a request log.
 pub fn request_page_url(origin: &str, wallet: &str, cluster: SolanaCluster, reference: &str, room: &str) -> String {
     let (cluster, room) = (cluster.slug(), percent_encode(room));
-    format!("{origin}/request.html#to={wallet}&c={cluster}&ref={reference}&room={room}")
+    format!("{origin}/request#to={wallet}&c={cluster}&ref={reference}&room={room}")
 }

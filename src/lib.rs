@@ -6,6 +6,7 @@ pub mod components;
 pub mod js_bridge;
 pub mod keys;
 pub mod library;
+pub mod mc;
 pub mod links;
 pub mod mic;
 pub mod picks;
