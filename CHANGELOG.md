@@ -3,6 +3,14 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.18.0] - 2026-09-27
+### Removed
+- The key (♭/♯, KEY TRANSPOSE) buttons: they only changed a label, because a web page cannot change the pitch of the audio inside a YouTube player. (A browser extension such as Transpose can, on youtube.com.)
+### Added
+- Official original-vocal videos found for 159 of the 200 most-sung library songs. They get the **Vocal** button once they are lined up by ear: with Guide Timing Tools on, the timing panel offers the found video (**Use suggested MV**).
+### Fixed
+- A guide timed on this device for a library song now comes back every time the song is picked (it was lost when the song was queued again from the list or by Auto-DJ).
+
 ## [0.17.3] - 2026-09-27 (`f1913264`)
 ### Changed
 - Faster start: preparing the full songbook for search takes ~30x less time (25 ms → 0.8 ms natively), which removes a brief freeze on slower phones a few seconds after the page opens.

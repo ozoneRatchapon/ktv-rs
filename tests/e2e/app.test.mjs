@@ -308,6 +308,35 @@ test('fullscreen: typing lists songs beside the video, and one plays from there'
   assert.ok(await page.eval(`!!document.fullscreenElement`), 'still fullscreen');
 }));
 
+test('library MV: timing tools offer the found official video; the timed guide sticks to the song', () => with_page({}, async (page) => {
+  const loaded = `parseInt(document.querySelector('.catalog-meta-row .count-text')?.textContent.replace(/\\D/g, ''), 10) > 5000`;
+  await page.wait_for(`localStorage.getItem('ktv.settings.v1')`);
+  await page.eval(`(() => { const s = JSON.parse(localStorage.getItem('ktv.settings.v1')); s.show_timing_tools = true; localStorage.setItem('ktv.settings.v1', JSON.stringify(s)); })()`);
+  await page.reload();
+  await page.wait_for(loaded);
+  // คนบ้านเดียวกัน - ไผ่ พงศธร (GMM Karaoke 37849): suggested official MV wv-G-kM9pUs, not timed yet
+  const play_code = async () => {
+    await page.eval(`document.activeElement?.blur()`);
+    for (const key of '37849') await page.key(key);
+    await page.wait_for(`document.querySelector('.song-card .song-code-tag')?.textContent === '#37849'`);
+    await page.eval(`document.querySelector('.song-card .play-now').click()`);
+    await page.wait_for(`document.querySelector('.now-title').textContent === 'คนบ้านเดียวกัน'`);
+  };
+  const vocal = `[...document.querySelectorAll('.player-main-controls-row button')].some((b) => b.textContent.startsWith('Vocal:'))`;
+  await play_code();
+  assert.equal(await page.eval(vocal), false, 'an unchecked suggestion gives no Vocal button');
+  await page.wait_for(`!!document.querySelector('.timing-suggestion a[href$="wv-G-kM9pUs"]')`);
+  await page.eval(`document.querySelector('.timing-suggestion button').click()`);
+  await page.wait_for(`document.querySelector('.timing-status')?.textContent === 'saved on this device' && ${vocal}`);
+  assert.equal(await page.eval(`JSON.parse(localStorage.getItem('ktv.guides.v1'))['yt_-x4Urp1Qrrk'].video_id`), 'wv-G-kM9pUs');
+  // Another song, then this one again from the list: the timing saved on this device comes with it
+  await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
+  await page.wait_for(`document.querySelector('.now-title').textContent !== 'คนบ้านเดียวกัน'`);
+  await page.eval(`document.querySelector('.clear-search-btn')?.click()`);
+  await play_code();
+  await page.wait_for(vocal);
+}));
+
 test('favourites and recently sung shelves', () => with_page({}, async (page) => {
   const chip = (label) => `[...document.querySelectorAll('.chip')].find((c) => c.textContent === ${JSON.stringify(label)})`;
   const titles = `[...document.querySelectorAll('.song-title')].map((e) => e.textContent)`;

@@ -44,3 +44,20 @@ python3 tools/title_aliases.py --write   # romanised search aliases from the off
 python3 tools/link_check.py              # every video still public + embeddable
 cargo test --test catalog_test           # unique ids/codes, known category, valid ids, intro < duration
 ```
+
+## Original-vocal video for library songs
+
+Library songs get their **Vocal** button from [`assets/mv_guides.json`](../assets/mv_guides.json), keyed by the karaoke
+video id. `python3 tools/match_mv.py [--top 200]` finds the official MV / lyric video for the most-watched GMM Karaoke
+songs on the labels' channels (GMM GRAMMY OFFICIAL, Genierock, GRAMMY GOLD): metadata only, title **and** artist must
+match, similar length, embeddable. It writes suggestions (`{"video_id": ...}`) and never touches a timed entry; every
+match is listed in `tools/mv_candidates.json` (not committed) for review.
+
+A suggestion reaches singers only once it is **timed by ear** (the audio cannot be analysed without breaking YouTube's
+terms):
+1. Settings → **Guide Timing Tools** on, then play the song (search its code).
+2. The timing panel shows **Official video found**: check it on YouTube, then **Use suggested MV**.
+3. **Play guide**, **Hear both**, nudge until the singer and the karaoke line up (Mark in sync + Fit speed for drift), **Save**.
+4. **Share on GitHub** (or Copy JSON), and add `"offset_secs"` and `"rate"` to the song's entry in `assets/mv_guides.json`.
+
+Then `cargo test --test library_test` (entries must be library songs; timed ones reach the song, untimed ones do not).

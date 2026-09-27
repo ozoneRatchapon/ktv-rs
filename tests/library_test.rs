@@ -121,3 +121,26 @@ fn test_retired_codes_are_not_reused() {
         }
     }
 }
+
+#[test]
+fn test_mv_guides_point_at_library_songs() {
+    use app::library::{suggested_video, timed_guide, MV_GUIDES};
+    let by_video: std::collections::HashMap<&str, &Song> = SONGS.iter().map(|s| (s.youtube_id.as_str(), s)).collect();
+    assert!(!MV_GUIDES.is_empty());
+    for (karaoke_id, guide) in MV_GUIDES.iter() {
+        let song = by_video.get(karaoke_id.as_str()).unwrap_or_else(|| panic!("{karaoke_id}: not a library song"));
+        assert!(is_youtube_id(&guide.video_id), "{karaoke_id}: bad video id {}", guide.video_id);
+        assert_ne!(&guide.video_id, karaoke_id, "{karaoke_id}: the guide must be a different video");
+        match guide.offset_secs {
+            // Timed: the library song carries it, so its Vocal button shows
+            Some(_) => {
+                assert_eq!(song.guide, timed_guide(karaoke_id), "{karaoke_id}");
+                assert_eq!(suggested_video(karaoke_id), None);
+            }
+            None => {
+                assert_eq!(song.guide, None, "{karaoke_id}: an unchecked suggestion must not reach singers");
+                assert_eq!(suggested_video(karaoke_id), Some(guide.video_id.as_str()));
+            }
+        }
+    }
+}

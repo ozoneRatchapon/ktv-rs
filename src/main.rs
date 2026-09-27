@@ -212,7 +212,9 @@ fn App() -> Element {
             // Queue is empty: Auto-DJ plays the top anticipated pick
             let (title, artist, reason) = (&rec.song.title, &rec.song.artist, &rec.reason);
             auto_dj_notice.set(Some(format!("🧠 Auto-DJ: queue is empty, playing next: {title} - {artist} ({reason})")));
-            booth.write().add(rec.song, Requester::AutoDj, Placement::Now);
+            let mut song = rec.song;
+            timing::apply_overrides([&mut song], &guide_overrides.peek());
+            booth.write().add(song, Requester::AutoDj, Placement::Now);
         }
     };
 
@@ -235,7 +237,9 @@ fn App() -> Element {
     };
 
     // Every way of requesting a song goes through here; a song that goes on stage starts a new take
-    let mut request = move |song: Song, requester: Requester, placement: Placement| {
+    let mut request = move |mut song: Song, requester: Requester, placement: Placement| {
+        // Library songs are not in `catalog`, so a guide timed on this device is applied as they are requested
+        timing::apply_overrides([&mut song], &guide_overrides.peek());
         if booth.write().add(song, requester, placement) {
             song_started_at.set(js_sys::Date::now());
         }
@@ -291,7 +295,11 @@ fn App() -> Element {
         set_song_guide(&song_id, Some(guide));
     };
 
-    let catalog_guide = |song_id: &str| builtin_catalog().iter().find(|s| s.id == song_id).and_then(|s| s.guide.clone());
+    // The curated catalog's timing, or a library song's timed official video (assets/mv_guides.json)
+    let catalog_guide = |song_id: &str| match builtin_catalog().iter().find(|s| s.id == song_id) {
+        Some(song) => song.guide.clone(),
+        None => song_id.strip_prefix(library::ID_PREFIX).and_then(library::timed_guide),
+    };
 
     // Back to the catalog timing (custom songs have none, so their guide is dropped)
     let handle_revert_guide = move |_: ()| {

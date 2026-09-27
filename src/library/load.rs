@@ -1,5 +1,6 @@
 use std::sync::OnceLock;
 
+use super::mv::timed_guide;
 use super::types::{Library, LibraryFile, LibraryRow, Songbook};
 use crate::types::Song;
 
@@ -15,12 +16,12 @@ pub fn parse(json: &str) -> Result<Vec<Song>, serde_json::Error> {
         let (name, intro_skip_secs) = (channel.name, channel.intro_skip_secs);
         channel.songs.into_iter().map(move |LibraryRow(youtube_id, code, duration_secs, title, artist, alias)| Song {
             id: format!("{ID_PREFIX}{youtube_id}"),
+            guide: timed_guide(&youtube_id),
             code: code.to_string(),
             title,
             artist,
             aliases: if alias.is_empty() { Vec::new() } else { vec![alias] },
             youtube_id,
-            guide: None,
             duration_secs,
             // A short song must still start before its end
             intro_skip_secs: intro_skip_secs.min(duration_secs / 4),
