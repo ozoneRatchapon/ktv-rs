@@ -77,8 +77,8 @@ impl TuningTally {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct LaneNote {
     pub note: HeldNote,
-    /// Analysis frame (since the take started) where the note ended.
-    pub end_frame: u64,
+    /// Clock time (song seconds) where the note ended.
+    pub end_t: f64,
 }
 
 /// One note bar of the lane, ready to draw: `x0..x1` in 0..=1 across the window.
@@ -90,10 +90,30 @@ pub struct LaneBar {
     pub cents: f32,
 }
 
-/// What the lane shows: bars inside the time window, and the whole semitones spanned (`low..=high`).
+/// What the lane shows: the singer's bars and the melody's target bars inside the time window, and the whole
+/// semitones spanned (`low..=high`). `now_x` marks the present when the window also shows what is coming.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct LaneView {
     pub low: i32,
     pub high: i32,
     pub bars: Vec<LaneBar>,
+    pub targets: Vec<LaneBar>,
+    pub now_x: Option<f32>,
+}
+
+/// One note of a song's melody (the tune the singer should hit), in karaoke-video seconds.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct TargetNote {
+    pub start: f32,
+    pub end: f32,
+    /// MIDI note number (60 = C4).
+    pub midi: u8,
+}
+
+/// Running melody result for one take: frames where the song had a target note, and how many of them the
+/// singer was on the right note (any octave).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct MelodySummary {
+    pub target_frames: u32,
+    pub hit_frames: u32,
 }

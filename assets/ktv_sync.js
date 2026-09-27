@@ -465,6 +465,8 @@
         return {
             bind, load_song, set_mapping, set_monitor, set_start, seek_all, seek_by, set_loop, restart, set_paused, toggle_playback, switch_vocal,
             tick, progress, on_message, debug,
+            // Called per mic frame (~47/s): the karaoke clock alone, without building the debug snapshot
+            time: karaoke_time,
         };
     }
 

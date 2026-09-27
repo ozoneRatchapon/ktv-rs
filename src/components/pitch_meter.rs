@@ -1,14 +1,24 @@
+use std::rc::Rc;
+
 use dioxus::prelude::*;
 
 use crate::mic::{Mic, MicError, HOP_SIZE};
 use crate::pitch::{rms, Mpm, MpmConfig, NoiseGate, NoteReading};
 use crate::score::{
-    LaneView, NoteLane, TakeResult, TuningScorer, TuningSummary, MIN_PHRASE_NOTES, MIN_SCORED_NOTES, PERFECT_CENTS, RANDOM_CENTS,
+    stored_melody, LaneView, LaneWindow, MelodyScorer, MelodySummary, NoteLane, StoredMelodies, TakeResult,
+    TuningScorer, TuningSummary, FULL_COVERAGE, MIN_PHRASE_NOTES, MIN_SCORED_NOTES, PERFECT_CENTS,
+    RANDOM_CENTS,
 };
+use crate::storage::{self, MELODIES_KEY};
+use crate::sync;
 use crate::types::Song;
 
 /// Seconds of singing the note lane shows.
-const LANE_SECONDS: f32 = 8.0;
+const LANE_SECONDS: f64 = 8.0;
+/// With a melody, the lane also shows this much of what is coming (the tune's next notes).
+const LANE_AHEAD_SECONDS: f64 = 2.0;
+/// With a melody the targets scroll, so the lane is redrawn every few frames (~10 per second), not only on changes.
+const SCROLL_EVERY_FRAMES: u32 = 5;
 
 #[derive(Debug, Clone, PartialEq)]
 enum MicState {
@@ -34,6 +44,12 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
     let mut phrase = use_signal(|| None::<u8>);
     let mut current_take = use_signal(|| take);
     // Song of the take being scored: guide edits change `song` without starting a new take
+    // The song's melody, if this device has one (none ship; see plan 002 item 7): enables the melody score
+    let song_id = song.id.clone();
+    let melody = use_memo(use_reactive((&song_id,), |(id,)| {
+        storage::load::<StoredMelodies>(MELODIES_KEY).and_then(|store| stored_melody(&store, &id)).map(Rc::new)
+    }));
+    let mut melody_summary = use_signal(MelodySummary::default);
     let song_meta = (song.id, song.title, song.artist);
     let mut take_song = use_signal(|| song_meta.clone());
 
@@ -41,10 +57,11 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
         if *current_take.peek() != take {
             let (id, title, artist) = &*take_song.peek();
             if let Some(result) = TakeResult::new(id, title, artist, *summary.peek(), js_sys::Date::now()) {
-                on_take_end.call(result);
+                on_take_end.call(result.with_melody_score(melody_summary.peek().score()));
             }
             current_take.set(take);
             summary.set(TuningSummary::default());
+            melody_summary.set(MelodySummary::default());
             lane.set(LaneView::default());
             phrase.set(None);
         }
@@ -59,6 +76,7 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
         }
         state.set(MicState::Starting);
         summary.set(TuningSummary::default());
+        melody_summary.set(MelodySummary::default());
         lane.set(LaneView::default());
         phrase.set(None);
         room_check.set(true);
@@ -66,8 +84,12 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
             let started = Mic::start(move |sample_rate| {
                 let mut detector = Mpm::new(MpmConfig::singing(sample_rate));
                 let mut scorer = TuningScorer::new();
-                let mut notes = NoteLane::new();
-                let window = (LANE_SECONDS * sample_rate / HOP_SIZE as f32) as u64;
+                let frame_secs = f64::from(HOP_SIZE) / f64::from(sample_rate);
+                let mut notes = NoteLane::new(frame_secs);
+                let mut tune = MelodyScorer::new();
+                // Without a video clock (never in the app, but a stalled bridge must not stop the lane), frames count time
+                let mut frame_clock = 0.0f64;
+                let mut frames_since_draw = 0u32;
                 let mut gate = NoiseGate::new();
                 let mut scored_take = *current_take.peek();
                 move |frame: &[f32]| {
@@ -79,15 +101,34 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
                     if *current_take.peek() != scored_take {
                         scored_take = *current_take.peek();
                         scorer = TuningScorer::new();
-                        notes = NoteLane::new();
+                        notes = NoteLane::new(frame_secs);
+                        tune = MelodyScorer::new();
                     }
-                    // ~47 frames/s: only re-render when the shown note changes, a held note is judged or a phrase ends
-                    let judged = scorer.push(estimate.map(|est| est.midi()));
+                    frame_clock += frame_secs;
+                    let t = sync::karaoke_time().unwrap_or(frame_clock);
+                    let midi = estimate.map(|est| est.midi());
+                    let melody = melody.peek();
+                    let melody = melody.as_deref();
+                    if let Some(m) = melody {
+                        if tune.push(m, t, midi) && *melody_summary.peek() != tune.summary() {
+                            melody_summary.set(tune.summary());
+                        }
+                    }
+                    // ~47 frames/s: re-render only when the shown note changes, a held note is judged, a phrase ends,
+                    // or (with a melody) the targets have scrolled a little
+                    let judged = scorer.push(midi);
                     if judged.is_some() {
                         summary.set(scorer.summary());
                     }
-                    if notes.push(estimate.is_some(), judged) {
-                        lane.set(notes.view(window));
+                    frames_since_draw += 1;
+                    let scroll = melody.is_some() && frames_since_draw >= SCROLL_EVERY_FRAMES;
+                    if notes.push(t, estimate.is_some(), judged) || scroll {
+                        frames_since_draw = 0;
+                        let window = match melody {
+                            Some(_) => LaneWindow { past: LANE_SECONDS - LANE_AHEAD_SECONDS, ahead: LANE_AHEAD_SECONDS },
+                            None => LaneWindow { past: LANE_SECONDS, ahead: 0.0 },
+                        };
+                        lane.set(notes.view(window, melody));
                         phrase.set(notes.phrase_score());
                     }
                     let next = estimate.map(|est| est.reading());
@@ -140,6 +181,9 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
                     }
                 }
                 NoteLaneView { view: lane(), phrase: phrase() }
+                if melody().is_some() {
+                    MelodyBadge { summary: melody_summary() }
+                }
                 TuningBadge { summary: summary() }
             }
         }
@@ -169,6 +213,21 @@ fn NoteLaneView(view: LaneView, phrase: Option<u8>) -> Element {
                 for midi in view.low..=view.high {
                     line { key: "g{midi}", class: "lane-grid", x1: "0", x2: "100", y1: "{y(midi as f32)}", y2: "{y(midi as f32)}" }
                 }
+                // The tune's notes (when the song has a melody) behind the singer's, moved to the singer's octave
+                for (i, target) in view.targets.iter().enumerate() {
+                    rect {
+                        key: "t{i}",
+                        class: "lane-target",
+                        x: "{target.x0 * 100.0}",
+                        width: "{((target.x1 - target.x0) * 100.0).max(1.0)}",
+                        y: "{y(target.midi) - row * 0.45}",
+                        height: "{row * 0.9}",
+                        rx: "1",
+                    }
+                }
+                if let Some(now_x) = view.now_x {
+                    line { class: "lane-now", x1: "{now_x * 100.0}", x2: "{now_x * 100.0}", y1: "0", y2: "100" }
+                }
                 for (i, bar) in view.bars.iter().enumerate() {
                     rect {
                         key: "{i}",
@@ -191,6 +250,34 @@ fn NoteLaneView(view: LaneView, phrase: Option<u8>) -> Element {
                     Some(score) => rsx! { span { class: "tuning-value", "{score}" } },
                     None => rsx! { span { class: "tuning-value idle", "—" } },
                 }
+            }
+        }
+    }
+}
+
+/// Melody score, shown only when this device has the song's melody. Same tap-to-explain form as the Tuning badge.
+#[component]
+fn MelodyBadge(summary: MelodySummary) -> Element {
+    let heard = summary.target_frames;
+    let hit = summary.hit_frames;
+    let pending = match summary.score() {
+        Some(_) => String::new(),
+        None => " A score appears after about 2 s of the tune.".to_string(),
+    };
+    rsx! {
+        details { class: "tuning-score melody-score",
+            summary { title: "What does this number mean?",
+                span { class: "tuning-label", "Melody" }
+                match summary.score() {
+                    Some(score) => rsx! { span { class: "tuning-value", "{score}" } },
+                    None => rsx! { span { class: "tuning-value idle", "—" } },
+                }
+                span { class: "tuning-help", aria_hidden: "true", "?" }
+            }
+            div { class: "tuning-explain",
+                p { strong { "Melody 0-100: " } "how much of the tune you sang on the right note. Any octave counts, so low and high voices score the same. 100 = the right note for {FULL_COVERAGE * 100.0:.0}% of the tune's notes (breaths and consonants make all of it impossible)." }
+                p { "This song so far: right note in {hit} of {heard} moments of the tune.{pending}" }
+                p { class: "tuning-caveat", "The grey bars in the lane are the tune, moved to your octave. The melody comes from data saved on this device for this song." }
             }
         }
     }
