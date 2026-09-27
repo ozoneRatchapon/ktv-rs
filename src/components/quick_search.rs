@@ -8,8 +8,8 @@ use crate::types::Song;
 const SHOWN: usize = 8;
 
 /// Search results for the fullscreen player, where the songbook panel is out of view.
-/// Rendered while there is a query; CSS shows it only inside a fullscreen player (beside the video,
-/// never over it: YouTube forbids drawing in front of an embedded player).
+/// Rendered while the player is fullscreen and there is a query; CSS lays it out beside the video
+/// (never over it: YouTube forbids drawing in front of an embedded player).
 #[component]
 pub fn QuickSearch(
     catalog: Vec<Song>,

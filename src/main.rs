@@ -135,6 +135,17 @@ fn App() -> Element {
         }
     });
 
+    // Fullscreen player: the songbook is out of view, so typed searches list beside the video
+    let mut is_fullscreen = use_signal(|| false);
+    use_hook(move || {
+        let mut changes = app::browser::watch_fullscreen();
+        spawn(async move {
+            while let Some(on) = changes.next().await {
+                is_fullscreen.set(on);
+            }
+        });
+    });
+
     // Booth keyboard: type-to-search, Space pause, arrows seek, ? help (assets/ktv_keys.js)
     use_effect(move || {
         let mut messages = keys::install();
@@ -364,8 +375,7 @@ fn App() -> Element {
                     if settings().tv_mode {
                         UpNext { queue: queue() }
                     }
-                    // Fullscreen hides the songbook: typed searches list here, beside the video (CSS)
-                    if !search_query.read().is_empty() {
+                    if is_fullscreen() && !search_query.read().is_empty() {
                         QuickSearch {
                             catalog: catalog(),
                             library: song_library(),
