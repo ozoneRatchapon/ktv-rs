@@ -1299,6 +1299,36 @@ body {
     white-space: nowrap;
 }
 
+.score-card-singer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.score-card-singer strong {
+    color: var(--text-primary);
+}
+
+.leaderboard {
+    margin: 0 0 16px;
+    padding: 0;
+    list-style: none;
+}
+
+.leader-rank {
+    min-width: 18px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.score-row-singer {
+    color: var(--text-secondary);
+}
+
 .clear-data-row {
     display: flex;
     gap: 8px;

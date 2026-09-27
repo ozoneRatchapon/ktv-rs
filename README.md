@@ -66,7 +66,7 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 ### 9. Mic Pitch Meter & Tuning Score
 * **Mic: On** shows the note you are singing (e.g. `A4 +12¢`), detected in Rust/wasm (McLeod pitch method) from an AudioWorklet. Mic audio never leaves the device. For its first second it measures the room, then ignores anything not clearly louder than the room.
 * **Tuning 0–100** rates how exactly your held notes land on a semitone (after 3 held notes). It does not know the song's melody, so it cannot tell whether they are the right notes; tap the badge for the full explanation.
-* When a song ends, a result card shows that take's score; **Queue → Recent scores** keeps the last 20 on this device.
+* When a song ends, a result card shows that take's score; type who sang (or tap a name used before) and **Queue → Party leaderboard** ranks each singer's best take of the last 12 hours. **Recent scores** lists the latest 20. Names and scores stay on this device (**Settings → Clear my data** removes them).
 
 ---
 

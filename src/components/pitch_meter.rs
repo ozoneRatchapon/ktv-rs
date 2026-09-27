@@ -33,7 +33,7 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
     use_effect(use_reactive!(|take, song_meta| {
         if *current_take.peek() != take {
             let (id, title, artist) = &*take_song.peek();
-            if let Some(result) = TakeResult::new(id, title, artist, *summary.peek()) {
+            if let Some(result) = TakeResult::new(id, title, artist, *summary.peek(), js_sys::Date::now()) {
                 on_take_end.call(result);
             }
             current_take.set(take);

@@ -410,7 +410,17 @@ fn App() -> Element {
                 // Right / Tabbed Controller Panel
                 section { class: "stage-control-side",
                     if let Some(result) = last_result() {
-                        ScoreCard { result, on_close: move |_| last_result.set(None) }
+                        ScoreCard {
+                            result,
+                            singers: score::recent_singers(&score_history.read(), 6),
+                            on_name: move |name: Option<String>| {
+                                let Some(mut result) = last_result() else { return };
+                                result.singer = name.as_deref().and_then(score::clean_name);
+                                score::name_take(&mut score_history.write(), result.sung_at_ms, result.singer.clone());
+                                last_result.set(Some(result));
+                            },
+                            on_close: move |_| last_result.set(None),
+                        }
                     }
                     if show_help() {
                         ShortcutHelp {
@@ -441,6 +451,7 @@ fn App() -> Element {
                                 current_item: current_song(),
                                 anticipated: ant_candidates,
                                 score_history: score_history(),
+                                leaders: score::leaderboard(&score_history.read(), js_sys::Date::now()),
                                 on_skip: handle_next_song,
                                 on_remove: handle_remove_queue,
                                 on_move_up: handle_move_up,

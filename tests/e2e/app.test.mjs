@@ -204,7 +204,7 @@ test('empty queue: Next Song hands over to Auto-DJ with a different song', () =>
   assert.ok(next && next !== finished, `Auto-DJ picked ${next} after ${finished}`);
 }));
 
-test('mic: room check, noise gate, held notes give a Tuning score, the finished song shows a result card and joins Recent scores', () => with_page({ fake_mic: true }, async (page) => {
+test('mic: room check, noise gate, held notes give a Tuning score, the finished song shows a result card, named for the party leaderboard, and joins Recent scores', () => with_page({ fake_mic: true }, async (page) => {
   const sung = await page.eval(now_title);
   await page.eval(`[...document.querySelectorAll('.pitch-meter button')].find((b) => b.textContent.startsWith('Mic')).click()`);
   await page.wait_for(`!!window.__mic_gain`);
@@ -233,13 +233,22 @@ test('mic: room check, noise gate, held notes give a Tuning score, the finished 
   const { value, song } = JSON.parse(card);
   assert.ok(Number(value) >= 90, `sawtooth in tune scores high, got ${value}`);
   assert.ok(song.startsWith(sung), `card names the finished song: ${song}`);
+  // Name the take for the party leaderboard (typing in the field does not type into the song search)
+  await page.eval(`document.getElementById('singer_name').focus()`);
+  for (const c of '  Pim ') await page.key(c);
+  await page.key('Enter');
+  await page.wait_for(`document.querySelector('.score-card-singer strong')?.textContent === 'Pim'`);
+  assert.equal(await page.eval(search_value), '');
   await page.reload();
-  const rows = await page.eval(`(async () => {
+  const board = await page.eval(`(async () => {
     [...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Queue')).click();
     await new Promise((r) => setTimeout(r, 200));
-    return [...document.querySelectorAll('.score-row-song')].map((e) => e.textContent);
+    return JSON.stringify({
+      leaders: [...document.querySelectorAll('.leaderboard .score-row-song strong')].map((e) => e.textContent),
+      recent: [...document.querySelectorAll('.score-history > .score-row .score-row-song')].map((e) => e.textContent),
+    });
   })()`);
-  assert.deepEqual(rows, [sung], 'history survives reload');
+  assert.deepEqual(JSON.parse(board), { leaders: ['Pim'], recent: [`${sung} · Pim`] }, 'history and name survive reload');
 }));
 
 test('search: romanised alias and wrong keyboard layout both find Thai songs', () => with_page({}, async (page) => {

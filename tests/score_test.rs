@@ -129,12 +129,12 @@ fn test_pitches_unrelated_to_semitones_score_near_zero() {
 
 fn take(title: &str, notes: u32, cents: f32) -> app::score::TakeResult {
     let summary = TuningSummary { notes, mean_abs_cents: Some(cents) };
-    app::score::TakeResult::new("id", title, "artist", summary).expect("judged take")
+    app::score::TakeResult::new("id", title, "artist", summary, 0.0).expect("judged take")
 }
 
 #[test]
 fn test_take_result_needs_a_judged_note() {
-    assert_eq!(app::score::TakeResult::new("id", "t", "a", TuningSummary::default()), None, "mic on but silent");
+    assert_eq!(app::score::TakeResult::new("id", "t", "a", TuningSummary::default(), 0.0), None, "mic on but silent");
     let result = take("t", 5, 8.0);
     assert_eq!(result.score(), Some(100));
     assert_eq!(take("t", 2, 8.0).score(), None, "too few notes for a score, still kept");
@@ -155,4 +155,12 @@ fn test_history_round_trips_through_storage() {
     let history = vec![take("รักไม่ไหวแล้วโว้ย", 12, 11.5)];
     let json = serde_json::to_string(&history).unwrap();
     assert_eq!(app::storage::decode::<Vec<app::score::TakeResult>>(Some(&json)), Some(history));
+}
+
+#[test]
+fn test_takes_saved_before_singer_names_still_load() {
+    let old = r#"[{"song_id":"id","title":"t","artist":"a","notes":5,"mean_abs_cents":9.0}]"#;
+    let history = app::storage::decode::<Vec<app::score::TakeResult>>(Some(old)).expect("old history loads");
+    assert_eq!((history[0].singer.clone(), history[0].sung_at_ms), (None, 0.0));
+    assert!(!serde_json::to_string(&history).unwrap().contains("singer"), "no name, no field");
 }

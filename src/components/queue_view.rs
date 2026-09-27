@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use crate::components::score_card::ScoreHistory;
 use crate::recommendation::AnticipatedRecommendation;
-use crate::score::TakeResult;
+use crate::score::{LeaderRow, TakeResult};
 use crate::types::{QueueItem, Song};
 
 #[component]
@@ -10,6 +10,8 @@ pub fn QueueView(
     current_item: Option<QueueItem>,
     anticipated: Vec<AnticipatedRecommendation>,
     score_history: Vec<TakeResult>,
+    /// Tonight's best take per named singer.
+    leaders: Vec<LeaderRow>,
     on_skip: EventHandler<()>,
     on_remove: EventHandler<u64>,
     on_move_up: EventHandler<usize>,
@@ -182,7 +184,7 @@ pub fn QueueView(
                 }
             }
 
-            ScoreHistory { results: score_history }
+            ScoreHistory { results: score_history, leaders }
         }
     }
 }
