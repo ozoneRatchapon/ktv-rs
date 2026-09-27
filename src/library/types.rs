@@ -14,6 +14,12 @@ pub struct LibraryFile {
 pub struct LibraryChannel {
     pub name: String,
     pub intro_skip_secs: u32,
+    /// Every song's genre, for a label that keeps to one (Smallroom: Indie).
+    #[serde(default)]
+    pub genre: Option<String>,
+    /// Per-song genre by karaoke video id, from the label channel its official video is on (tools/match_mv.py).
+    #[serde(default)]
+    pub genres: std::collections::HashMap<String, String>,
     pub songs: Vec<LibraryRow>,
 }
 

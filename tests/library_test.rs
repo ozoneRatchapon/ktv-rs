@@ -70,7 +70,9 @@ fn test_shelves_and_search_cover_the_library() {
     assert_eq!(picks.shelf(cat, lib(), &Shelf::All).len(), cat.len() + SONGS.len());
     assert_eq!(picks.shelf(cat, lib(), &Shelf::Favourites)[0].id, starred.id);
     assert_eq!(picks.shelf(cat, lib(), &Shelf::Recent)[0].id, starred.id);
-    assert!(picks.shelf(cat, lib(), &Shelf::Category("Rock")).iter().all(|s| !s.id.starts_with(ID_PREFIX)));
+    let rock = picks.shelf(cat, lib(), &Shelf::Category("Rock"));
+    assert!(rock.iter().all(|s| s.category == "Rock"));
+    assert!(rock.iter().any(|s| s.id.starts_with(ID_PREFIX)), "labelled library songs join the genre shelf");
 
     let all = cat.iter().chain(*SONGS);
     let hits = search(all.clone(), lib(), &starred.title);
@@ -162,4 +164,31 @@ fn test_every_label_keeps_its_code_range() {
             assert!(range.contains(&code), "{channel}: {} has code {code}", song.title);
         }
     }
+}
+
+#[test]
+fn test_library_genres_are_known_and_label_based() {
+    use app::catalog::CATEGORIES;
+    let file: app::library::LibraryFile = serde_json::from_str(LIBRARY_JSON).unwrap();
+    for channel in &file.channels {
+        let ids: HashSet<&str> = channel.songs.iter().map(|row| row.0.as_str()).collect();
+        for (vid, genre) in &channel.genres {
+            assert!(ids.contains(vid.as_str()), "{}: genre for unknown video {vid}", channel.name);
+            assert!(CATEGORIES.contains(&genre.as_str()), "{}: unknown genre {genre}", channel.name);
+        }
+    }
+    for song in *SONGS {
+        assert!(song.category.is_empty() || CATEGORIES.contains(&song.category.as_str()), "{}: {}", song.title, song.category);
+    }
+    let count = |channel: &str, genre: &str| SONGS.iter().filter(|s| s.channel == channel && s.category == genre).count();
+    let smallroom = SONGS.iter().filter(|s| s.channel == "Smallroom Karaoke").count();
+    assert_eq!(count("Smallroom Karaoke", "Indie"), smallroom, "Smallroom is an indie label");
+    assert!(count("GMM Karaoke", "Luk Thung") > 1000 && count("GMM Karaoke", "Rock") > 300);
+}
+
+#[test]
+fn test_genre_chip_now_lists_library_songs() {
+    let shelf = Picks::default().shelf(builtin_catalog(), lib(), &Shelf::Category("Luk Thung"));
+    let from_library = shelf.iter().filter(|s| s.id.starts_with(ID_PREFIX)).count();
+    assert!(from_library > 1000, "{from_library} library songs under Luk Thung");
 }

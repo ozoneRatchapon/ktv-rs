@@ -45,6 +45,10 @@ MV_CHANNELS = {
     ],
 }
 
+# A label's own channel tells a song's genre where the label keeps to one (names from catalog::CATEGORIES);
+# GMM GRAMMY OFFICIAL and the other sub-labels mix genres, so their songs get none
+GENRE_BY_CHANNEL = {"mv_grammygold": "Luk Thung", "mv_genierock": "Rock"}
+
 # Best kind first; anything else is not a candidate
 KINDS = [("mv", re.compile(r"official\s*m\.?v|music\s*video|【\s*m\.?v\s*】|\[\s*m\.?v\s*\]", re.I)),
          ("lyric", re.compile(r"lyric", re.I))]
@@ -117,6 +121,33 @@ def best_mv(song, mvs):
     return min(found, key=lambda f: f[:2])[2] if found else None
 
 
+def genres_for(songs, mvs):
+    """{karaoke video id: genre} for every song whose official video is on a single-genre label's channel."""
+    genres = {}
+    for song in songs:
+        mv = best_mv(song, mvs)
+        if mv and mv["channel"] in GENRE_BY_CHANNEL:
+            genres[song["id"]] = GENRE_BY_CHANNEL[mv["channel"]]
+    return genres
+
+
+def write_genres(channels, cache):
+    """Tag every library song (not only the most-watched) with its label's genre, in assets/library.json."""
+    from harvest_library import CHANNELS, to_json
+    label_genre = {c["name"]: c.get("genre") for c in CHANNELS}
+    for channel in channels:
+        channel["genre"] = label_genre.get(channel["name"])
+        if channel["name"] not in MV_CHANNELS:
+            continue
+        mvs = [dict(mv, channel=mv_name, kind=kind_of(mv["title"]))
+               for mv_name, url in MV_CHANNELS[channel["name"]] for mv in listing(mv_name, url, cache)]
+        songs = [{"id": r[0], "secs": r[2], "title": r[3], "artist": r[4]} for r in channel["songs"]]
+        channel["genres"] = genres_for(songs, [mv for mv in mvs if mv["kind"]])
+        print(f"{channel['name']}: genre for {len(channel['genres'])} songs", file=sys.stderr)
+    with open(LIBRARY, "w", encoding="utf-8") as f:
+        f.write(to_json({"channels": channels}))
+
+
 def merge_guides(guides, candidates):
     """Suggestions for the matched songs; timed entries (curated by ear) are kept as they are."""
     merged = {vid: g for vid, g in guides.items() if "offset_secs" in g}
@@ -166,6 +197,7 @@ def main():
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump({"stats": stats, "candidates": candidates}, f, ensure_ascii=False, indent=1)
         f.write("\n")
+    write_genres(channels, cache)
     guides = {}
     if os.path.exists(GUIDES):
         with open(GUIDES, encoding="utf-8") as f:
