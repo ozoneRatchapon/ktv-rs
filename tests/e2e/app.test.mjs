@@ -357,6 +357,14 @@ test('practice: A then B loops the part, a new song clears it; Chords opens a we
   await page.wait_for(`window.KtvSync.debug().loop === null && document.querySelector('.practice-label').textContent.startsWith('Loop a part')`);
 }));
 
+test('search: a typo still finds the song, and says it is showing close matches', () => with_page({}, async (page) => {
+  await page.wait_for(`parseInt(document.querySelector('.catalog-meta-row .count-text')?.textContent.replace(/\\D/g, ''), 10) > 5000`);
+  await page.eval(`document.activeElement?.blur()`);
+  for (const key of 'bodyslan') await page.key(key);
+  await page.wait_for(`document.querySelector('.catalog-meta-row [role=status]')?.textContent.startsWith('No exact match')`);
+  assert.ok(await page.eval(`[...document.querySelectorAll('.song-artist')].some((a) => /bodyslam/i.test(a.textContent))`));
+}));
+
 test('favourites and recently sung shelves', () => with_page({}, async (page) => {
   const chip = (label) => `[...document.querySelectorAll('.chip')].find((c) => c.textContent === ${JSON.stringify(label)})`;
   const titles = `[...document.querySelectorAll('.song-title')].map((e) => e.textContent)`;

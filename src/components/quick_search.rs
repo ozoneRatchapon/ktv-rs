@@ -40,6 +40,9 @@ pub fn QuickSearch(
                     strong { lang: "th", "{retyped}" }
                 }
             }
+            if hits.fuzzy {
+                p { class: "retyped-text", role: "status", "No exact match: closest songs" }
+            }
             p { class: "count-text",
                 match total {
                     0 => "No songs found".to_string(),
