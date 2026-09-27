@@ -6,6 +6,8 @@ pub const PERFECT_CENTS: f32 = 8.0;
 pub const RANDOM_CENTS: f32 = 25.0;
 /// Fewer judged notes than this give no score yet (one lucky note is not a score).
 pub const MIN_SCORED_NOTES: u32 = 3;
+/// A phrase is short: two held notes are enough to judge it.
+pub const MIN_PHRASE_NOTES: u32 = 2;
 
 /// A sustained note: pitch held steady long enough to judge where it sits.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -34,11 +36,64 @@ pub struct TuningSummary {
 impl TuningSummary {
     /// 0..=100: 100 at <= `PERFECT_CENTS` average error, 0 at `RANDOM_CENTS` (no better than chance).
     pub fn score(&self) -> Option<u8> {
-        if self.notes < MIN_SCORED_NOTES {
+        self.score_after(MIN_SCORED_NOTES)
+    }
+
+    /// Same scale as `score`, given once at least `min_notes` notes were judged.
+    pub fn score_after(&self, min_notes: u32) -> Option<u8> {
+        if self.notes < min_notes {
             return None;
         }
         let err = self.mean_abs_cents?;
         let ratio = ((RANDOM_CENTS - err) / (RANDOM_CENTS - PERFECT_CENTS)).clamp(0.0, 1.0);
         Some((ratio * 100.0).round() as u8)
     }
+}
+
+/// Running duration-weighted tally of judged notes (a whole take, or one phrase).
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct TuningTally {
+    notes: u32,
+    weighted_abs_cents: f64,
+    weight: u64,
+}
+
+impl TuningTally {
+    pub fn add(&mut self, note: &HeldNote) {
+        self.notes += 1;
+        self.weighted_abs_cents += f64::from(note.cents_off().abs()) * f64::from(note.frames);
+        self.weight += u64::from(note.frames);
+    }
+
+    pub fn summary(&self) -> TuningSummary {
+        TuningSummary {
+            notes: self.notes,
+            mean_abs_cents: (self.weight > 0).then(|| (self.weighted_abs_cents / self.weight as f64) as f32),
+        }
+    }
+}
+
+/// A judged note placed in time for the note lane.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct LaneNote {
+    pub note: HeldNote,
+    /// Analysis frame (since the take started) where the note ended.
+    pub end_frame: u64,
+}
+
+/// One note bar of the lane, ready to draw: `x0..x1` in 0..=1 across the window.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct LaneBar {
+    pub x0: f32,
+    pub x1: f32,
+    pub midi: f32,
+    pub cents: f32,
+}
+
+/// What the lane shows: bars inside the time window, and the whole semitones spanned (`low..=high`).
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct LaneView {
+    pub low: i32,
+    pub high: i32,
+    pub bars: Vec<LaneBar>,
 }

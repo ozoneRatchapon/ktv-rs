@@ -2631,6 +2631,46 @@ body {
     color: #ffffff;
 }
 
+/* Note lane: the singer's held notes on a semitone grid (below the players, never over them) */
+.note-lane {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.note-lane-plot {
+    width: 120px;
+    height: 32px;
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.lane-grid {
+    stroke: rgba(255, 255, 255, 0.12);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+.lane-note.good {
+    fill: var(--accent-cyan);
+}
+
+.lane-note.near {
+    fill: var(--accent-amber);
+}
+
+.lane-note.off {
+    fill: var(--accent-red);
+}
+
+.note-lane-phrase {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    font-variant-numeric: tabular-nums;
+}
+
 /* Reference-free tuning score beside the live pitch readout */
 .tuning-score {
     display: inline-flex;

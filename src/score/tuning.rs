@@ -1,6 +1,6 @@
 //! Held-note segmentation + tuning error, fed one pitch frame at a time (allocation-free).
 
-use super::types::{HeldNote, TuningSummary};
+use super::types::{HeldNote, TuningSummary, TuningTally};
 
 /// Shortest sustained note judged (~170 ms at 48 kHz): shorter pitches are passing tones or consonants.
 const MIN_NOTE_FRAMES: u32 = 8;
@@ -49,9 +49,7 @@ impl Segment {
 #[derive(Debug, Clone, Default)]
 pub struct TuningScorer {
     seg: Segment,
-    notes: u32,
-    weighted_abs_cents: f64,
-    weight: u64,
+    tally: TuningTally,
 }
 
 impl TuningScorer {
@@ -85,19 +83,14 @@ impl TuningScorer {
     }
 
     pub fn summary(&self) -> TuningSummary {
-        TuningSummary {
-            notes: self.notes,
-            mean_abs_cents: (self.weight > 0).then(|| (self.weighted_abs_cents / self.weight as f64) as f32),
-        }
+        self.tally.summary()
     }
 
     fn close(&mut self) -> Option<HeldNote> {
         let note = self.seg.held_note();
         self.seg = Segment::default();
         let note = note?;
-        self.notes += 1;
-        self.weighted_abs_cents += f64::from(note.cents_off().abs()) * f64::from(note.frames);
-        self.weight += u64::from(note.frames);
+        self.tally.add(&note);
         Some(note)
     }
 }

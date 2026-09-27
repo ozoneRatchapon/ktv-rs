@@ -205,7 +205,7 @@ test('empty queue: Next Song hands over to Auto-DJ with a different song', () =>
   assert.ok(next && next !== finished, `Auto-DJ picked ${next} after ${finished}`);
 }));
 
-test('mic: room check, noise gate, held notes give a Tuning score, the finished song shows a result card, named for the party leaderboard, and joins Recent scores', () => with_page({ fake_mic: true }, async (page) => {
+test('mic: room check, noise gate, held notes give a Tuning score, a phrase score and a note lane, the finished song shows a result card, named for the party leaderboard, and joins Recent scores', () => with_page({ fake_mic: true }, async (page) => {
   const sung = await page.eval(now_title);
   await page.eval(`[...document.querySelectorAll('.pitch-meter button')].find((b) => b.textContent.startsWith('Mic')).click()`);
   await page.wait_for(`!!window.__mic_gain`);
@@ -224,7 +224,18 @@ test('mic: room check, noise gate, held notes give a Tuning score, the finished 
     await page.eval(`window.__mic.frequency.value = ${hz}`);
     await sleep(500);
   }
-  await page.wait_for(`/^\\d+$/.test(document.querySelector('.tuning-value')?.textContent ?? '')`);
+  await page.wait_for(`/^\\d+$/.test(document.querySelector('.tuning-score .tuning-value')?.textContent ?? '')`);
+  // A breath ends the phrase: it gets its own score, and the held notes sit in the lane on grid lines
+  await page.eval(`window.__mic_gain.gain.value = 0`);
+  await page.wait_for(`/^\\d+$/.test(document.querySelector('.note-lane-phrase .tuning-value')?.textContent ?? '')`, 3000);
+  const lane = await page.eval(`JSON.stringify({
+    phrase: Number(document.querySelector('.note-lane-phrase .tuning-value').textContent),
+    notes: document.querySelectorAll('.note-lane-plot .lane-note').length,
+    good: document.querySelectorAll('.note-lane-plot .lane-note.good').length,
+  })`);
+  const { phrase, notes, good } = JSON.parse(lane);
+  assert.ok(phrase >= 90, `in-tune phrase scores high, got ${phrase}`);
+  assert.ok(notes >= 4 && good === notes, `held notes drawn in tune: ${good}/${notes}`);
   await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
   await page.wait_for(`!!document.querySelector('.score-card')`);
   const card = await page.eval(`JSON.stringify({
