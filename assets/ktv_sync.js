@@ -87,6 +87,8 @@
             video_at: null,
             // Karaoke player's last reported YT_STATE; undefined until the mounted player reports one
             karaoke_state: undefined,
+            // The mounted karaoke player has played at least once (before that its reported position is 0)
+            karaoke_started: false,
             start_sec: 0,
             mount_at: env.now(),
             guide_time: undefined,
@@ -233,10 +235,9 @@
                 return;
             }
             const state = data && typeof data.info === 'number' ? data.info : info && info.playerState;
-            // An unstarted or cued player reports 0, not the start second it will play from: not a position
-            const known = typeof state === 'number' ? state : st.karaoke_state;
-            const unstarted = known === YT_STATE.UNSTARTED || known === YT_STATE.CUED;
-            if (info && typeof info.currentTime === 'number' && !unstarted) {
+            if (state === YT_STATE.PLAYING) st.karaoke_started = true;
+            // Until it first plays, a player reports 0, not the start second it will play from: not a position
+            if (info && typeof info.currentTime === 'number' && st.karaoke_started) {
                 st.video_time = info.currentTime;
                 st.video_at = env.now();
             }
@@ -274,6 +275,7 @@
             st.guide_learn = null;
             st.guide_rate_now = 1;
             st.karaoke_state = undefined;
+            st.karaoke_started = false;
             if (st.paused) {
                 st.paused = false;
                 st.send('PAUSE_STATE:0');
@@ -310,6 +312,7 @@
         function set_start(sec) {
             set_position(sec);
             st.karaoke_state = undefined;
+            st.karaoke_started = false;
         }
 
         function seek_all(target) {

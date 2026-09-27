@@ -3,7 +3,11 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.17.0] - 2026-09-27
+## [0.17.1] - 2026-09-27
+### Fixed
+- On opening the site with autoplay blocked, the time under the player could still jump to 00:00; it now stays at the song's start until the video plays.
+
+## [0.17.0] - 2026-09-27 (not deployed: its release check caught the fix above)
 ### Added
 - Search in **Fullscreen**: type while the player is fullscreen and the matching songs list beside the video (top 8), each with **Play**, **Insert** and **Queue**; ✕ clears the search and keeps fullscreen.
 
