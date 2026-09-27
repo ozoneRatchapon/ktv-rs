@@ -1,11 +1,18 @@
 {
-  // Assets-only Worker: serves the static Dioxus web build, no Worker script.
-  // Build + deploy with ./deploy.sh (release builds from `main` only).
+  // Static Dioxus web build + a small Worker for the phone remote (one Durable Object per room).
+  // Assets are served first; only /api/* runs the Worker. Build + deploy from `main` (CI, or ./deploy.sh).
   "$schema": "https://unpkg.com/wrangler@4/config-schema.json",
   "name": "ktv-rs",
+  "main": "worker/index.js",
   "compatibility_date": "2026-09-20",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
-  }
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "ROOM", "class_name": "Room" }]
+  },
+  // SQLite-backed: the class the Workers Free plan allows
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }]
 }

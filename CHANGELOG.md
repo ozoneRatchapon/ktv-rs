@@ -3,6 +3,15 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.30.0] - 2026-09-28
+### Added
+- Phone remote (Keypad → Phone remote, off until the host turns it on). Guests scan the QR with a phone camera and get a page with the song on stage, the next five, song search and a 5-digit code box: *Add to the queue* puts the song at the back, marked 📱 Phone, and the phone is told what happened ("Queued 10001: …" or "No song with code …"). Skip, pause and replay buttons appear on phones only if the host ticks *Phones may skip, pause and replay*. The booth shows how many phones are connected; *New link* (two taps) makes a new code and sends phones on the old one away.
+- How it works: the site now runs a small Cloudflare Worker with one Durable Object per room that relays commands and the song list; the booth holds the room's secret key on this device and the server stores no key, no names and no history (the last song list is kept a day, or until *New link*). Phones close their connection while the page is hidden. Limits: 32 phones per room, a few commands in a burst then one every 10 s.
+
+### Changed
+- The request page (`/request`) and the new remote page share one song search script (`/song_search.js`).
+- Privacy page: the phone remote is the one feature that sends data through this site's server, and what it sends.
+
 ## [0.29.1] - 2026-09-28 (`1f92489e`)
 ### Fixed
 - Phones: with the mic on, the Tuning score (and on narrow phones the note lane) ran off the right edge of the player and was cut off. The mic row now wraps inside the player at any width.

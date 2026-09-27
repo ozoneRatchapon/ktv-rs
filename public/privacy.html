@@ -22,12 +22,13 @@
 <body>
 <main>
     <h1>Privacy</h1>
-    <p class="muted">KTV-RS · last updated 2026-09-28</p>
+    <p class="muted">KTV-RS · last updated 2026-09-28 (phone remote)</p>
 
     <h2>In short</h2>
     <ul>
         <li>No accounts, no cookies of our own, no analytics or trackers.</li>
-        <li>Everything the app remembers stays in <strong>your browser</strong> (localStorage), not on a server.</li>
+        <li>Everything the app remembers stays in <strong>your browser</strong> (localStorage), not on a server. The one exception
+            is the phone remote (off unless the host turns it on), below.</li>
         <li>The microphone is analysed inside this browser tab to show your pitch. Audio is never recorded, stored or sent anywhere.</li>
         <li>The spoken MC (off unless you turn it on) uses only voices installed on this device, so its words never leave it.</li>
     </ul>
@@ -41,6 +42,7 @@
         <tr><td><code>ktv.scores.v1</code></td><td>Tuning scores of your last 100 songs (song, when it ended, notes held, average cents off) and the singer's name if you typed one for the party leaderboard</td></tr>
         <tr><td><code>ktv.chords.v1</code></td><td>Chord changes you entered by ear (chord names and times, per song)</td></tr>
         <tr><td><code>ktv.guides.v1</code></td><td>Guide timings you saved in Guide Timing Tools</td></tr>
+        <tr><td><code>ktv.room.v1</code></td><td>The booth's secret phone-remote key (a new link makes a new one)</td></tr>
         <tr><td><code>_ktv_*_lead</code></td><td>How long this device's players take to start, so the original-vocal guide stays in sync</td></tr>
     </table>
     <p>Remove all of it at any time: <strong>Settings → Clear my data on this device</strong>. Clearing your browser's site data does the same.</p>
@@ -53,6 +55,11 @@
             data in your browser once a video plays. Song thumbnails load from <code>i.ytimg.com</code>.</li>
         <li><strong>Cloudflare</strong> serves the app's files. Like any web host it sees your IP address to deliver them;
             we have not added any logging or analytics of our own.</li>
+        <li><strong>Phone remote (Cloudflare)</strong>: only if the host turns it on under <em>Keypad → Phone remote</em>. The booth
+            and guests' phones then connect to this site's server (a Cloudflare Worker), which passes along the room name, the
+            song on stage and the next five (code, title, artist, and whether it was a tip or phone request), and the song codes
+            phones ask for. It keeps the last of that list for up to a day after the booth was last connected so a phone that
+            joins sees it; no names, no scores, no history, no IP logs of our own. <em>New link</em> deletes it at once.</li>
         <li><strong>GitHub</strong>: only if you use <em>Share on GitHub</em> in Guide Timing Tools, which opens a pre-filled issue
             in your browser. Nothing is sent until you submit it there.</li>
         <li><strong>Google</strong>: only if you tap <em>Chords</em>, which opens a Google search for the song's title and artist

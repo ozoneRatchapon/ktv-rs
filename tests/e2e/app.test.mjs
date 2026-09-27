@@ -273,6 +273,53 @@ test('mic: room check, noise gate, held notes give a Tuning score, a phrase scor
   assert.deepEqual(JSON.parse(board), { leaders: ['Pim'], recent: [`${sung} · Pim`] }, 'history and name survive reload');
 }));
 
+test('phone remote: the Keypad QR opens /remote, a phone sees the stage, queues by code, playback buttons only when the host allows, a new link sends old phones away', () => with_page({}, async (booth) => {
+  const status = `document.querySelector('.phone-remote [role=status]')?.textContent ?? ''`;
+  await booth.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Keypad')).click()`);
+  await booth.wait_for(`!!document.querySelector('.phone-remote .toggle-btn')`);
+  assert.match(await booth.eval(status), /^Off/, 'off until the host turns it on');
+  await booth.click('.phone-remote .toggle-btn');
+  await booth.wait_for(`${status}.startsWith('Online')`);
+  const url = await booth.eval(`document.querySelector('.phone-remote-qr-link').href`);
+  assert.match(url, /\/remote#r=[A-Za-z0-9_-]{22}$/);
+  const on_stage = await booth.eval(now_title);
+  const phone = await browser.new_page({ width: 390, height: 844 });
+  try {
+    await phone.send('Page.navigate', { url });
+    await phone.wait_for(`document.getElementById('now_title')?.textContent === ${JSON.stringify(on_stage)}`);
+    await phone.wait_for(`document.getElementById('status').textContent === 'Connected to the booth'`);
+    await booth.wait_for(`${status}.includes('1 phone connected')`);
+    assert.equal(await phone.eval(`getComputedStyle(document.getElementById('controls')).display`), 'none', 'queue only by default');
+    assert.ok(await phone.eval(`document.querySelectorAll('#next li').length > 0`), 'up next listed');
+    // Queue by code: the booth adds it and answers the phone
+    await phone.eval(`(() => { const c = document.getElementById('code'); c.value = '10001'; c.dispatchEvent(new Event('input')); document.getElementById('queue').click(); })()`);
+    await phone.wait_for(`document.getElementById('reply').textContent.startsWith('Queued 10001')`);
+    assert.equal(await phone.eval(`document.getElementById('reply').dataset.ok`), 'true');
+    await booth.wait_for(`document.querySelector('.auto-dj-toast')?.textContent.includes('📱 Queued 10001')`);
+    await phone.wait_for(`[...document.querySelectorAll('#next li')].some((li) => li.textContent.startsWith('10001') && li.textContent.includes('📱 Phone'))`);
+    // A code the booth does not have is refused with a reason
+    await phone.eval(`(() => { const c = document.getElementById('code'); c.value = '00000'; c.dispatchEvent(new Event('input')); document.getElementById('queue').click(); })()`);
+    await phone.wait_for(`document.getElementById('reply').textContent === 'No song with code 00000'`);
+    // The host allows playback: Skip on the phone moves the booth on
+    await booth.click('#remote_allow_playback');
+    await phone.wait_for(`getComputedStyle(document.getElementById('controls')).display === 'grid'`);
+    await phone.click('#controls button[data-cmd=skip]');
+    await booth.wait_for(`${now_title} !== ${JSON.stringify(on_stage)}`);
+    const next_up = await booth.eval(now_title);
+    await phone.wait_for(`document.getElementById('now_title').textContent === ${JSON.stringify(next_up)}`);
+    // New link (two taps): the old phone is told to scan again, and the QR changes
+    await booth.click('.phone-remote-options .action-btn');
+    await booth.click('.phone-remote-options .action-btn');
+    await phone.wait_for(`document.getElementById('status').textContent.startsWith('The booth made a new code')`);
+    await booth.wait_for(`document.querySelector('.phone-remote-qr-link').href !== ${JSON.stringify(url)}`);
+    await booth.wait_for(`${status}.startsWith('Online')`);
+    assert.deepEqual(await phone.eval('window.__csp'), [], 'phone CSP violations');
+    assert.deepEqual(phone.errors, [], 'phone console errors');
+  } finally {
+    await phone.close();
+  }
+}));
+
 test('search: romanised alias and wrong keyboard layout both find Thai songs', () => with_page({}, async (page) => {
   const titles = `[...document.querySelectorAll('.song-title')].map((e) => e.textContent)`;
   for (const key of 'rak mai wai'.replace(/ /g, '')) await page.key(key);

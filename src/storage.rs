@@ -19,6 +19,8 @@ pub const SCORES_KEY: &str = "ktv.scores.v1";
 pub const PICKS_KEY: &str = "ktv.picks.v1";
 /// [`crate::chords::ChordCharts`]: chord changes entered by ear, by song id.
 pub const CHORDS_KEY: &str = "ktv.chords.v1";
+/// [`crate::room::RoomKey`]: the booth's phone-remote room secret (a new one makes a new phone link).
+pub const ROOM_KEY: &str = "ktv.room.v1";
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Session {

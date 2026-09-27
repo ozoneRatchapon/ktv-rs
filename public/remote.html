@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Room remote · KTV-RS</title>
+    <meta name="description" content="Queue karaoke songs from your phone." />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.ico" />
+    <style>
+        body { margin: 0; background: #0b0d13; color: #e2e8f0; font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        main { max-width: 420px; margin: 0 auto; padding: 24px 20px 48px; display: flex; flex-direction: column; gap: 16px; }
+        h1 { font-size: 24px; margin: 0; }
+        #app:not([hidden]) { display: flex; flex-direction: column; gap: 16px; }
+        h2 { font-size: 13px; margin: 0; color: #8a97ab; text-transform: uppercase; letter-spacing: 0.08em; }
+        .muted { color: #8a97ab; font-size: 14px; margin: 0; }
+        #status { font-size: 14px; margin: 0; color: #f59e0b; }
+        #status[data-online="true"] { color: #00f5d4; }
+        #error { color: #fca5a5; }
+        .now { padding: 14px 16px; border-radius: 12px; border: 1px solid #2a3142; background: #141926; }
+        #now_title { font-size: 20px; font-weight: 800; display: block; }
+        #now_artist { color: #8a97ab; }
+        ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+        ol li { padding: 8px 12px; border-radius: 10px; background: #141926; }
+        .code { color: #00f5d4; font-weight: 700; margin-right: 8px; }
+        .artist { display: block; color: #8a97ab; font-size: 14px; }
+        .tag { font-size: 12px; font-weight: 700; color: #f59e0b; }
+        form { display: flex; flex-direction: column; gap: 10px; }
+        label { font-weight: 700; display: flex; flex-direction: column; gap: 6px; }
+        input { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid #2a3142; background: #141926; color: #fff; }
+        #code { font-size: 28px; letter-spacing: 0.2em; }
+        #results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 45vh; overflow-y: auto; }
+        #results:empty { display: none; }
+        #results button { width: 100%; text-align: left; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid #2a3142; background: #141926; color: #e2e8f0; }
+        button.primary { font: inherit; font-weight: 800; padding: 16px; border-radius: 12px; border: 0; background: #00f5d4; color: #0b0d13; }
+        button.primary:disabled { background: #2a3142; color: #8a97ab; }
+        #controls:not([hidden]) { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        #controls button { font: inherit; font-weight: 700; padding: 14px 0; border-radius: 10px; border: 1px solid #2a3142; background: #141926; color: #e2e8f0; }
+        #reply { margin: 0; min-height: 1.5em; font-weight: 700; }
+        #reply[data-ok="true"] { color: #00f5d4; }
+        #reply[data-ok="false"] { color: #fca5a5; }
+        a { color: #00f5d4; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Room remote</h1>
+    <p id="error" role="alert" hidden>This link is incomplete. Scan the booth's "Phone remote" code again.</p>
+    <div id="app" hidden>
+        <p class="muted" id="room"></p>
+        <p id="status" role="status">Connecting…</p>
+        <section class="now" aria-labelledby="now_label">
+            <h2 id="now_label">Now singing</h2>
+            <span id="now_title" lang="th">…</span>
+            <span id="now_artist" lang="th"></span>
+        </section>
+        <div id="controls" hidden>
+            <button type="button" data-cmd="pause">⏯ Pause</button>
+            <button type="button" data-cmd="skip">⏭ Skip</button>
+            <button type="button" data-cmd="replay">↺ Replay</button>
+        </div>
+        <form id="form">
+            <label for="song_search">Find a song
+                <input id="song_search" name="song_search" type="search" autocomplete="off" placeholder="Title or artist (ไทย / English)" />
+            </label>
+            <ul id="results" aria-label="Songs found"></ul>
+            <label for="code">Song code (5 digits)
+                <input id="code" name="code" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" autocomplete="off" />
+            </label>
+            <button id="queue" class="primary" type="submit" disabled>Add to the queue</button>
+            <p id="reply" role="status"></p>
+        </form>
+        <section aria-labelledby="next_label">
+            <h2 id="next_label">Up next</h2>
+            <ol id="next"></ol>
+            <p class="muted" id="more"></p>
+        </section>
+    </div>
+    <p class="muted">Songs you add show on the booth's queue. This page keeps no names; the song list goes through
+        this site's server (Cloudflare) to reach your phone. <a href="/privacy.html">Privacy</a></p>
+</main>
+<script src="/song_search.js"></script>
+<script src="/remote.js"></script>
+</body>
+</html>
