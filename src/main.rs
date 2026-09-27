@@ -23,6 +23,7 @@ use components::{
     header::Header,
     player::Player,
     queue_view::QueueView,
+    quick_search::QuickSearch,
     remote::Remote,
     settings::Settings,
     score_card::ScoreCard,
@@ -362,6 +363,17 @@ fn App() -> Element {
                     }
                     if settings().tv_mode {
                         UpNext { queue: queue() }
+                    }
+                    // Fullscreen hides the songbook: typed searches list here, beside the video (CSS)
+                    if !search_query.read().is_empty() {
+                        QuickSearch {
+                            catalog: catalog(),
+                            library: song_library(),
+                            search_query,
+                            on_play_song: handle_play_song,
+                            on_queue_song: handle_queue_song,
+                            on_queue_next_song: handle_queue_next_song,
+                        }
                     }
                 }
 

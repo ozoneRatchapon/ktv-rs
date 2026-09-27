@@ -282,6 +282,27 @@ test('Add URL: a video already in the songbook is queued as that song, not copie
   assert.deepEqual(await page.eval(`JSON.parse(localStorage.getItem('ktv.session.v1')).custom_songs`), [], 'no custom copy');
 }));
 
+test('fullscreen: typing lists songs beside the video, and one plays from there', () => with_page({ width: 1280, height: 800 }, async (page) => {
+  await page.wait_for(`parseInt(document.querySelector('.catalog-meta-row .count-text')?.textContent.replace(/\\D/g, ''), 10) > 5000`);
+  await page.tap('.player-main-controls-row button[title="Toggle Fullscreen Cinema Mode"]');
+  await page.wait_for(`document.fullscreenElement?.classList.contains('stage-player-side')`);
+  assert.equal(await page.eval(`!!document.querySelector('.quick-search')`), false, 'no panel before typing');
+  for (const key of 'kamkasakalasin') await page.key(key);
+  const panel = `document.querySelector('.stage-player-side:fullscreen > .quick-search')`;
+  await page.wait_for(`${panel} && getComputedStyle(${panel}).display === 'flex'`);
+  // Beside the video, not over it
+  const layout = JSON.parse(await page.eval(`JSON.stringify({ video: document.querySelector('.video-stage').getBoundingClientRect(), panel: ${panel}.getBoundingClientRect() })`));
+  assert.ok(layout.video.right <= layout.panel.left + 1, `video ${layout.video.right} overlaps panel ${layout.panel.left}`);
+  if (process.env.KTV_SHOT) await page.screenshot(process.env.KTV_SHOT);
+  const item = `[...document.querySelectorAll('.quick-search-item')].find((c) => c.querySelector('.quick-search-title').textContent === 'กำก่าสกาฬสินธ์ุ')`;
+  await page.wait_for(`!!${item}`);
+  await page.eval(`${item}.querySelector('.play-now').click()`);
+  await page.wait_for(`document.querySelector('.now-title').textContent === 'กำก่าสกาฬสินธ์ุ'`);
+  await page.eval(`document.querySelector('.quick-search .clear-search-btn').click()`);
+  await page.wait_for(`!document.querySelector('.quick-search')`);
+  assert.ok(await page.eval(`!!document.fullscreenElement`), 'still fullscreen');
+}));
+
 test('favourites and recently sung shelves', () => with_page({}, async (page) => {
   const chip = (label) => `[...document.querySelectorAll('.chip')].find((c) => c.textContent === ${JSON.stringify(label)})`;
   const titles = `[...document.querySelectorAll('.song-title')].map((e) => e.textContent)`;

@@ -5,6 +5,7 @@ pub mod header;
 pub mod pitch_meter;
 pub mod player;
 pub mod queue_view;
+pub mod quick_search;
 pub mod remote;
 pub mod score_card;
 pub mod settings;

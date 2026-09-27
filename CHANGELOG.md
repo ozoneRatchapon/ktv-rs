@@ -3,6 +3,10 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.17.0] - 2026-09-27
+### Added
+- Search in **Fullscreen**: type while the player is fullscreen and the matching songs list beside the video (top 8), each with **Play**, **Insert** and **Queue**; ✕ clears the search and keeps fullscreen.
+
 ## [0.16.2] - 2026-09-27 (`655085ed`)
 ### Fixed
 - On opening the site, when the browser blocks the video from starting by itself (browsers do until you tap or press a key), the time under the player no longer runs on while the video stands still. After a moment the button shows **Play**: press it (or Space), or YouTube's play button, and the song starts with the time in step. The time also holds while a video is buffering.
