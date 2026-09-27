@@ -3,7 +3,7 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.32.0] - 2026-09-28
+## [0.32.0] - 2026-09-28 (`7fcba75b`)
 ### Added
 - Count-in for practising (musician tools row): tap **Tap** along with the beat four times or more and the song's tempo is saved on this device (♩ 96). **Count-in** then jumps to four beats before the loop's A (or before where the song is) and clicks them in, a higher click on the first, so the part starts on the beat. Taps that slip or skip a beat do not bend the tempo; a pause of two seconds starts the tapping over.
 
