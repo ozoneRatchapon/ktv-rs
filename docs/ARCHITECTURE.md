@@ -88,6 +88,11 @@ $$\text{bottleneck\_penalty} = \begin{cases} -\infty & \text{if dwell} \le 20s \
   channel metadata (no media downloaded; every video oEmbed-checked as embeddable). It is ~900 KB raw / ~300 KB
   gzip, so it is a content-hashed asset (`asset!`, cached `immutable`) fetched after the first paint
   (`browser::fetch_text`) and set once (`library::install`, a `OnceLock`). Until it lands, only the curated songs list.
+* **MV guides** (`assets/mv_guides.json`, `src/library/mv.rs`): original-vocal videos for library songs, keyed by
+  karaoke video id (timed ones reach the song as its guide, untimed ones are timing-panel suggestions; see
+  [ADDING_SONGS.md](ADDING_SONGS.md)). ~385 KB raw / ~115 KB gzip, so like the library it is fetched after the first
+  paint, in parallel with it, and set once (`library::install_guides`) before the library is installed. If it fails,
+  the library still loads without guides.
 * **`Library`** is a `Copy` handle compared by identity, so props holding it never diff 8,000 songs. Its `Songbook`
   keeps a normalised search key per song (`search::search_key`), looked up in O(1) from the entry's address:
   search over the whole songbook takes ~0.2 ms per keystroke instead of ~20 ms (release build, M-series host).
