@@ -130,6 +130,9 @@ cargo clippy --fix --allow-dirty --quiet
 * **Request a song with a tip**: the smaller QR opens a phone page; the guest types a song code, picks an amount and pays. At least 0.10 USDC plays that song next, marked **★ TIP**, with a garland toast on the booth. The blockchain is the relay, so there is no backend or account.
 * **Tips show when they land**: the booth polls the Solana RPC for the song's `reference` (`getSignaturesForAddress` → `getTransaction`), counts a payment only if it succeeded and the singer's USDC balance rose, and shows the running total under the QR. Devnet uses the free public RPC; for Mainnet, set a Helius URL under **Settings → Tip RPC** (the public mainnet RPC refuses browsers).
 
+### 11. Spoken MC
+* **Settings → MC Voice** (Off / ไทย / English): the booth announces each song as it goes on stage ("A tipped request!" for a ★ TIP song) and reads out the tuning score when a take ends. The lines come from templates (no LLM), and the voice is the device's own speech synthesis (on-device voices only, so no text leaves the device). A device with no Thai or English voice stays silent.
+
 ---
 
 ## Privacy & Legal Compliance
@@ -137,7 +140,7 @@ cargo clippy --fix --allow-dirty --quiet
 * **100% Client-Side WebAssembly**: No media or copyrighted files are stored on our servers.
 * **YouTube Embed Compliance**: Standard YouTube embedded players only, following the [YouTube API Developer Policies](https://developers.google.com/youtube/terms/developer-policies) and [Required Minimum Functionality](https://developers.google.com/youtube/terms/required-minimum-functionality): no overlays, no hidden or background playback, no audio separation, no downloading; players stay at least 200x200. All ad views, watch time, and royalties go directly to the respective record labels and artists.
 * **Privacy note**: [`/privacy.html`](public/privacy.html) lists everything stored on the device and what a Solana tip makes public; **Settings → Clear my data on this device** removes it.
-* **Zero Tracking**: No tracking cookies, analytics pixels, or personal data collection (GDPR & PDPA compliant). Fonts (Kanit, Outfit; SIL OFL 1.1) are self-hosted from `public/fonts`, so the app itself makes no third-party requests; only the YouTube player frames (youtube-nocookie.com) and thumbnails (i.ytimg.com) load from Google.
+* **Zero Tracking**: No tracking cookies, analytics pixels, or personal data collection (GDPR & PDPA compliant). Fonts (Kanit, Outfit; SIL OFL 1.1) are self-hosted from `public/fonts`, so the app itself makes no third-party requests; only the YouTube player frames (youtube-nocookie.com) and thumbnails (i.ytimg.com) load from Google, plus a Solana RPC once a tip wallet is set.
 
 ---
 

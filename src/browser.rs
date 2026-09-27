@@ -46,6 +46,53 @@ pub fn watch_fullscreen() -> futures_channel::mpsc::UnboundedReceiver<bool> {
     rx
 }
 
+/// Say `text` in `lang` (a BCP 47 tag) with an on-device voice, queued after anything still being said.
+/// Returns `false` without speaking when the device has no local voice for the language: Chrome's network voices
+/// ("Google US English") send the text to a server. No-op (`false`) on the host.
+pub fn speak(text: &str, lang: &str) -> bool {
+    #[cfg(target_arch = "wasm32")]
+    {
+        use wasm_bindgen::JsCast;
+        let Some(synth) = web_sys::window().and_then(|w| w.speech_synthesis().ok()) else {
+            return false;
+        };
+        let primary = |tag: &str| tag.split(['-', '_']).next().unwrap_or_default().to_ascii_lowercase();
+        let voice = synth
+            .get_voices()
+            .iter()
+            .filter_map(|v| v.dyn_into::<web_sys::SpeechSynthesisVoice>().ok())
+            .find(|v| v.local_service() && primary(&v.lang()) == primary(lang));
+        let (Some(voice), Ok(utterance)) = (voice, web_sys::SpeechSynthesisUtterance::new_with_text(text)) else {
+            return false;
+        };
+        utterance.set_voice(Some(&voice));
+        utterance.set_lang(lang);
+        synth.speak(&utterance);
+        true
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = (text, lang);
+        false
+    }
+}
+
+/// Ask for the speech voices early: Chrome loads them on the first request and answers an empty list until then.
+pub fn load_voices() {
+    #[cfg(target_arch = "wasm32")]
+    if let Some(synth) = web_sys::window().and_then(|w| w.speech_synthesis().ok()) {
+        let _ = synth.get_voices();
+    }
+}
+
+/// Stop speaking and drop anything queued (the MC was turned off).
+pub fn stop_speaking() {
+    #[cfg(target_arch = "wasm32")]
+    if let Some(synth) = web_sys::window().and_then(|w| w.speech_synthesis().ok()) {
+        synth.cancel();
+    }
+}
+
 /// This page's origin (`https://host`), for links a phone opens. `None` on the host.
 pub fn page_origin() -> Option<String> {
     #[cfg(target_arch = "wasm32")]

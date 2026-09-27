@@ -691,3 +691,50 @@ test('tip request: the room QR opens the phone page; a paid request plays next a
     + `&label=${encodeURIComponent('VIP ROOM 07')}&message=Request%20%23${code}&memo=ktv%3Areq%3A${code}`);
   assert.equal(await page.eval(`document.getElementById('test_badge').hidden`), false, 'devnet is marked');
 }));
+
+test('MC voice: off by default; when on, each new song is announced once in the chosen language', () => with_page({}, async (page) => {
+  // Record instead of speaking; headless Chrome has no voices, so the test supplies them (network-only at first)
+  await page.eval(`(() => {
+    const voice = (lang, localService) => Object.defineProperties(Object.create(SpeechSynthesisVoice.prototype), {
+      lang: { value: lang }, localService: { value: localService }, name: { value: lang }, voiceURI: { value: lang }, default: { value: false } });
+    window.__voices = [voice('en-US', false)];
+    window.__local_voices = () => { window.__voices = [voice('en-US', false), voice('th-TH', true), voice('en-US', true)]; };
+    speechSynthesis.getVoices = () => window.__voices;
+    // The real utterance only takes a real voice; a plain one takes the stub
+    window.SpeechSynthesisUtterance = class { constructor(text) { this.text = text; } };
+    window.__spoken = [];
+    speechSynthesis.speak = (u) => window.__spoken.push({ lang: u.lang, text: u.text, local: u.voice?.localService });
+  })()`);
+  await page.eval(`[...document.querySelectorAll('.shortcut-help button')].find((b) => b.textContent === 'Close').click()`);
+  const next_song = `[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`;
+  await page.eval(next_song);
+  await sleep(1000);
+  assert.deepEqual(await page.eval('window.__spoken'), [], 'silent until chosen');
+
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'Settings').click()`);
+  await page.wait_for(`!!document.getElementById('mc_voice')`);
+  await page.click('#mc_voice');
+  await page.wait_for(`document.getElementById('mc_voice').textContent === 'ไทย'`);
+  // No Thai voice on the device: silent, never a network voice
+  await page.eval(next_song);
+  await sleep(1000);
+  assert.deepEqual(await page.eval('window.__spoken'), [], 'no local voice, nothing said');
+  await page.eval('window.__local_voices()');
+  await page.eval(next_song);
+  await page.wait_for('window.__spoken.length === 1');
+  const title = await page.eval(`document.querySelector('.now-title').textContent`);
+  const [said] = await page.eval('window.__spoken');
+  assert.equal(said.lang, 'th-TH');
+  assert.equal(said.local, true, 'an on-device voice');
+  assert.ok(said.text.includes(title), `"${said.text}" names the song on stage, "${title}"`);
+  // A replay is the same song: not announced again
+  await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Replay').click()`);
+  await sleep(1000);
+  assert.equal(await page.eval('window.__spoken.length'), 1, 'replay is not re-announced');
+
+  await page.click('#mc_voice');
+  await page.wait_for(`document.getElementById('mc_voice').textContent === 'English'`);
+  await page.eval(next_song);
+  await page.wait_for('window.__spoken.length === 2');
+  assert.equal(await page.eval('window.__spoken[1].lang'), 'en-US');
+}));

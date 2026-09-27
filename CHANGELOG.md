@@ -4,6 +4,9 @@ User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
 ## [Unreleased]
+### Added
+- Spoken MC (Settings → MC Voice: Off / ไทย / English). It announces each song as it goes on stage, with its own line for a ★ TIP request, and reads the tuning score when a take ends. Template lines (no LLM), three wordings per song, the same one each time for a given song. Only on-device voices are used: Chrome's network voices would send the text to Google, so with no local voice the MC stays silent. Off by default. It does not re-announce a replay or the song restored on load.
+
 ### Changed
 - Search ranks results: a keypad code first, then titles that are the query, start with it or contain it, then artists, then romanised aliases. Before, matches came in songbook order.
 - The request QR links `/request` directly: one fewer redirect on the guest's phone.

@@ -3,11 +3,12 @@ use futures_util::StreamExt;
 use std::collections::HashSet;
 use std::rc::Rc;
 
-use app::booth::{Booth, Placement, Requester};
+use app::booth::{self, Booth, Placement, Requester};
 use app::catalog;
 use app::components;
 use app::keys::{self, KeyAction};
 use app::library;
+use app::mc::{self, McEvent};
 use app::recommendation;
 use app::picks::Picks;
 use app::score::{self, TakeResult};
@@ -44,6 +45,8 @@ const _: Asset = asset!("/assets/ktv_keys.js", AssetOptions::js().with_static_he
 // The full songbook and its songs' original-vocal guides, fetched after the first paint (content-hashed, so cached for good)
 const LIBRARY_JSON: Asset = asset!("/assets/library.json");
 const MV_GUIDES_JSON: Asset = asset!("/assets/mv_guides.json");
+/// The MC waits this long before announcing a song, so the last take's score is said first.
+const MC_SONG_UP_DELAY_MS: i32 = 400;
 
 fn main() {
     dioxus::launch(App);
@@ -242,6 +245,30 @@ fn App() -> Element {
     let handle_play_song = move |song: Song| request(song, Requester::Singer, Placement::Now);
     let handle_queue_song = move |song: Song| request(song, Requester::Guest, Placement::Back);
     let handle_queue_next_song = move |song: Song| request(song, Requester::Priority, Placement::Next);
+    // Plan 003 A3: the MC announces each song that goes on stage (not the one restored on load, not a replay).
+    // A short wait lets the finished take's score be said first.
+    let mut announced = use_signal(|| booth.peek().current.as_ref().map(|c| c.queue_id));
+    use_hook(|| {
+        if settings.peek().mc_voice != app::mc::McVoice::Off {
+            app::browser::load_voices();
+        }
+    });
+    use_effect(move || {
+        let Some(item) = current_song() else { return };
+        if *announced.peek() == Some(item.queue_id) {
+            return;
+        }
+        announced.set(Some(item.queue_id));
+        let voice = settings.peek().mc_voice;
+        let tipped = booth::is_tip_request(&item);
+        let event = McEvent::SongUp { title: item.song.title.clone(), artist: item.song.artist.clone(), tipped };
+        let seed = mc::seed_of(&item.song.id);
+        spawn(async move {
+            app::browser::sleep_ms(MC_SONG_UP_DELAY_MS).await;
+            mc::announce(&event, voice, seed);
+        });
+    });
+
     // Plan 003 S3: tips from both QRs. A request memo with enough USDC queues its song next as ★ TIP; every tip
     // gets a garland toast. Each signature is acted on once, even when a watcher restarts and sees it again.
     let room_reference =
@@ -434,6 +461,10 @@ fn App() -> Element {
                             !guide_overrides.read().contains_key(&c.song.id) && library::auto_timed(&c.song.youtube_id)
                         }),
                         on_take_end: move |result: TakeResult| {
+                            if let Some(score) = result.score() {
+                                let event = McEvent::TakeEnded { score, singer: result.singer.clone() };
+                                mc::announce(&event, settings.peek().mc_voice, mc::seed_of(&result.song_id));
+                            }
                             score::record(&mut score_history.write(), result.clone());
                             last_result.set(Some(result));
                         },
