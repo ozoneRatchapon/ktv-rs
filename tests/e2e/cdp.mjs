@@ -9,6 +9,9 @@ export const app_url = process.env.KTV_URL ?? 'http://localhost:8788/';
 const chrome_bin = process.env.CHROME_BIN ??
   (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : 'google-chrome');
 
+/** Longest a single DevTools call may take (well under node --test's per-test timeout). */
+const CALL_TIMEOUT_MS = 30000;
+
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // A sawtooth "voice" instead of a microphone (headless Chrome has none). Starts silent so the
@@ -95,9 +98,16 @@ async function connect(ws_url) {
     }
     for (const l of listeners) l(msg);
   };
+  // A call Chrome never answers (hung renderer, a navigation swallowing an evaluate) fails with its name and
+  // params instead of stalling the whole test until --test-timeout, so a CI log says which step stuck
   const send = (method, params = {}, sessionId) => new Promise((resolve, reject) => {
     const id = ++next_id;
-    pending.set(id, { resolve, reject });
+    const timer = setTimeout(() => {
+      pending.delete(id);
+      reject(new Error(`CDP ${method} got no answer in ${CALL_TIMEOUT_MS} ms: ${JSON.stringify(params).slice(0, 300)}`));
+    }, CALL_TIMEOUT_MS);
+    const settle = (fn) => (value) => { clearTimeout(timer); fn(value); };
+    pending.set(id, { resolve: settle(resolve), reject: settle(reject) });
     ws.send(JSON.stringify({ id, method, params, ...(sessionId && { sessionId }) }));
   });
   return { ws, send, listeners };
