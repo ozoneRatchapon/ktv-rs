@@ -435,3 +435,76 @@ test('set_monitor: karaoke audio stays on under the guide until turned off or a 
     sync.load_song(0, 1);
     assert.equal(sync.debug().monitor, false);
 });
+
+// YouTube reports karaoke player state as onStateChange (info is the state) or inside infoDelivery
+function karaoke_state(sync, state) {
+    sync.on_message(false, { event: 'onStateChange', info: state });
+}
+
+test('karaoke clock waits for the player: blocked autoplay does not run the time on', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.set_start(18);
+    karaoke_state(sync, YT_STATE.UNSTARTED);
+    env.advance(2000);
+    assert.equal(sync.debug().karaoke_time, 18, 'unstarted: time stays at the start second');
+    sync.progress();
+    assert.deepEqual(env.sent, ['TIME:18']);
+});
+
+test('blocked autoplay shows as paused after the wait; Play starts the video and the clock', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.set_start(18);
+    karaoke_state(sync, YT_STATE.UNSTARTED);
+    env.advance(2000);
+    sync.tick();
+    assert.equal(sync.debug().paused, false, 'still inside the autoplay wait');
+    env.advance(1000);
+    sync.tick();
+    assert.equal(sync.debug().paused, true);
+    assert.ok(env.sent.includes('PAUSE_STATE:1'), 'Rust shows Play');
+    assert.equal(env.commands(FRAME.KARAOKE, 'pauseVideo').length, 0, 'the karaoke player is not commanded');
+
+    env.clear();
+    sync.toggle_playback();
+    assert.equal(env.commands(FRAME.KARAOKE, 'playVideo').length, 1);
+    assert.deepEqual(env.sent, ['PAUSE_STATE:0']);
+    env.advance(500);
+    karaoke_state(sync, YT_STATE.PLAYING);
+    env.advance(3000);
+    assert.equal(Math.round(sync.debug().karaoke_time), 21, 'runs from when it started playing');
+});
+
+test('YouTube play button on a blocked video is mirrored: unpaused, clock runs', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.set_start(0);
+    karaoke_state(sync, YT_STATE.CUED);
+    env.advance(3000);
+    sync.tick();
+    assert.equal(sync.debug().paused, true);
+    karaoke_state(sync, YT_STATE.PLAYING);
+    assert.equal(sync.debug().paused, false);
+    env.advance(4000);
+    assert.equal(Math.round(sync.debug().karaoke_time), 4);
+});
+
+test('autoplay that works never pauses; buffering holds the clock; a new mount forgets the old state', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.set_start(10);
+    karaoke_state(sync, YT_STATE.UNSTARTED);
+    env.advance(300);
+    karaoke_state(sync, YT_STATE.BUFFERING);
+    env.advance(3000);
+    sync.tick();
+    assert.equal(sync.debug().paused, false, 'buffering is loading, not blocked');
+    assert.equal(sync.debug().karaoke_time, 10, 'buffering: clock held');
+    karaoke_state(sync, YT_STATE.PLAYING);
+    env.advance(2000);
+    assert.equal(Math.round(sync.debug().karaoke_time), 12);
+
+    sync.set_start(0);
+    assert.equal(sync.debug().karaoke_state, undefined);
+});

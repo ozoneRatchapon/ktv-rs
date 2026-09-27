@@ -25,6 +25,9 @@
     // Karaoke state reports this soon after our own play/pause command may predate it; don't mirror them
     const OWN_COMMAND_MS = 1000;
     const PROGRESS_MS = 1000;
+    // Autoplay with sound is blocked until the visitor interacts with the page; a karaoke player still unstarted
+    // this long after mounting is shown as paused, so Play (or Space) starts it
+    const AUTOPLAY_WAIT_MS = 2500;
 
     // Speed nudge by error (YouTube only allows 0.05 steps). Between 0.03 and 0.08 the current rate is kept (hysteresis).
     function next_rate(err, rate_now) {
@@ -82,6 +85,8 @@
             paused: false,
             video_time: 0,
             video_at: null,
+            // Karaoke player's last reported YT_STATE; undefined until the mounted player reports one
+            karaoke_state: undefined,
             start_sec: 0,
             mount_at: env.now(),
             guide_time: undefined,
@@ -104,10 +109,16 @@
             env.post(frame, JSON.stringify({ event: 'command', func, args: args || [] }));
         }
 
+        // The player said it is not playing (autoplay blocked, buffering, cued, ended): time must not run on
+        function karaoke_stalled() {
+            return st.karaoke_state !== undefined && st.karaoke_state !== YT_STATE.PLAYING;
+        }
+
         // Karaoke time extrapolated from the last YouTube report (reports arrive every ~0.25-1s)
         function karaoke_time() {
+            if (st.paused || karaoke_stalled()) return st.video_time;
             if (st.video_time > 0 && st.video_at !== null) {
-                return st.paused ? st.video_time : st.video_time + (env.now() - st.video_at) / 1000;
+                return st.video_time + (env.now() - st.video_at) / 1000;
             }
             return Math.max(0, (env.now() - st.mount_at) / 1000 + st.start_sec);
         }
@@ -157,6 +168,8 @@
 
         // Closed-loop sync step (every CONTROL_MS)
         function tick() {
+            const unstarted = st.karaoke_state === YT_STATE.UNSTARTED || st.karaoke_state === YT_STATE.CUED;
+            if (!st.paused && unstarted && env.now() - st.mount_at > AUTOPLAY_WAIT_MS) apply_paused(true, false);
             const action = decide_guide({
                 active: st.original,
                 paused: st.paused,
@@ -225,7 +238,15 @@
             }
             if (data && data.info === YT_STATE.ENDED) st.send('ended');
             const state = data && typeof data.info === 'number' ? data.info : info && info.playerState;
-            if (typeof state === 'number') on_karaoke_state(state);
+            if (typeof state !== 'number') return;
+            if (state === YT_STATE.PLAYING && st.karaoke_state !== YT_STATE.PLAYING) {
+                // Started (or resumed after buffering): extrapolate from now, not from when it stalled
+                st.video_at = env.now();
+                st.mount_at = env.now();
+                st.start_sec = st.video_time;
+            }
+            st.karaoke_state = state;
+            on_karaoke_state(state);
         }
 
         // The karaoke player's own controls stay usable (YouTube forbids covering the player), so a pause or
@@ -249,6 +270,7 @@
             st.guide_state = undefined;
             st.guide_learn = null;
             st.guide_rate_now = 1;
+            st.karaoke_state = undefined;
             if (st.paused) {
                 st.paused = false;
                 st.send('PAUSE_STATE:0');
@@ -274,16 +296,21 @@
             command(FRAME.KARAOKE, both ? 'unMute' : 'mute');
         }
 
-        // Karaoke iframe (re)mounted at `sec`
-        function set_start(sec) {
+        function set_position(sec) {
             st.mount_at = env.now();
             st.start_sec = sec;
             st.video_time = sec;
             st.video_at = env.now();
         }
 
+        // Karaoke iframe (re)mounted at `sec`: a new player, whose state is unknown until it reports
+        function set_start(sec) {
+            set_position(sec);
+            st.karaoke_state = undefined;
+        }
+
         function seek_all(target) {
-            set_start(target);
+            set_position(target);
             command(FRAME.KARAOKE, 'seekTo', [target, true]);
             if (st.original) seek_guide(guide_target(target), 'PAIR', false);
         }
@@ -364,6 +391,7 @@
                 guide_time: guide_time(),
                 guide_error: st.guide_error,
                 guide_state: st.guide_state,
+                karaoke_state: st.karaoke_state,
                 guide_rate_now: st.guide_rate_now,
                 original: st.original,
                 monitor: st.monitor,
