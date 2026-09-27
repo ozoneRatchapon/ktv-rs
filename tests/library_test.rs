@@ -32,7 +32,7 @@ fn test_library_is_well_formed() {
         assert!(song.code.len() == 5 && song.code.bytes().all(|b| b.is_ascii_digit()), "{}: code must be 5 digits", song.id);
         assert!(!song.title.trim().is_empty() && !song.artist.trim().is_empty(), "{}: empty title/artist", song.id);
         assert!(song.intro_skip_secs < song.duration_secs, "{}: intro skip past the end", song.id);
-        assert!(song.guide.is_none(), "{}: library songs have no guide timing", song.id);
+        assert_eq!(song.guide, app::library::timed_guide(&song.youtube_id), "{}: a guide only from a timed mv_guides entry", song.id);
     }
 }
 
@@ -191,4 +191,16 @@ fn test_genre_chip_now_lists_library_songs() {
     let shelf = Picks::default().shelf(builtin_catalog(), lib(), &Shelf::Category("Luk Thung"));
     let from_library = shelf.iter().filter(|s| s.id.starts_with(ID_PREFIX)).count();
     assert!(from_library > 1000, "{from_library} library songs under Luk Thung");
+}
+
+#[test]
+fn test_auto_timed_guides_are_gmm_official_audio_at_the_intro_offset() {
+    use app::library::{auto_timed, MV_GUIDES};
+    for (karaoke_id, guide) in MV_GUIDES.iter().filter(|(_, g)| g.auto) {
+        let song = SONGS.iter().find(|s| &s.youtube_id == karaoke_id).unwrap();
+        assert_eq!(song.channel, "GMM Karaoke", "{karaoke_id}: only GMM has the fixed intro");
+        assert_eq!((guide.offset_secs, guide.rate), (Some(-18.2), Some(1.0)), "{karaoke_id}");
+        assert!(auto_timed(karaoke_id));
+        assert!(song.guide.is_some(), "{karaoke_id}: an auto-timed song has its Vocal button");
+    }
 }

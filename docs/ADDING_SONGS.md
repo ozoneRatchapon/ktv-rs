@@ -53,7 +53,15 @@ songs on the labels' channels (GMM GRAMMY OFFICIAL, Genierock, GRAMMY GOLD): met
 match, similar length, embeddable. It writes suggestions (`{"video_id": ...}`) and never touches a timed entry; every
 match is listed in `tools/mv_candidates.json` (not committed) for review.
 
-A suggestion reaches singers only once it is **timed by ear** (the audio cannot be analysed without breaking YouTube's
+**Auto-timing (GMM Karaoke):** the same run looks for each song's **official audio track** on YouTube Music
+(`tools/official_audio.py`). A GMM karaoke video is an 18 s intro plus the studio recording, and the audio track is that
+recording, so it lines up at a fixed −18.2 s (checked against the hand-timed catalog: within 0.3 s for 11 of 12). Only
+the first search result is taken, and only if the title matches, it is a music track (not live / cover / another
+version) and it is 16–22 s shorter than the karaoke video. These entries carry `"auto": true`, reach singers at once,
+and the player offers **Vocal ahead / Vocal behind** (±0.5 s, saved on the device) in case one is slightly off.
+A hand-timed entry always wins over an automatic one.
+
+Any other suggestion reaches singers only once it is **timed by ear** (the audio cannot be analysed without breaking YouTube's
 terms):
 1. Settings → **Guide Timing Tools** on, then play the song (search its code).
 2. The timing panel shows **Official video found**: check it on YouTube, then **Use suggested MV**.

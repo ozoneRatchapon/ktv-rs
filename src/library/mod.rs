@@ -7,5 +7,5 @@ mod mv;
 mod types;
 
 pub use load::{install, loaded, parse, ID_PREFIX};
-pub use mv::{suggested_video, timed_guide, MvGuide, MV_GUIDES};
+pub use mv::{auto_timed, suggested_video, timed_guide, MvGuide, MV_GUIDES};
 pub use types::{Library, LibraryChannel, LibraryFile, LibraryRow, Songbook};

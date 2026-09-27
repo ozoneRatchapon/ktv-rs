@@ -369,6 +369,9 @@ fn App() -> Element {
                         saved_timing,
                         on_save_guide: handle_save_guide,
                         on_revert_guide: handle_revert_guide,
+                        auto_timed: current_song().is_some_and(|c| {
+                            !guide_overrides.read().contains_key(&c.song.id) && library::auto_timed(&c.song.youtube_id)
+                        }),
                         on_take_end: move |result: TakeResult| {
                             score::record(&mut score_history.write(), result.clone());
                             last_result.set(Some(result));

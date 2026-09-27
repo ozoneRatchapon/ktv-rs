@@ -13,6 +13,9 @@ Writes tools/mv_candidates.json (every match, for review) and merges assets/mv_g
 {"<karaoke video id>": {"video_id": "<MV id>"}} is a suggestion (unchecked); an entry that also has "offset_secs" and
 "rate" was lined up by a curator, is never replaced here, and gives the song its Vocal button.
 
+For GMM Karaoke it also looks for each song's official audio track, which lines up at a fixed offset (see
+tools/official_audio.py): those entries are timed automatically ("auto": true) and replace the MV suggestion.
+
 Usage: python3 tools/match_mv.py [--top N] [--cache DIR]
        --cache DIR reuses/stores the channel listings as DIR/<name>.tsv (listing 30k videos takes minutes)
 """
@@ -25,6 +28,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from link_check import status  # noqa: E402  (oEmbed: 200 = public + embeddable)
+import official_audio  # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 LIBRARY = os.path.join(ROOT, "assets", "library.json")
@@ -148,9 +152,18 @@ def write_genres(channels, cache):
         f.write(to_json({"channels": channels}))
 
 
-def merge_guides(guides, candidates):
-    """Suggestions for the matched songs; timed entries (curated by ear) are kept as they are."""
-    merged = {vid: g for vid, g in guides.items() if "offset_secs" in g}
+def merge_guides(guides, candidates, audio=None):
+    """Hand-timed entries (curated by ear) are kept as they are; then official-audio timings (`"auto": true`,
+    re-decided for every song in `audio`, kept for songs this run did not check); then MV suggestions."""
+    audio = audio or {}
+    hand = {vid: g for vid, g in guides.items() if "offset_secs" in g and not g.get("auto")}
+    merged = dict(hand)
+    for vid, g in guides.items():
+        if g.get("auto") and vid not in audio and vid not in hand:
+            merged[vid] = g
+    for vid, track in audio.items():
+        if track and vid not in hand:
+            merged[vid] = {"video_id": track, "offset_secs": official_audio.OFFSET_SECS, "rate": 1.0, "auto": True}
     for c in candidates:
         merged.setdefault(c["karaoke_id"], {"video_id": c["video_id"]})
     return dict(sorted(merged.items()))
@@ -168,7 +181,7 @@ def main():
     cache = sys.argv[sys.argv.index("--cache") + 1] if "--cache" in sys.argv else None
     with open(LIBRARY, encoding="utf-8") as f:
         channels = json.load(f)["channels"]
-    candidates, stats = [], {}
+    candidates, stats, audio = [], {}, {}
     for channel in channels:
         name = channel["name"]
         if name not in KARAOKE or name not in MV_CHANNELS:
@@ -177,8 +190,8 @@ def main():
         mvs = [dict(mv, channel=mv_name, kind=kind_of(mv["title"]))
                for mv_name, url in MV_CHANNELS[name] for mv in listing(mv_name, url, cache)]
         mvs = [mv for mv in mvs if mv["kind"]]
-        songs = [{"id": r[0], "code": r[1], "secs": r[2], "title": r[3], "artist": r[4], "views": views.get(r[0], 0)}
-                 for r in channel["songs"]]
+        songs = [{"id": r[0], "code": r[1], "secs": r[2], "title": r[3], "artist": r[4], "alias": r[5],
+                  "views": views.get(r[0], 0)} for r in channel["songs"]]
         songs.sort(key=lambda s: -s["views"])
         picked = songs[:top]
         matched = [(s, best_mv(s, mvs)) for s in picked]
@@ -187,6 +200,14 @@ def main():
             codes = list(pool.map(lambda pair: status(pair[1]["id"]), matched))
         embeddable = [(s, mv) for (s, mv), code in zip(matched, codes) if code == 200]
         stats[name] = {"top": len(picked), "matched": len(matched), "embeddable": len(embeddable), "mv_pool": len(mvs)}
+        if name in official_audio.CHANNELS:
+            path = os.path.join(cache, f"audio_{KARAOKE[name][0]}.json") if cache else None
+            with ThreadPoolExecutor(max_workers=6) as pool:
+                found = official_audio.find_all(picked, normalize, path, pool)
+            with ThreadPoolExecutor(max_workers=16) as pool:
+                ok = dict(zip(found, pool.map(lambda v: v and status(v) == 200, found.values())))
+            audio.update({k: (v if ok[k] else None) for k, v in found.items()})
+            stats[name]["official_audio"] = sum(1 for v in audio.values() if v)
         for s, mv in embeddable:
             candidates.append({
                 "karaoke_id": s["id"], "code": s["code"], "title": s["title"], "artist": s["artist"],
@@ -202,11 +223,13 @@ def main():
     if os.path.exists(GUIDES):
         with open(GUIDES, encoding="utf-8") as f:
             guides = json.load(f)
-    merged = merge_guides(guides, candidates)
+    merged = merge_guides(guides, candidates, audio)
     with open(GUIDES, "w", encoding="utf-8") as f:
         f.write(guides_json(merged))
-    timed = sum(1 for g in merged.values() if "offset_secs" in g)
-    print(json.dumps(stats), f"assets/mv_guides.json: {len(merged)} songs, {timed} timed", file=sys.stderr)
+    auto = sum(1 for g in merged.values() if g.get("auto"))
+    hand = sum(1 for g in merged.values() if "offset_secs" in g and not g.get("auto"))
+    print(json.dumps(stats), f"assets/mv_guides.json: {len(merged)} songs, {hand} hand-timed, {auto} auto-timed "
+          "(official audio)", file=sys.stderr)
 
 
 if __name__ == "__main__":
