@@ -3,7 +3,13 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.16.0] - 2026-09-27
+## [0.16.1] - 2026-09-27
+### Changed
+- The code is now licensed under the GNU AGPL v3.0 (it said MIT with no license file). Settings links the source code as AGPL-3.0.
+- Settings credits Muzik Move alongside the other labels.
+- Releases now deploy from GitHub Actions after the owner approves them.
+
+## [0.16.0] - 2026-09-27 (`f0bbb862`)
 ### Added
 - Auto-DJ now picks from the whole songbook, not only the curated songs: sing an artist through and their other songs come up next.
 - 11 more GMM Karaoke songs whose titles were written slightly differently (8,189 songs in all).
