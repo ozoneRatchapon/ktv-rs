@@ -7,11 +7,13 @@ fn test_parse_sync_events() {
     assert_eq!(SyncEvent::parse("PAUSE_STATE:1"), Some(SyncEvent::Paused(true)));
     assert_eq!(SyncEvent::parse("PAUSE_STATE:0"), Some(SyncEvent::Paused(false)));
     assert_eq!(SyncEvent::parse("GUIDE_ERROR:150"), Some(SyncEvent::GuideError(150)));
+    assert_eq!(SyncEvent::parse("GUIDE_LOST:1"), Some(SyncEvent::GuideLost(true)));
+    assert_eq!(SyncEvent::parse("GUIDE_LOST:0"), Some(SyncEvent::GuideLost(false)));
 }
 
 #[test]
 fn test_parse_rejects_malformed_events() {
-    for msg in ["", "TIME:", "TIME:-1", "TIME:1.5", "PAUSE_STATE:yes", "GUIDE_ERROR:x", "UNKNOWN:1", "Ended"] {
+    for msg in ["", "TIME:", "TIME:-1", "TIME:1.5", "PAUSE_STATE:yes", "GUIDE_ERROR:x", "GUIDE_LOST:2", "GUIDE_LOST:", "UNKNOWN:1", "Ended"] {
         assert_eq!(SyncEvent::parse(msg), None, "{msg:?} must not parse");
     }
 }

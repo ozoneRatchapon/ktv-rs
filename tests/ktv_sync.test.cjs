@@ -535,3 +535,109 @@ test('practice loop: past the end it jumps back to the start; a new song or a cl
     sync.load_song(0, 1);
     assert.equal(sync.debug().loop, null, 'a new song clears the loop');
 });
+
+// Vocal on and warm, then the guide stops following seeks (an ad plays in its place): each tick past the settle
+// window finds it several seconds behind
+function lost_guide_setup() {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.load_song(0, 1);
+    sync.switch_vocal(true);
+    env.advance(2000);
+    report(sync, 20, 20);
+    sync.tick();
+    return { env, sync };
+}
+
+function miss(env, sync, karaoke_sec) {
+    env.advance(1600); // past SEEK_SETTLE_MS
+    report(sync, karaoke_sec, 3); // guide reports ad time, not the MV position
+    return sync.tick();
+}
+
+test('guide lost: after LOST_RESEEKS missed re-seeks the guide is muted and karaoke audio plays', () => {
+    const { env, sync } = lost_guide_setup();
+    env.clear();
+    for (let i = 1; i < core.LOST_RESEEKS; i += 1) {
+        assert.equal(miss(env, sync, 20 + i * 2).kind, ACTION.RESEEK);
+        assert.equal(sync.debug().guide_lost, false, `not lost after ${i} misses`);
+    }
+    assert.equal(env.commands(FRAME.KARAOKE, 'unMute').length, 0);
+
+    miss(env, sync, 30);
+    assert.equal(sync.debug().guide_lost, true);
+    assert.equal(sync.debug().original, true, 'the vocal choice is kept');
+    assert.equal(env.commands(FRAME.GUIDE, 'mute').length, 1);
+    assert.equal(env.commands(FRAME.KARAOKE, 'unMute').length, 1);
+    assert.deepEqual(env.sent, ['GUIDE_LOST:1']);
+
+    // Still lost: no repeated commands or messages, and progress no longer re-mutes karaoke
+    env.clear();
+    miss(env, sync, 32);
+    sync.progress();
+    assert.equal(env.commands(FRAME.GUIDE, 'mute').length, 0);
+    assert.equal(env.commands(FRAME.KARAOKE, 'mute').length, 0);
+    assert.deepEqual(env.sent.filter((m) => m.startsWith('GUIDE_LOST')), []);
+    assert.equal(env.commands(FRAME.GUIDE, 'seekTo').length, 1, 'keeps trying to re-seek');
+});
+
+test('guide lost: back in step restores the original vocal and tells Rust', () => {
+    const { env, sync } = lost_guide_setup();
+    for (let i = 0; i < core.LOST_RESEEKS; i += 1) miss(env, sync, 22 + i * 2);
+    env.clear();
+
+    env.advance(1600);
+    report(sync, 40, 40);
+    assert.equal(sync.tick().kind, ACTION.RATE);
+    assert.equal(sync.debug().guide_lost, false);
+    assert.equal(env.commands(FRAME.GUIDE, 'unMute').length, 1);
+    assert.equal(env.commands(FRAME.KARAOKE, 'mute').length, 1);
+    assert.deepEqual(env.sent, ['GUIDE_LOST:0']);
+});
+
+test('guide lost: an in-step tick or a user seek restarts the count', () => {
+    const { env, sync } = lost_guide_setup();
+    for (let i = 1; i < core.LOST_RESEEKS; i += 1) miss(env, sync, 20 + i * 2);
+    env.advance(1600);
+    report(sync, 30, 30);
+    sync.tick();
+    for (let i = 1; i < core.LOST_RESEEKS; i += 1) miss(env, sync, 30 + i * 2);
+    assert.equal(sync.debug().guide_lost, false, 'misses around an in-step tick do not add up');
+
+    sync.seek_all(90);
+    miss(env, sync, 92);
+    assert.equal(sync.debug().guide_lost, false, 'a scrub starts a fresh count');
+});
+
+test('guide lost: timing mode keeps karaoke audio on when the guide comes back', () => {
+    const { env, sync } = lost_guide_setup();
+    sync.set_monitor(true);
+    for (let i = 0; i < core.LOST_RESEEKS; i += 1) miss(env, sync, 22 + i * 2);
+    sync.set_monitor(false);
+    env.clear();
+    sync.progress();
+    assert.equal(env.commands(FRAME.KARAOKE, 'mute').length, 0, 'monitor off while lost keeps karaoke audible');
+
+    sync.set_monitor(true);
+    env.advance(1600);
+    report(sync, 40, 40);
+    sync.tick();
+    assert.equal(env.commands(FRAME.KARAOKE, 'mute').length, 0);
+    assert.equal(env.commands(FRAME.GUIDE, 'unMute').length, 1);
+});
+
+test('guide lost: switching the vocal or a new song clears it', () => {
+    const { env, sync } = lost_guide_setup();
+    for (let i = 0; i < core.LOST_RESEEKS; i += 1) miss(env, sync, 22 + i * 2);
+    sync.switch_vocal(false);
+    assert.equal(sync.debug().guide_lost, false);
+    sync.switch_vocal(true);
+    env.clear();
+    sync.progress();
+    assert.equal(env.commands(FRAME.KARAOKE, 'mute').length, 1, 'vocal back on mutes karaoke again');
+
+    for (let i = 0; i < core.LOST_RESEEKS; i += 1) miss(env, sync, 50 + i * 2);
+    assert.equal(sync.debug().guide_lost, true);
+    sync.load_song(0, 1);
+    assert.equal(sync.debug().guide_lost, false);
+});

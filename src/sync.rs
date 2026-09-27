@@ -71,6 +71,8 @@ pub enum SyncEvent {
     Paused(bool),
     /// YouTube player error code from the guide iframe (e.g. 100 removed, 101/150 embedding disabled).
     GuideError(i32),
+    /// The guide stopped following seeks (an ad pre-roll, a stalled stream): karaoke audio plays until it is back in step.
+    GuideLost(bool),
 }
 
 impl SyncEvent {
@@ -87,6 +89,11 @@ impl SyncEvent {
                 _ => None,
             },
             "GUIDE_ERROR" => value.parse().ok().map(Self::GuideError),
+            "GUIDE_LOST" => match value {
+                "1" => Some(Self::GuideLost(true)),
+                "0" => Some(Self::GuideLost(false)),
+                _ => None,
+            },
             _ => None,
         }
     }
