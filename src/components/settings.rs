@@ -133,7 +133,7 @@ pub fn Settings(
                     div { class: "legal-text-block",
                         p {
                             strong { "Legal & Copyright Attribution: " }
-                            "This application is a non-commercial educational showcase and technical portfolio demonstrating high-performance web engineering with Dioxus 0.7 and WebAssembly. No audio or video files are hosted on our servers. Videos load in YouTube's privacy-enhanced mode (youtube-nocookie.com); YouTube may still store data in your browser once playback starts, under Google's privacy policy. All media playback is streamed directly via the official YouTube Embed API in compliance with YouTube Terms of Service. All rights, trademarks, and royalties remain with the respective artists and record labels (GMM Grammy, Genie Records, What The Duck)."
+                            "This application is a non-commercial educational showcase and technical portfolio demonstrating high-performance web engineering with Dioxus 0.7 and WebAssembly. No audio or video files are hosted on our servers. Videos load in YouTube's privacy-enhanced mode (youtube-nocookie.com); YouTube may still store data in your browser once playback starts, under Google's privacy policy. All media playback is streamed directly via the official YouTube Embed API in compliance with YouTube Terms of Service. All rights, trademarks, and royalties remain with the respective artists and record labels (GMM Grammy, Genie Records, What The Duck, Muzik Move)."
                         }
                         p {
                             strong { "Source code (AGPL-3.0): " }

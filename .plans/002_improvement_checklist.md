@@ -60,14 +60,14 @@ The score today is tuning precision (held notes vs the semitone grid); there is 
 - [ ] 33. Phone remote. `gated:` Durable Objects blocked by Cloudflare `10013`/`10021`; recheck the versions API or pick another transport.
 
 ## Wave 9 — ops & docs
-- [ ] 34. Deploy from CI with an approval environment. `gated:` see 34b (Cloudflare token as a GitHub secret).
+- [ ] 34. Deploy from CI with an approval environment. Built 2026-09-27: `.github/workflows/deploy.yml` (a `v*` tag on main → build + e2e → owner approves in the `production` environment → `wrangler deploy` → prod e2e); environment created (owner as required reviewer, only `main` / `v*` tags, `CLOUDFLARE_ACCOUNT_ID` variable). `gated:` owner adds the `CLOUDFLARE_API_TOKEN` environment secret (34b); first real run pending.
 - [x] 35. CHANGELOG / release notes per tag. Done: `CHANGELOG.md` (Keep a Changelog, v0.1.0–v0.12.0 with Worker version ids). Release flow now: add the entry, tag with `-m "vX.Y.Z: <summary>"`.
 - [x] 36. Uptime check on the prod URL. Done: `.github/workflows/prod-check.yml` every 6 h — HTTP + CSP header + the full e2e suite against prod; opens/comments one `prod-check` issue on failure. First run 36270832447: 16/16.
 - [x] 37. README screenshots + "adding songs" guide. Done: `docs/ADDING_SONGS.md`; `docs/screenshots/` (desktop standby + songbook, mobile romanised search, recent scores; standby so no video frames in the repo); README badges now real CI / prod-check status. Fixed "1 Songs".
 
 ## Gated (not worked until the owner/device says so)
 - [x] L1. License. Done (owner call 2026-09-27: AGPL-3.0 for now, may change later): `LICENSE` (GNU AGPL v3 text), `license = "AGPL-3.0-only"` in `Cargo.toml`, README badge + section (code only; media and the KTV-RS name not licensed), Settings links the source as AGPL-3.0 (AGPL §13 source offer for network users).
-- [ ] 34b. Deploy from CI (item 34). `gated:` needs a Cloudflare API token stored as a GitHub secret (owner) plus an approval environment.
+- [ ] 34b. Cloudflare API token ("Edit Cloudflare Workers" template) as the `production` environment secret: `gh secret set CLOUDFLARE_API_TOKEN --env production --repo ozoneRatchapon/ktv-rs`. `gated:` owner only (never passes through the agent).
 - [ ] 1. Custom domain. `gated:` owner deferred (costs money).
 - [ ] 3. Real mic test on iPhone Safari / Android Chrome. `gated:` needs devices.
 - [ ] 4. YouTube pre-roll ads vs sync. `gated:` needs real playback on a device.
