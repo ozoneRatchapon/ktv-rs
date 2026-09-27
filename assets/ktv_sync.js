@@ -21,6 +21,9 @@
     const ACTION = Object.freeze({ NONE: 'none', HOLD: 'hold', RELEASE: 'release', RESEEK: 'reseek', RATE: 'rate' });
     const RESEEK_ERR_SECS = 1.0;  // beyond this, seek instead of nudging speed
     const SEEK_SETTLE_MS = 1500;  // ignore time reports right after a seek
+    // Consecutive controller re-seeks that still miss (~5 s): the guide is not following seekTo (an ad pre-roll,
+    // a stalled stream). Its audio is swapped for karaoke until the guide is back in step.
+    const LOST_RESEEKS = 3;
     const CONTROL_MS = 250;
     // Karaoke state reports this soon after our own play/pause command may predate it; don't mirror them
     const OWN_COMMAND_MS = 1000;
@@ -99,6 +102,9 @@
             guide_hold_until: 0,
             guide_learn: null,
             guide_error: undefined,
+            // Re-seeks in a row without the guide landing in step, and whether its audio is swapped out for that
+            guide_misses: 0,
+            guide_lost: false,
             own_command_at: -Infinity,
             // Practice loop: [start, end] in karaoke seconds, or null
             loop: null,
@@ -198,16 +204,46 @@
                     st.guide_error = action.err;
                     consume_learn(action.err);
                     seek_guide(action.target, 'RESEEK', false);
+                    st.guide_misses += 1;
+                    if (st.guide_misses >= LOST_RESEEKS) set_guide_lost(true);
                     break;
                 case ACTION.RATE:
                     st.guide_error = action.err;
                     consume_learn(action.err);
                     set_guide_rate(action.rate);
+                    st.guide_misses = 0;
+                    set_guide_lost(false);
                     break;
                 default:
                     break;
             }
             return action;
+        }
+
+        // Guide out of step for good (see LOST_RESEEKS): mute it (an ad's sound too) and play karaoke audio; back in
+        // step: restore the original vocal. The controller keeps re-seeking either way.
+        function set_guide_lost(lost) {
+            if (st.guide_lost === lost) return;
+            st.guide_lost = lost;
+            if (lost) {
+                command(FRAME.GUIDE, 'mute');
+                command(FRAME.KARAOKE, 'unMute');
+            } else {
+                command(FRAME.GUIDE, 'unMute');
+                if (!st.monitor) command(FRAME.KARAOKE, 'mute');
+            }
+            st.send('GUIDE_LOST:' + (lost ? '1' : '0'));
+        }
+
+        // A seek or pause the user asked for starts a fresh count: its first re-seek is expected
+        function reset_misses() {
+            st.guide_misses = 0;
+        }
+
+        // Vocal choice or song changed: audio is set by the caller, so only the flags are cleared
+        function forget_lost() {
+            st.guide_misses = 0;
+            st.guide_lost = false;
         }
 
         // Progress step (every PROGRESS_MS): keep YouTube reporting, report karaoke time to Rust
@@ -218,7 +254,7 @@
             env.post(FRAME.KARAOKE, '{"event":"listening"}');
             env.post(FRAME.GUIDE, '{"event":"listening"}');
             // Re-assert mute in case the karaoke iframe was remounted
-            if (st.original && !st.monitor) command(FRAME.KARAOKE, 'mute');
+            if (st.original && !st.monitor && !st.guide_lost) command(FRAME.KARAOKE, 'mute');
         }
 
         function on_message(from_guide, data) {
@@ -279,6 +315,7 @@
             st.guide_state = undefined;
             st.guide_learn = null;
             st.guide_rate_now = 1;
+            forget_lost();
             st.karaoke_state = undefined;
             st.karaoke_started = false;
             st.loop = null;
@@ -296,6 +333,7 @@
             st.guide_offset = offset_secs;
             st.guide_rate = rate;
             if (!st.original || st.guide_waiting) return;
+            reset_misses();
             const target = guide_target(karaoke_time());
             if (target < 0) return; // still in the karaoke-only intro: tick() holds the guide
             seek_guide(target, st.paused ? 'PAIR' : 'RESEEK', false);
@@ -303,7 +341,7 @@
 
         function set_monitor(both) {
             st.monitor = both;
-            if (!st.original) return;
+            if (!st.original || st.guide_lost) return;
             command(FRAME.KARAOKE, both ? 'unMute' : 'mute');
         }
 
@@ -324,6 +362,7 @@
         function seek_all(target) {
             set_position(target);
             command(FRAME.KARAOKE, 'seekTo', [target, true]);
+            reset_misses();
             if (st.original) seek_guide(guide_target(target), 'PAIR', false);
         }
 
@@ -349,6 +388,7 @@
                 st.video_at = env.now();
             }
             st.paused = paused;
+            reset_misses();
             if (!paused) {
                 st.mount_at = env.now();
                 st.start_sec = st.video_time || 0;
@@ -379,6 +419,7 @@
         function switch_vocal(original) {
             st.original = original;
             st.guide_waiting = false;
+            forget_lost();
             if (original) {
                 // Mute karaoke backing audio (video and lyrics stay visible), unmute and sync the guide
                 if (!st.monitor) command(FRAME.KARAOKE, 'mute');
@@ -407,6 +448,7 @@
                 karaoke_time: karaoke_time(),
                 guide_time: guide_time(),
                 guide_error: st.guide_error,
+                guide_lost: st.guide_lost,
                 guide_state: st.guide_state,
                 karaoke_state: st.karaoke_state,
                 guide_rate_now: st.guide_rate_now,
@@ -467,7 +509,7 @@
     }
 
     const api = Object.freeze({
-        FRAME, YT_STATE, LEAD, ACTION, next_rate, learn_lead, is_warm, parse_lead, decide_guide, create_sync, install,
+        FRAME, YT_STATE, LEAD, ACTION, LOST_RESEEKS, next_rate, learn_lead, is_warm, parse_lead, decide_guide, create_sync, install,
     });
     if (typeof module === 'object' && module.exports) module.exports = api;
     root.KtvSyncCore = api;

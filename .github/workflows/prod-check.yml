@@ -16,6 +16,7 @@ env:
 jobs:
   prod:
     runs-on: ubuntu-26.04
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -27,7 +28,7 @@ jobs:
           status=0
           headers=$(curl -sSI --max-time 20 "$KTV_URL") || status=1
           echo "$headers" | grep -qi '^content-security-policy:.*wasm-unsafe-eval' || status=1
-          node --test tests/e2e/app.test.mjs > e2e.log 2>&1 || status=1
+          node --test --test-timeout=120000 tests/e2e/app.test.mjs > e2e.log 2>&1 || status=1
           {
             echo "## Prod check $( [ $status = 0 ] && echo passed || echo failed ) ($(date -u +%FT%TZ))"
             echo

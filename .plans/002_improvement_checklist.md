@@ -70,4 +70,4 @@ The score today is tuning precision (held notes vs the semitone grid); there is 
 - [x] 34b. Cloudflare API token ("Edit Cloudflare Workers" template) as the `production` environment secret: `gh secret set CLOUDFLARE_API_TOKEN --env production --repo ozoneRatchapon/ktv-rs`. Done by the owner 2026-09-27.
 - [ ] 1. Custom domain. `gated:` owner deferred (costs money).
 - [ ] 3. Real mic test on iPhone Safari / Android Chrome. `gated:` needs devices.
-- [ ] 4. YouTube pre-roll ads vs sync. `gated:` needs real playback on a device.
+- [ ] 4. YouTube pre-roll ads vs sync. `gated:` needs real playback on a device. Fallback built 2026-09-28 (roadmap: guide-lost watchdog swaps to karaoke audio and back); only the device check is left.

@@ -10,18 +10,18 @@
 This repository contains a full-featured, zero-latency Web KTV / Karaoke player designed for real party room use. The UI has been redesigned to be **clean, minimal, accessible, and free of emojis/neon clutter** (OG KTV aesthetic).
 
 ### Key Completed Modules:
-1. **Catalog & Dual-Channel Playback** ([src/catalog.rs](file:///Users/ozone/karaoke/src/catalog.rs)):
+1. **Catalog & Dual-Channel Playback** ([src/catalog.rs](../src/catalog.rs)):
    - Official Thai karaoke tracks from `@gmmkaraoke` and `@whattheduckmusic` (What The Duck).
    - Real, verified video IDs (e.g. COCKTAIL hits including `9aCUDQ8SPcA` - คุกเข่า, `Nlr1jPW6LZ4` - เธอ, `mMRkEh6Z6vE` - คู่ชีวิต, `7Bima2M9xy4` - ดึงดัน, `xmyqhV0f9Go` - ที่คั่นหนังสือ BOWKYLION, etc.).
    - Support for `guide_video_id` (original artist vocal track) toggle.
-2. **Player & YouTube Bridge** ([src/components/player.rs](file:///Users/ozone/karaoke/src/components/player.rs)):
+2. **Player & YouTube Bridge** ([src/components/player.rs](../src/components/player.rs)):
    - Bypasses platform intro bumpers (`&start={intro_skip_secs}`).
    - PostMessage bridge detecting clip completion (`onStateChange: 0`) for automatic advancing.
    - Live Pitch HUD & Guide Vocal toggle.
-3. **Auto-DJ Substrate** ([src/recommendation.rs](file:///Users/ozone/karaoke/src/recommendation.rs)):
+3. **Auto-DJ Substrate** ([src/recommendation.rs](../src/recommendation.rs)):
    - Sigmoid dwell-time tracking.
    - Tropical $(\max, +)$ semiring early-skip bottleneck pruner.
-4. **10-Key KTV Keypad Remote** ([src/components/remote.rs](file:///Users/ozone/karaoke/src/components/remote.rs)):
+4. **10-Key KTV Keypad Remote** ([src/components/remote.rs](../src/components/remote.rs)):
    - 5-digit song code entry with instantaneous preview, play, queue, and tempo adjustments (`0.9x` to `1.1x`).
 
 ---

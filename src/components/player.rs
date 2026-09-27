@@ -31,6 +31,8 @@ pub fn Player(
 ) -> Element {
     let mut is_guide_vocal = use_signal(|| false);
     let mut is_guide_failed = use_signal(|| false);
+    // Guide out of step (ad or stall): the sync core plays karaoke audio until it catches up
+    let mut is_guide_lost = use_signal(|| false);
     let mut is_paused = use_signal(|| false);
     let mut current_playback_sec = use_signal(|| 0u64);
     // What the sync core was last loaded with: (queue id, intro skip, guide video) and the guide mapping
@@ -49,7 +51,9 @@ pub fn Player(
                     Some(SyncEvent::GuideError(_)) => {
                         is_guide_vocal.set(false);
                         is_guide_failed.set(true);
+                        is_guide_lost.set(false);
                     }
+                    Some(SyncEvent::GuideLost(lost)) => is_guide_lost.set(lost),
                     None => {}
                 }
             }
@@ -75,6 +79,7 @@ pub fn Player(
         is_skipped.set(auto_skip);
         is_guide_vocal.set(false);
         is_guide_failed.set(false);
+        is_guide_lost.set(false);
         current_playback_sec.set(it.song.start_sec(auto_skip));
         let (offset_secs, rate) = mapping;
         SyncCommand::LoadSong { offset_secs, rate }.run();
@@ -246,6 +251,7 @@ pub fn Player(
                                             // Karaoke video keeps playing (lyrics stay visible); only the audio source swaps
                                             let next = !is_guide_vocal();
                                             is_guide_vocal.set(next);
+                                            is_guide_lost.set(false);
                                             SyncCommand::SwitchVocal { original: next }.run();
                                         },
                                         if is_guide_failed() {
@@ -255,6 +261,12 @@ pub fn Player(
                                         } else {
                                             span { "Vocal: Karaoke" }
                                         }
+                                    }
+                                }
+
+                                if is_guide_vocal() && is_guide_lost() {
+                                    span { class: "vocal-nudge-label", role: "status",
+                                        "Original vocal is catching up (ad or buffering): karaoke audio for now"
                                     }
                                 }
 

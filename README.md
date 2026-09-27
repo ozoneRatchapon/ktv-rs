@@ -21,7 +21,7 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 ## Key Features
 
 ### 1. Direct Official Karaoke Streams
-* Full official karaoke libraries of **GMM Grammy** (GMM Karaoke), **What The Duck**, **Muzik Move**, **RS** and **Smallroom**: ~8,500 songs, loaded after the first paint, plus a curated set with genres and original-vocal guides.
+* Full official karaoke libraries of **GMM Grammy** (GMM Karaoke), **What The Duck**, **Muzik Move**, **RS** and **Smallroom**: ~8,500 songs, loaded after the first paint, plus a curated set with genres. Original-vocal guides (the **Vocal** switch) are timed for the curated songs and ~2,800 library songs.
 * Includes full verified collections for top artists like **COCKTAIL** (*คุกเข่า*, *เธอ*, *คู่ชีวิต*, *ดึงดัน*, *เธอทำให้ฉันเสียใจ*), **BOWKYLION** (*ที่คั่นหนังสือ*, *วาดไว้*), **Silly Fools** (*วัดใจ*), **Big Ass** (*เล่นของสูง*), etc.
 
 ### 2. Unobstructed YouTube Players
@@ -41,7 +41,7 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 * **Karaoke Mode**: Official backing track with lyrics.
 * **Original Vocal Mode**: Instant switch to the official artist MV, shown beside (or, on narrow screens, below) the karaoke video, to hear the singer while preserving song progress. The MV plays only while visible; it is never used as a hidden audio source.
 * **Offset Compensation**: Each song's `guide` maps karaoke time to MV time (`MV = offset_secs + rate × karaoke`), so the switch lands on the same lyric without restarting from 0.
-* **Guide Timing Tools** (Settings → Guide Timing Tools): line up an original-vocal MV by ear with the embedded players only (no audio download). Nudge ±1 s / ±0.1 s while *Hear both* plays the karaoke music under the guide (misalignment is heard as an echo); for an MV that drifts, *Mark in sync* early and late and *Fit speed*. *Save* keeps the timing on this device; *Copy JSON* gives the `guide` entry for `assets/catalog.json`.
+* **Guide Timing Tools** (Settings → Guide Timing Tools): line up an original-vocal MV by ear with the embedded players only (no audio download). Nudge ±1 s / ±0.1 s while *Hear both* plays the karaoke music under the guide (misalignment is heard as an echo); for an MV that drifts, *Mark in sync* early and late and *Fit speed*. *Save* keeps the timing on this device; *Copy JSON* gives the `guide` entry for `assets/catalog.json` (curated songs) or `assets/mv_guides.json` (library songs).
 
 ### 5. OG KTV "Type-to-Search" (Global Keystroke Capture)
 * Type any song title, artist, or 5-digit code anywhere on your keyboard to instantly filter the catalog.
@@ -136,11 +136,11 @@ cargo clippy --fix --allow-dirty --quiet
 
 ## Documentation Links
 
-* [Architecture & Math Guide](file:///Users/ozone/karaoke/docs/ARCHITECTURE.md)
-* [Cloudflare Workers & Pages Deployment Guide](file:///Users/ozone/karaoke/docs/CLOUDFLARE_WORKERS_GUIDE.md)
-* [Developer Handover & Solana Integration Blueprint](file:///Users/ozone/karaoke/docs/DEVELOPER_GUIDE.md)
-* [System Handover 001](file:///Users/ozone/karaoke/.handovers/001_ktv_complete_system_handover.md)
-* [Issue 001: Video Focus Trap & Vocal Offset Fix](file:///Users/ozone/karaoke/.issues/001_vocal_switch_offset_and_scrubber_controls.md)
+* [Architecture & Math Guide](docs/ARCHITECTURE.md)
+* [Cloudflare Workers & Pages Deployment Guide](docs/CLOUDFLARE_WORKERS_GUIDE.md)
+* [Developer Handover & Solana Integration Blueprint](docs/DEVELOPER_GUIDE.md)
+* [System Handover 001](.handovers/001_ktv_complete_system_handover.md)
+* [Issue 001: Video Focus Trap & Vocal Offset Fix](.issues/001_vocal_switch_offset_and_scrubber_controls.md)
 
 ---
 
