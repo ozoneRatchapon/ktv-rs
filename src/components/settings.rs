@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 
 use crate::storage;
+use crate::tip;
 use crate::types::AppSettings;
 
 #[component]
@@ -10,6 +11,10 @@ pub fn Settings(
     let current_settings = settings();
     // Two taps: a stray tap must not wipe favourites and scores
     let mut confirm_clear = use_signal(|| false);
+    let wallet_status = match tip::parse_wallet(&current_settings.tip.wallet) {
+        Ok(_) => "Tip QR shows under the player. Your address and every tip memo are public on-chain.",
+        Err(err) => err.message(),
+    };
 
     rsx! {
         div { class: "settings-container",
@@ -80,6 +85,46 @@ pub fn Settings(
                             settings.set(s);
                         },
                         if current_settings.show_timing_tools { "ON" } else { "OFF" }
+                    }
+                }
+
+                // Tip wallet (plan 003): Solana Pay QR under the player
+                div { class: "setting-row",
+                    div { class: "setting-desc",
+                        div { class: "setting-title", "Tip Wallet (Solana)" }
+                        div { class: "setting-sub", "{wallet_status}" }
+                    }
+                    input {
+                        id: "tip_wallet",
+                        name: "tip_wallet",
+                        aria_label: "Solana wallet address for tips",
+                        class: "text-input",
+                        r#type: "text",
+                        autocomplete: "off",
+                        spellcheck: "false",
+                        placeholder: "Solana address",
+                        value: "{current_settings.tip.wallet}",
+                        oninput: move |evt| {
+                            let mut s = settings();
+                            s.tip.wallet = evt.value().trim().to_string();
+                            settings.set(s);
+                        }
+                    }
+                }
+
+                div { class: "setting-row",
+                    div { class: "setting-desc",
+                        div { class: "setting-title", "Tip Network" }
+                        div { class: "setting-sub", "Devnet for demos; switch to Mainnet only to take real USDC" }
+                    }
+                    button {
+                        class: if current_settings.tip.cluster == tip::SolanaCluster::Mainnet { "toggle-btn active" } else { "toggle-btn" },
+                        onclick: move |_| {
+                            let mut s = settings();
+                            s.tip.cluster = s.tip.cluster.toggled();
+                            settings.set(s);
+                        },
+                        "{current_settings.tip.cluster.label()}"
                     }
                 }
 

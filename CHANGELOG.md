@@ -3,11 +3,17 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.25.0] - 2026-09-28
+## [0.26.0] - 2026-09-28
+### Added
+- Tip the singer: set a Solana wallet under Settings → Tip Wallet and a Solana Pay QR code shows under the player. Guests pay USDC from their phone wallet at an amount they choose. Each song gets a fresh `reference` and the memo `ktv:<code>`. Devnet (test USDC) by default, Mainnet is opt-in. The QR is built in Rust/wasm as one SVG path, uses level L error correction for a bigger module size, and sits beside the video, never over it.
+- Privacy note and README: what a Solana tip makes public.
+
+## [0.25.0] - 2026-09-28 (`b9024944`)
 ### Added
 - If the original-vocal video stops following the song (an ad before it, or a stalled stream), the app switches to the karaoke audio after about 5 seconds and says so ("Original vocal is catching up"), then brings the original singer back as soon as it is in step again. Before, you could hear the ad, or silence, instead of the song.
 ### Changed
 - Documentation links work on GitHub (they pointed at local file paths).
+- CI: every job has `timeout-minutes: 25` and e2e runs with `--test-timeout=120000`, so a hung headless run now fails with logs instead of blocking for 6 hours.
 
 ## [0.24.0] - 2026-09-28 (`d0f7a8af`)
 ### Added

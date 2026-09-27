@@ -12,4 +12,5 @@ pub mod remote;
 pub mod score_card;
 pub mod settings;
 pub mod shortcuts;
+pub mod tip_qr;
 pub mod up_next;

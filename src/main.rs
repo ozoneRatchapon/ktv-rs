@@ -28,6 +28,7 @@ use components::{
     settings::Settings,
     score_card::ScoreCard,
     shortcuts::ShortcutHelp,
+    tip_qr::TipQr,
     up_next::UpNext,
 };
 use recommendation::{SleepTimeAnticipator, SongTelemetry};
@@ -403,6 +404,9 @@ fn App() -> Element {
                             score::record(&mut score_history.write(), result.clone());
                             last_result.set(Some(result));
                         },
+                    }
+                    if let Some(item) = current_song() {
+                        TipQr { item, config: settings().tip, room_name: settings().room_name }
                     }
                     if settings().tv_mode {
                         UpNext { queue: queue() }
