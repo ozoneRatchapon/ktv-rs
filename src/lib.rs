@@ -16,5 +16,6 @@ pub mod search;
 pub mod storage;
 pub mod sync;
 pub mod timing;
+pub mod tip;
 pub mod types;
 pub mod youtube;

@@ -22,7 +22,7 @@
 <body>
 <main>
     <h1>Privacy</h1>
-    <p class="muted">KTV-RS · last updated 2026-09-27</p>
+    <p class="muted">KTV-RS · last updated 2026-09-28</p>
 
     <h2>In short</h2>
     <ul>
@@ -34,7 +34,7 @@
     <h2>What is stored on your device</h2>
     <table>
         <tr><th>Key</th><th>What for</th></tr>
-        <tr><td><code>ktv.settings.v1</code></td><td>Your settings (intro skip, room name, timing tools, shortcut help seen)</td></tr>
+        <tr><td><code>ktv.settings.v1</code></td><td>Your settings (intro skip, room name, timing tools, shortcut help seen, tip wallet address and network)</td></tr>
         <tr><td><code>ktv.session.v1</code></td><td>Current song, queue, and songs you added by URL</td></tr>
         <tr><td><code>ktv.picks.v1</code></td><td>Favourites and recently sung songs</td></tr>
         <tr><td><code>ktv.scores.v1</code></td><td>Tuning scores of your last 100 songs (song, when it ended, notes held, average cents off) and the singer's name if you typed one for the party leaderboard</td></tr>
@@ -56,6 +56,11 @@
             in your browser. Nothing is sent until you submit it there.</li>
         <li><strong>Google</strong>: only if you tap <em>Chords</em>, which opens a Google search for the song's title and artist
             in a new tab.</li>
+        <li><strong>Solana (tips)</strong>: only if a wallet address is set under <em>Settings → Tip Wallet</em>. The app then shows a
+            Solana Pay QR code; it contacts no server to do so. A guest who scans it pays from their own wallet app, and that
+            payment is <strong>public on the Solana blockchain forever</strong>: both wallet addresses, the amount, the time, and the memo
+            (<code>ktv:</code> plus the song code, nothing else). KTV-RS never holds or touches the money. Use Devnet (test money)
+            for demos.</li>
     </ul>
 
     <h2>Fonts</h2>

@@ -563,3 +563,43 @@ test('TV mode: toggle is remembered, shows Up next, still fits one 1080p screen'
   await page.reload();
   await page.wait_for(`document.querySelector('.ktv-app-wrapper').classList.contains('tv-mode')`);
 }));
+
+test('tip QR: a wallet in Settings shows a Solana Pay code under the player that decodes to the link, fits TV and desktop', () => with_page({ width: 1920, height: 1080 }, async (page) => {
+  const wallet = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+  assert.equal(await page.eval(`document.querySelectorAll('.tip-strip').length`), 0, 'off until a wallet is set');
+  await page.eval(`[...document.querySelectorAll('.shortcut-help button')].find((b) => b.textContent === 'Close').click()`);
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'Settings').click()`);
+  await page.wait_for(`!!document.getElementById('tip_wallet')`);
+  await page.eval(`(() => { const i = document.getElementById('tip_wallet'); i.value = 'not a wallet'; i.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+  await sleep(200);
+  assert.equal(await page.eval(`document.querySelectorAll('.tip-strip').length`), 0, 'an invalid address shows no code');
+  await page.eval(`(() => { const i = document.getElementById('tip_wallet'); i.value = ' ${wallet} '; i.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+  await page.wait_for(`!!document.querySelector('.tip-qr')`);
+  const href = await page.eval(`document.querySelector('.tip-qr-link').getAttribute('href')`);
+  assert.match(href, new RegExp(`^solana:${wallet}\\?spl-token=4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU&reference=[1-9A-HJ-NP-Za-km-z]{43,44}&label=[^&]+&message=Tip%20%23\\d+&memo=ktv%3A\\d+$`), 'devnet USDC by default');
+  // The code itself decodes to the same link (BarcodeDetector exists on macOS / Android / ChromeOS Chrome, not Linux)
+  const decoded = await page.eval(`(async () => {
+    if (!('BarcodeDetector' in window)) return null;
+    const svg = new XMLSerializer().serializeToString(document.querySelector('.tip-qr'));
+    const img = new Image();
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 600;
+    canvas.getContext('2d').drawImage(img, 0, 0, 600, 600);
+    const [code] = await new BarcodeDetector({ formats: ['qr_code'] }).detect(canvas);
+    return code?.rawValue ?? 'not found';
+  })()`);
+  if (decoded !== null) assert.equal(decoded, href, 'QR decodes to the Solana Pay link');
+  // A new song gets a new reference (each tip is matched to the song it was for)
+  await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
+  await page.wait_for(`document.querySelector('.tip-qr-link')?.getAttribute('href') !== ${JSON.stringify(href)}`);
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'TV').click()`);
+  await page.wait_for(`document.querySelector('.ktv-app-wrapper').classList.contains('tv-mode')`);
+  assert.equal(await page.eval(`document.documentElement.scrollHeight <= innerHeight`), true, 'TV mode still fits 1080p');
+  assert.equal(await page.eval(`[...document.querySelectorAll('.player-main-controls-row button, .tip-qr')].filter((b) => b.getBoundingClientRect().bottom > innerHeight).length`), 0, 'controls and code on screen');
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'TV').click()`);
+  await page.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+  await sleep(300);
+  assert.equal(await page.eval(`document.documentElement.scrollHeight <= innerHeight`), true, 'desktop 1280x800 still fits');
+}));

@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.25.0"
+version = "0.26.0"
 authors = ["ozoneRatchapon <ratchapon.poc@gmail.com>"]
 edition = "2021"
 license = "AGPL-3.0-only"
@@ -14,6 +14,8 @@ serde_json = "1.0"
 js-sys = "0.3"
 futures-channel = "0.3"
 futures-util = { version = "0.3", default-features = false }
+qrcode = { version = "0.14.1", default-features = false }
+bs58 = { version = "0.5.1", default-features = false, features = ["alloc"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
@@ -27,6 +29,7 @@ web-sys = { version = "0.3", features = [
     "BaseAudioContext",
     "Blob",
     "BlobPropertyBag",
+    "Crypto",
     "Clipboard",
     "Document",
     "DomException",

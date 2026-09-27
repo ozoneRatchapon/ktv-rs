@@ -533,6 +533,60 @@ body {
     white-space: nowrap;
 }
 
+/* Tip QR (plan 003): Solana Pay code under the player, big enough to scan from a sofa */
+.tip-strip {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 16px;
+    border-top: 1px solid var(--border-glass);
+    flex-shrink: 0;
+}
+
+.tip-qr-link {
+    display: block;
+    flex-shrink: 0;
+    line-height: 0;
+}
+
+.tip-qr {
+    width: 160px;
+    height: 160px;
+    border-radius: 6px;
+}
+
+.tv-mode .tip-qr {
+    width: 200px;
+    height: 200px;
+}
+
+.tip-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.tip-title {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--accent-amber);
+}
+
+.tip-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.tip-test-badge {
+    align-self: flex-start;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--accent-cyan);
+}
+
 /* Player Stage */
 .stage-player-side {
     display: flex;

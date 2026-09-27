@@ -17,7 +17,9 @@ as a Thai MC.
 - RPC: public devnet.
 
 ## Scope (gated items need an owner go)
-- [ ] S1. Tip QR on screen: Solana Pay transfer request (USDC, `reference` key, `memo`) to the singer's wallet or `.sol` name set in Settings. No wallet connection on the booth.
+- [x] S1. Tip QR on screen: Solana Pay transfer request (USDC, `reference` key, `memo`) to the singer's wallet set in Settings. No wallet connection on the booth. Done 2026-09-28 (`src/tip/`, `components/tip_qr.rs`, `tests/tip_test.rs`, e2e decodes the QR with BarcodeDetector). Devnet by default. The on-screen memo is fixed per song (`ktv:<code>`); guests cannot type one in most wallets, so S3 request-by-tip needs a phone page that builds its own link.
+  - [ ] `.sol` names: resolving them needs an RPC call, so do it with S2.
+  - [ ] Scan test from a real phone across a room: Phantom and Solflare on devnet.
 - [ ] S2. Confirm on-chain from the browser: poll `getSignaturesForAddress(reference)` → `getTransaction`, check amount, mint and recipient, dedupe by signature. Update CSP `connect-src` for the RPC. RPC decided: public devnet `api.devnet.solana.com` for the demo ($0); Helius free tier only if rate limits bite.
 - [ ] S3. Tip memo → priority request `[★ TIP]` + on-screen garland toast. The chain acts as the phone-remote relay, so no Durable Object is needed (this partly replaces checklist 33).
 - [ ] S4. Night leaderboard payout, optional: the host sends the pot to the best take (built on the party leaderboard).
@@ -27,7 +29,7 @@ as a Thai MC.
   - Measured 2026-09-28 (M5 Pro, n=3, not a benchmark): English memo → play-next 0.987, not-spam 0.912, celebrating 0.883; scam memo → spam 0.753; Thai memo → wrong answer at confidence 0.046. The HTTP server serves only the english checkpoint, so translate memos to English prompts via fixed templates or gate Thai at the threshold.
   - Before shipping: fit the threshold on ≥16 labelled memos (ρ-quantile, per the skill), add `http://127.0.0.1:7331` to CSP `connect-src`, and check Chrome Private Network Access (an https page calling loopback may need `Access-Control-Allow-Private-Network`).
 - [ ] A3. AI MC (template-based, no LLM): announces tips and requests and gives next-song picks and vocal feedback from the tuning summary, using the A2 mood answer.
-- [ ] P1. Privacy note + README: wallet addresses and memos are public on-chain.
+- [x] P1. Privacy note + README: wallet addresses and memos are public on-chain. Done 2026-09-28.
 - [ ] G1. Pilot: one real party or bar night in Bangkok. Count tips, requests and singers. `gated:` owner arranges.
 - [ ] G2. Submission: 3-min demo video, pitch deck, the 8 Superteam answers, disclosure of prior work. `gated:` team bios and founder story from the owner.
 

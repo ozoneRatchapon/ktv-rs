@@ -123,13 +123,18 @@ See [docs/ADDING_SONGS.md](docs/ADDING_SONGS.md). Requests and guide timings com
 cargo clippy --fix --allow-dirty --quiet
 ```
 
+### 10. Tip the Singer (Solana Pay)
+* **Settings → Tip Wallet**: paste a Solana address and a QR code appears under the player. A guest scans it with Phantom or Solflare and tips the singer in **USDC**, choosing the amount in their wallet; the booth never holds a wallet or keys.
+* Each song gets a fresh Solana Pay `reference`, and the memo is `ktv:<song code>`, so a tip can be matched to the song it was for. **Tip Network** defaults to **Devnet** (test money); switch to Mainnet only to take real USDC.
+* The code is drawn beside the video, never over it, and is rendered in Rust/wasm without contacting any server. Payments are public on-chain (see the privacy note).
+
 ---
 
 ## Privacy & Legal Compliance
 
 * **100% Client-Side WebAssembly**: No media or copyrighted files are stored on our servers.
 * **YouTube Embed Compliance**: Standard YouTube embedded players only, following the [YouTube API Developer Policies](https://developers.google.com/youtube/terms/developer-policies) and [Required Minimum Functionality](https://developers.google.com/youtube/terms/required-minimum-functionality): no overlays, no hidden or background playback, no audio separation, no downloading; players stay at least 200x200. All ad views, watch time, and royalties go directly to the respective record labels and artists.
-* **Privacy note**: [`/privacy.html`](public/privacy.html) lists everything stored on the device; **Settings → Clear my data on this device** removes it.
+* **Privacy note**: [`/privacy.html`](public/privacy.html) lists everything stored on the device and what a Solana tip makes public; **Settings → Clear my data on this device** removes it.
 * **Zero Tracking**: No tracking cookies, analytics pixels, or personal data collection (GDPR & PDPA compliant). Fonts (Kanit, Outfit; SIL OFL 1.1) are self-hosted from `public/fonts`, so the app itself makes no third-party requests; only the YouTube player frames (youtube-nocookie.com) and thumbnails (i.ytimg.com) load from Google.
 
 ---

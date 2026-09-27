@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::tip::TipConfig;
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Song {
     pub id: String,
@@ -70,6 +72,9 @@ pub struct AppSettings {
     /// Booth / TV screen: larger UI, wider player, "Up next" under the video.
     #[serde(default)]
     pub tv_mode: bool,
+    /// Plan 003: Solana Pay tip QR under the player (off until a wallet is set).
+    #[serde(default)]
+    pub tip: TipConfig,
 }
 
 impl Default for AppSettings {
@@ -83,6 +88,7 @@ impl Default for AppSettings {
             show_timing_tools: false,
             seen_shortcuts: false,
             tv_mode: false,
+            tip: TipConfig::default(),
         }
     }
 }
