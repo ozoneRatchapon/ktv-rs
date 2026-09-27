@@ -29,6 +29,8 @@ fn test_commands_call_core_methods_with_typed_args() {
         (SyncCommand::SwitchVocal { original: true }, "switch_vocal", vec![Bool(true)]),
         (SyncCommand::SetMapping { offset_secs: -18.24, rate: 1.0012 }, "set_mapping", vec![Num(-18.24), Num(1.0012)]),
         (SyncCommand::SetMonitor(true), "set_monitor", vec![Bool(true)]),
+        (SyncCommand::SetLoop { start: 60.5, end: 75.0 }, "set_loop", vec![Num(60.5), Num(75.0)]),
+        (SyncCommand::ClearLoop, "set_loop", vec![Num(-1.0), Num(-1.0)]),
     ];
     for (cmd, method, args) in cases {
         assert_eq!(cmd.call(), (method, args), "{cmd:?}");

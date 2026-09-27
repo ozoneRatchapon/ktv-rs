@@ -100,6 +100,8 @@
             guide_learn: null,
             guide_error: undefined,
             own_command_at: -Infinity,
+            // Practice loop: [start, end] in karaoke seconds, or null
+            loop: null,
             leads: {},
         };
         for (const kind of Object.keys(LEAD)) {
@@ -111,9 +113,10 @@
             env.post(frame, JSON.stringify({ event: 'command', func, args: args || [] }));
         }
 
-        // The player said it is not playing (autoplay blocked, buffering, cued, ended): time must not run on
+        // Time runs only while the mounted player says it is playing: not before it first starts (loading, or
+        // autoplay blocked), nor while it buffers, is cued or has ended
         function karaoke_stalled() {
-            return st.karaoke_state !== undefined && st.karaoke_state !== YT_STATE.PLAYING;
+            return !st.karaoke_started || st.karaoke_state !== YT_STATE.PLAYING;
         }
 
         // Karaoke time extrapolated from the last YouTube report (reports arrive every ~0.25-1s)
@@ -170,6 +173,7 @@
 
         // Closed-loop sync step (every CONTROL_MS)
         function tick() {
+            if (st.loop && !st.paused && karaoke_time() >= st.loop[1]) seek_all(st.loop[0]);
             const unstarted = st.karaoke_state === YT_STATE.UNSTARTED || st.karaoke_state === YT_STATE.CUED;
             if (!st.paused && unstarted && env.now() - st.mount_at > AUTOPLAY_WAIT_MS) apply_paused(true, false);
             const action = decide_guide({
@@ -208,12 +212,13 @@
 
         // Progress step (every PROGRESS_MS): keep YouTube reporting, report karaoke time to Rust
         function progress() {
+            // Always report the time, so the display settles on the held second after a pause
+            st.send('TIME:' + Math.floor(karaoke_time()));
             if (st.paused) return;
             env.post(FRAME.KARAOKE, '{"event":"listening"}');
             env.post(FRAME.GUIDE, '{"event":"listening"}');
             // Re-assert mute in case the karaoke iframe was remounted
             if (st.original && !st.monitor) command(FRAME.KARAOKE, 'mute');
-            st.send('TIME:' + Math.floor(karaoke_time()));
         }
 
         function on_message(from_guide, data) {
@@ -276,6 +281,7 @@
             st.guide_rate_now = 1;
             st.karaoke_state = undefined;
             st.karaoke_started = false;
+            st.loop = null;
             if (st.paused) {
                 st.paused = false;
                 st.send('PAUSE_STATE:0');
@@ -319,6 +325,11 @@
             set_position(target);
             command(FRAME.KARAOKE, 'seekTo', [target, true]);
             if (st.original) seek_guide(guide_target(target), 'PAIR', false);
+        }
+
+        // Practice loop between two karaoke seconds (end after start); anything else clears it
+        function set_loop(start, end) {
+            st.loop = start >= 0 && end > start ? [start, end] : null;
         }
 
         function seek_by(delta) {
@@ -399,6 +410,7 @@
                 guide_state: st.guide_state,
                 karaoke_state: st.karaoke_state,
                 guide_rate_now: st.guide_rate_now,
+                loop: st.loop,
                 original: st.original,
                 monitor: st.monitor,
                 paused: st.paused,
@@ -409,7 +421,7 @@
         }
 
         return {
-            bind, load_song, set_mapping, set_monitor, set_start, seek_all, seek_by, restart, set_paused, toggle_playback, switch_vocal,
+            bind, load_song, set_mapping, set_monitor, set_start, seek_all, seek_by, set_loop, restart, set_paused, toggle_playback, switch_vocal,
             tick, progress, on_message, debug,
         };
     }

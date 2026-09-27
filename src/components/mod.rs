@@ -4,6 +4,7 @@ pub mod guide_timing;
 pub mod header;
 pub mod pitch_meter;
 pub mod player;
+pub mod practice;
 pub mod queue_view;
 pub mod quick_search;
 pub mod remote;

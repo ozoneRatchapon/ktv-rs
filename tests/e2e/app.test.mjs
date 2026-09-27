@@ -337,6 +337,26 @@ test('library MV: timing tools offer the found official video; the timed guide s
   await page.wait_for(vocal);
 }));
 
+test('practice: A then B loops the part, a new song clears it; Chords opens a web search for the song', () => with_page({}, async (page) => {
+  const buttons = `[...document.querySelectorAll('.practice-row button')]`;
+  const press = (label) => page.eval(`${buttons}.find((b) => b.textContent === ${JSON.stringify(label)}).click()`);
+  assert.equal(await page.eval(`${buttons}.find((b) => b.textContent === 'B').disabled`), true, 'B waits for A');
+  await press('A');
+  // Move 10 s on without depending on YouTube playing (CI may not)
+  await page.eval(`[...document.querySelectorAll('.player-quick-controls button')].find((b) => b.textContent === '+10s').click()`);
+  await sleep(100);
+  await press('B');
+  await page.wait_for(`document.querySelector('.practice-label').textContent.startsWith('Looping')`);
+  const loop = JSON.parse(await page.eval(`JSON.stringify(window.KtvSync.debug().loop)`));
+  assert.ok(loop && loop[1] - loop[0] >= 9, `loop ${loop}`);
+  const title = await page.eval(`document.querySelector('.now-title').textContent`);
+  const href = await page.eval(`document.querySelector('.practice-chords').href`);
+  assert.equal(decodeURIComponent(new URL(href).searchParams.get('q')).startsWith(`คอร์ด ${title} `), true, href);
+  assert.equal(await page.eval(`document.querySelector('.practice-chords').rel`), 'noopener noreferrer');
+  await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
+  await page.wait_for(`window.KtvSync.debug().loop === null && document.querySelector('.practice-label').textContent.startsWith('Loop a part')`);
+}));
+
 test('favourites and recently sung shelves', () => with_page({}, async (page) => {
   const chip = (label) => `[...document.querySelectorAll('.chip')].find((c) => c.textContent === ${JSON.stringify(label)})`;
   const titles = `[...document.querySelectorAll('.song-title')].map((e) => e.textContent)`;

@@ -512,3 +512,26 @@ test('autoplay that works never pauses; buffering holds the clock; a new mount f
     sync.set_start(0);
     assert.equal(sync.debug().karaoke_state, undefined);
 });
+
+test('practice loop: past the end it jumps back to the start; a new song or a clear ends it', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.set_start(0);
+    report(sync, 60);
+    sync.set_loop(60, 75);
+    env.advance(10000);
+    sync.tick();
+    assert.equal(env.commands(FRAME.KARAOKE, 'seekTo').length, 0, 'inside the loop: no seek');
+    env.advance(6000);
+    sync.tick();
+    assert.deepEqual(env.commands(FRAME.KARAOKE, 'seekTo').map((p) => p.msg.args), [[60, true]]);
+    assert.equal(Math.round(sync.debug().karaoke_time), 60);
+
+    sync.set_loop(-1, -1);
+    assert.equal(sync.debug().loop, null);
+    sync.set_loop(80, 70);
+    assert.equal(sync.debug().loop, null, 'end before start is no loop');
+    sync.set_loop(10, 20);
+    sync.load_song(0, 1);
+    assert.equal(sync.debug().loop, null, 'a new song clears the loop');
+});

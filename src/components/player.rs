@@ -3,6 +3,7 @@ use futures_util::StreamExt;
 use crate::sync::{self, SyncCommand, SyncEvent, GUIDE_FRAME_ID, KARAOKE_FRAME_ID};
 use crate::components::guide_timing::GuideTiming;
 use crate::components::pitch_meter::PitchMeter;
+use crate::components::practice::Practice;
 use crate::score::TakeResult;
 use crate::timing::SavedTiming;
 use crate::types::{GuideTrack, QueueItem};
@@ -189,6 +190,8 @@ pub fn Player(
                             }
                             span { class: "time-text total-time", "{format_time(u64::from(song.duration_secs))}" }
                         }
+
+                        Practice { song: song.clone(), queue_id: item.queue_id, fallback_sec: current_playback_sec() }
 
                         div { class: "player-main-controls-row",
                             div { class: "song-info",
