@@ -58,3 +58,23 @@ fn test_no_match_stays_empty() {
     assert!(hits.songs.is_empty());
     assert_eq!(hits.retyped, None);
 }
+
+/// The straightforward definition `normalize` / `search_key` must keep matching (they take fast paths).
+fn reference_normalize(text: &str) -> String {
+    let thai_mark = |c: char| ('\u{0E47}'..='\u{0E4D}').contains(&c);
+    text.chars().filter(|c| c.is_alphanumeric() && !thai_mark(*c)).flat_map(char::to_lowercase).collect()
+}
+
+#[test]
+fn test_search_key_matches_reference_on_every_song() {
+    let library = app::library::parse(include_str!("../assets/library.json")).expect("library parses");
+    let songs = app::catalog::builtin_catalog().iter().chain(&library);
+    for song in songs {
+        let fields = [&song.title, &song.artist].into_iter().chain(&song.aliases);
+        let reference = fields.map(|f| reference_normalize(f)).collect::<Vec<_>>().join("\n");
+        assert_eq!(app::search::search_key(song), reference, "{} - {}", song.title, song.artist);
+    }
+    for text in ["Rak-Mai Wai", "รักไม่ไหว", "ÄÖÜ Straße", "İstanbul", "ΣΊΣΥΦΟΣ", "１２３", "Ⅻ"] {
+        assert_eq!(app::search::normalize(text), reference_normalize(text), "{text}");
+    }
+}
