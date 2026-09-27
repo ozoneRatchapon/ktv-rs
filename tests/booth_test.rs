@@ -1,4 +1,4 @@
-use app::booth::{Booth, Placement, Requester, KEY_RANGE};
+use app::booth::{Booth, Placement, Requester};
 use app::catalog::builtin_catalog;
 use app::types::GuideTrack;
 
@@ -55,21 +55,6 @@ fn test_advance_takes_the_head_then_empties_the_stage() {
     assert!(booth.advance());
     assert!(!booth.advance());
     assert!(booth.current.is_none());
-}
-
-#[test]
-fn test_key_shifts_clamp_to_range() {
-    let mut booth = Booth::default();
-    booth.add(song(0), Requester::Guest, Placement::Back);
-    booth.add(song(1), Requester::Guest, Placement::Back);
-    booth.shift_current_key(100);
-    assert_eq!(booth.current.as_ref().unwrap().key_shift, *KEY_RANGE.end());
-    booth.reset_current_key();
-    assert_eq!(booth.current.as_ref().unwrap().key_shift, 0);
-    let qid = booth.queue[0].queue_id;
-    booth.shift_item_key(qid, -100);
-    assert_eq!(booth.queue[0].key_shift, *KEY_RANGE.start());
-    booth.shift_item_key(9999, 1); // unknown id: no-op
 }
 
 #[test]

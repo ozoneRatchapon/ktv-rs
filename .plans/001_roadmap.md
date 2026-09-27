@@ -70,7 +70,7 @@ Date: 2026-09-26 · Branch: `develop` · Status legend: `[ ]` todo, `[~]` in pro
   - [ ] Real-mic check on phone/tablet browsers (Safari, Android Chrome) — part of the owner listening test.
 - [ ] Real Score HUD: note-lane view + per-phrase score; octave-tolerant matching.
 - [x] (2026-09-26) Reference-free **Tuning** score (no licence needed): `src/score/` segments held notes (>= 8 frames ~170 ms, <= 2-frame dropouts, splits on steps > 0.6 st or spread > 0.8 st, so vibrato is one note and glides split), scores duration-weighted |cents off nearest semitone|: 100 at <= 8 cents, 0 at 25 cents (chance). Shown as `Tuning NN` next to the mic readout, resets per take (song start / replay via `song_started_at`); tooltip states it cannot know the right notes and that speaker bleed can inflate it. `tests/score_test.rs` (9). Browser check (fake mic, prod bundle via wrangler dev): in tune = 100, 18 cents sharp = 41, replay resets, 0 CSP violations. Owner listening test with a real mic still open.
-- [ ] Repurpose **key transpose** honestly: shifts the *target melody* for scoring ("sing in your key"), not the backing audio.
+- [x] (dropped 2026-09-27: key buttons removed, see checklist 5) Repurpose **key transpose** honestly: shifts the *target melody* for scoring ("sing in your key"), not the backing audio.
 - [x] (2026-09-26) Benchmarks auto-numbered in `bench/NNN_*`: `bench/001_pitch_detector.md` — native 78 µs/frame, wasm 277 µs/frame (1.3% of one core at 48 kHz), `simd128` 101 µs but not shipped (Safari < 16.4 cannot load SIMD wasm); release wasm 846 → 878 KB. Harness `benches/pitch_detector.rs` (`cargo bench`), wasm via `bench/run_wasi.mjs` (Node WASI).
 
 ## Phase 3 — Super GOAT (quarter+)

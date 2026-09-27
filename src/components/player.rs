@@ -17,7 +17,6 @@ pub fn Player(
     take_started_at: f64,
     on_next_song: EventHandler<()>,
     on_replay_song: EventHandler<()>,
-    on_key_change: EventHandler<i32>,
     on_video_ended: EventHandler<()>,
     show_timing_tools: bool,
     /// The current song's guide timing comes from this device, not the catalog.
@@ -100,12 +99,6 @@ pub fn Player(
             let iframe_src = format!(
                 "https://www.youtube-nocookie.com/embed/{active_video_id}?autoplay=1&start={start_sec}&enablejsapi=1&rel=0&iv_load_policy=3"
             );
-
-            let key_label = match item.key_shift {
-                k if k > 0 => format!("KEY: +{k} ♯"),
-                k if k < 0 => format!("KEY: {k} ♭"),
-                _ => "ORIGINAL KEY (±0)".to_string(),
-            };
 
             // Guide player stays loaded (muted, paused) so the vocal switch is instant
             let guide_iframe_src = song.guide.as_ref().map(|g| {
@@ -231,23 +224,6 @@ pub fn Player(
                                         SyncCommand::SeekTo(target).run();
                                     },
                                     "+10s"
-                                }
-
-                                // Key Transpose Buttons
-                                div { class: "key-control-group",
-                                    button {
-                                        class: "ctrl-btn key-btn",
-                                        title: "Key -1 (label only: YouTube audio cannot be pitch-shifted)",
-                                        onclick: move |_| on_key_change.call(-1),
-                                        "-1"
-                                    }
-                                    span { class: "key-pill", "{key_label}" }
-                                    button {
-                                        class: "ctrl-btn key-btn",
-                                        title: "Key +1 (label only: YouTube audio cannot be pitch-shifted)",
-                                        onclick: move |_| on_key_change.call(1),
-                                        "+1"
-                                    }
                                 }
 
                                 // Guide Vocal / Original Artist Switcher with Intro Offset Compensation

@@ -48,7 +48,7 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 
 ### 6. 10-Key KTV Keypad Remote & On-Screen Play/Pause
 * 5-digit quick code dialer (e.g. `#10026` for *คุกเข่า*).
-* Real-time Key Transposition (`-6` to `+6` semitones) and tempo control (`0.9x` to `1.1x`).
+* Tempo control (`0.9x` to `1.1x`). No key change: a web page cannot reach the audio inside an embedded YouTube player (a browser extension such as [Transpose](https://transpose.video/) can, on its own terms).
 * Dedicated **Play / Pause** toggle button with active state styling.
 
 ### 7. Auto-DJ Recommendation Engine

@@ -51,7 +51,6 @@ fn demo_session() -> Session {
     let item = |queue_id: u64, index: usize, requester: &str| QueueItem {
         queue_id,
         song: cat[index].clone(),
-        key_shift: 0,
         requester: requester.to_string(),
     };
     Session {
@@ -258,9 +257,6 @@ fn App() -> Element {
         }
     };
 
-    let handle_key_change = move |delta: i32| booth.write().shift_current_key(delta);
-    let handle_reset_key = move |_: ()| booth.write().reset_current_key();
-    let handle_adjust_item_key = move |(queue_id, delta): (u64, i32)| booth.write().shift_item_key(queue_id, delta);
     let handle_move_up = move |index: usize| booth.write().move_up(index);
     let handle_move_down = move |index: usize| booth.write().move_down(index);
     let handle_remove_queue = move |queue_id: u64| booth.write().remove(queue_id);
@@ -311,7 +307,6 @@ fn App() -> Element {
         },
         _ => SavedTiming::None,
     };
-    let current_key = current_song().map(|c| c.key_shift).unwrap_or(0);
     let ant_candidates = anticipated_set().candidates;
 
     rsx! {
@@ -361,7 +356,6 @@ fn App() -> Element {
                         playback_speed: playback_speed(),
                         on_next_song: handle_next_song,
                         on_replay_song: handle_replay_song,
-                        on_key_change: handle_key_change,
                         on_video_ended: handle_video_ended,
                         show_timing_tools: settings().show_timing_tools,
                         saved_timing,
@@ -426,7 +420,6 @@ fn App() -> Element {
                                 on_move_up: handle_move_up,
                                 on_move_down: handle_move_down,
                                 on_clear_queue: handle_clear_queue,
-                                on_adjust_item_key: handle_adjust_item_key,
                                 on_queue_song: handle_queue_song,
                                 on_play_song: handle_play_song,
                                 on_simulate_end: handle_video_ended,
@@ -441,10 +434,7 @@ fn App() -> Element {
                                 on_queue_by_code: handle_queue_by_code,
                                 on_skip_song: handle_next_song,
                                 on_replay_song: handle_replay_song,
-                                on_key_shift: handle_key_change,
-                                on_reset_key: handle_reset_key,
                                 on_speed_change: move |s| playback_speed.set(s),
-                                current_key,
                                 current_speed: playback_speed(),
                             }
                         },

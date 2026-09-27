@@ -11,10 +11,7 @@ pub fn Remote(
     on_queue_by_code: EventHandler<String>,
     on_skip_song: EventHandler<()>,
     on_replay_song: EventHandler<()>,
-    on_key_shift: EventHandler<i32>,
-    on_reset_key: EventHandler<()>,
     on_speed_change: EventHandler<f32>,
-    current_key: i32,
     current_speed: f32,
 ) -> Element {
     let mut input_code = use_signal(String::new);
@@ -143,40 +140,6 @@ pub fn Remote(
                         class: "code-action-btn secondary-btn",
                         onclick: queue_now,
                         span { "Queue" }
-                    }
-                }
-
-                // Pitch Transpose Control Section
-                div { class: "remote-section",
-                    div { class: "section-title", "KEY TRANSPOSE" }
-                    div {
-                        class: "key-transpose-row",
-                        title: "Saved per song as a key label; YouTube audio cannot be pitch-shifted in the browser",
-                        button {
-                            class: "pitch-btn",
-                            onclick: move |_| on_key_shift.call(-2),
-                            "-2"
-                        }
-                        button {
-                            class: "pitch-btn",
-                            onclick: move |_| on_key_shift.call(-1),
-                            "-1"
-                        }
-                        button {
-                            class: if current_key == 0 { "pitch-btn active" } else { "pitch-btn" },
-                            onclick: move |_| on_reset_key.call(()),
-                            "ORIGINAL"
-                        }
-                        button {
-                            class: "pitch-btn",
-                            onclick: move |_| on_key_shift.call(1),
-                            "+1"
-                        }
-                        button {
-                            class: "pitch-btn",
-                            onclick: move |_| on_key_shift.call(2),
-                            "+2"
-                        }
                     }
                 }
 

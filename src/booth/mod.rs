@@ -3,5 +3,4 @@
 mod ops;
 mod types;
 
-pub use ops::KEY_RANGE;
 pub use types::{Booth, Placement, Requester};

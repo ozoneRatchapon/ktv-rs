@@ -22,7 +22,7 @@ This repository contains a full-featured, zero-latency Web KTV / Karaoke player 
    - Sigmoid dwell-time tracking.
    - Tropical $(\max, +)$ semiring early-skip bottleneck pruner.
 4. **10-Key KTV Keypad Remote** ([src/components/remote.rs](file:///Users/ozone/karaoke/src/components/remote.rs)):
-   - 5-digit song code entry with instantaneous preview, play, queue, key transpose (`-2` to `+2`), and tempo adjustments (`0.9x` to `1.1x`).
+   - 5-digit song code entry with instantaneous preview, play, queue, and tempo adjustments (`0.9x` to `1.1x`).
 
 ---
 
