@@ -156,7 +156,8 @@ test('queue: Queue appends, Insert goes first, Play replaces, Next Song advances
   await page.wait_for(`${now_title} === ${JSON.stringify(inserted)}`);
   assert.deepEqual(await page.eval(queue_titles), [...start, queued]);
   await page.reload();
-  assert.equal(await page.eval(now_title), inserted);
+  // The app shell mounts before the player renders its song: wait for it rather than read once
+  await page.wait_for(`${now_title} === ${JSON.stringify(inserted)}`);
   assert.deepEqual(await page.eval(queue_titles), [...start, queued]);
 }));
 
