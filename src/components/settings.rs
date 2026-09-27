@@ -15,6 +15,11 @@ pub fn Settings(
         Ok(_) => "Tip QR shows under the player. Your address and every tip memo are public on-chain.",
         Err(err) => err.message(),
     };
+    let rpc_status = match (tip::parse_rpc_url(&current_settings.tip.rpc_url), current_settings.tip.rpc_endpoint()) {
+        (Err(err), _) => err.message(),
+        (Ok(_), Some(_)) => "Tips are confirmed on-chain and shown under the QR",
+        (Ok(_), None) => "Mainnet needs a Helius RPC URL to confirm tips (the public one blocks browsers)",
+    };
 
     rsx! {
         div { class: "settings-container",
@@ -125,6 +130,29 @@ pub fn Settings(
                             settings.set(s);
                         },
                         "{current_settings.tip.cluster.label()}"
+                    }
+                }
+
+                div { class: "setting-row",
+                    div { class: "setting-desc",
+                        div { class: "setting-title", "Tip RPC (optional)" }
+                        div { class: "setting-sub", "{rpc_status}" }
+                    }
+                    input {
+                        id: "tip_rpc",
+                        name: "tip_rpc",
+                        aria_label: "Solana RPC URL for tip checks",
+                        class: "text-input",
+                        r#type: "url",
+                        autocomplete: "off",
+                        spellcheck: "false",
+                        placeholder: "https://mainnet.helius-rpc.com/?api-key=…",
+                        value: "{current_settings.tip.rpc_url}",
+                        oninput: move |evt| {
+                            let mut s = settings();
+                            s.tip.rpc_url = evt.value().trim().to_string();
+                            settings.set(s);
+                        }
                     }
                 }
 

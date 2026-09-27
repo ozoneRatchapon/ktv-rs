@@ -3,7 +3,13 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.26.0] - 2026-09-28
+## [0.27.0] - 2026-09-28
+### Added
+- Request a song with a tip: a second, smaller QR beside the tip code opens a phone page (`/request.html`, plain HTML + JS, no wasm). The guest types the 5-digit song code, picks 0.5 / 1 / 2 / 5 USDC and pays in Phantom or Solflare. The booth finds the payment by the room's `reference`, and a request memo (`ktv:req:<code>`) with at least 0.10 USDC plays that song next, marked **★ TIP** in the queue and Up next. The room details ride in the link's `#fragment`, so no server logs them.
+- Garland toast when a tip lands: "Garland for the singer! +1.50 USDC", or the requested song. It sits bottom right, never over the video, and closes after 8 s. Each on-chain payment is acted on once.
+- Tips confirmed on-chain: while a song plays, the booth asks the Solana RPC for payments carrying that song's `reference` and shows "✓ Tip received: 1.50 USDC" under the QR (a screen-reader status line). A payment counts only if it succeeded and the singer's USDC balance went up; each is counted once. Devnet uses the free public RPC; Mainnet needs a Helius URL under Settings → Tip RPC, because the public mainnet RPC refuses browsers. Polls every 5 s and backs off to 60 s when offline or rate limited.
+
+## [0.26.0] - 2026-09-28 (`39bae859`)
 ### Added
 - Tip the singer: set a Solana wallet under Settings → Tip Wallet and a Solana Pay QR code shows under the player. Guests pay USDC from their phone wallet at an amount they choose. Each song gets a fresh `reference` and the memo `ktv:<code>`. Devnet (test USDC) by default, Mainnet is opt-in. The QR is built in Rust/wasm as one SVG path, uses level L error correction for a bigger module size, and sits beside the video, never over it.
 - Privacy note and README: what a Solana tip makes public.

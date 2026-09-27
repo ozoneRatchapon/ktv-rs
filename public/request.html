@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Request a song · KTV-RS</title>
+    <meta name="description" content="Request a karaoke song with a USDC tip (Solana Pay)." />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.ico" />
+    <style>
+        body { margin: 0; background: #0b0d13; color: #e2e8f0; font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        main { max-width: 420px; margin: 0 auto; padding: 28px 20px 48px; display: flex; flex-direction: column; gap: 16px; }
+        h1 { font-size: 24px; margin: 0; }
+        .muted { color: #8a97ab; font-size: 14px; margin: 0; }
+        label { font-weight: 700; display: flex; flex-direction: column; gap: 6px; }
+        input { font: inherit; font-size: 28px; letter-spacing: 0.2em; padding: 10px 12px; border-radius: 10px; border: 1px solid #2a3142; background: #141926; color: #fff; }
+        .amounts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; border: 0; padding: 0; margin: 0; }
+        .amounts legend { font-weight: 700; margin-bottom: 6px; }
+        .amounts button { font: inherit; padding: 12px 0; border-radius: 10px; border: 1px solid #2a3142; background: #141926; color: #e2e8f0; }
+        .amounts button[aria-pressed="true"] { background: #f59e0b; color: #0b0d13; border-color: #f59e0b; font-weight: 800; }
+        #pay { display: block; text-align: center; padding: 16px; border-radius: 12px; background: #00f5d4; color: #0b0d13; font-weight: 800; text-decoration: none; }
+        #pay[aria-disabled="true"] { background: #2a3142; color: #8a97ab; pointer-events: none; }
+        .badge { color: #00f5d4; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; }
+        #error { color: #fca5a5; }
+        a { color: #00f5d4; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Request a song</h1>
+    <p class="muted" id="room"></p>
+    <p id="error" role="alert" hidden>This link is incomplete. Scan the room's "Request a song" code again.</p>
+    <form id="form" hidden>
+        <label for="code">Song code (5 digits, from the songbook on screen)
+            <input id="code" name="code" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" autocomplete="off" required />
+        </label>
+        <fieldset class="amounts">
+            <legend>Tip (USDC)</legend>
+            <button type="button" data-amount="0.5" aria-pressed="false">0.5</button>
+            <button type="button" data-amount="1" aria-pressed="true">1</button>
+            <button type="button" data-amount="2" aria-pressed="false">2</button>
+            <button type="button" data-amount="5" aria-pressed="false">5</button>
+        </fieldset>
+        <span class="badge" id="test_badge" hidden>DEVNET · test money</span>
+    </form>
+    <a id="pay" href="#" aria-disabled="true">Pay with a Solana wallet</a>
+    <p class="muted">Opens Phantom or Solflare. The song plays next once the payment lands (a few seconds). Tips of at
+        least 0.10 USDC jump the queue. The payment, both wallet addresses and the memo <code>ktv:req:&lt;code&gt;</code>
+        are public on the Solana blockchain. <a href="/privacy.html">Privacy</a></p>
+</main>
+<script src="/request.js"></script>
+</body>
+</html>

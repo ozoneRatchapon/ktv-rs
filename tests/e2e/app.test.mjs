@@ -2,6 +2,7 @@
 // Run: tools/build_web.sh && npx wrangler dev --port 8788, then `node --test tests/e2e/app.test.mjs`.
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { launch, sleep } from './cdp.mjs';
 
 let browser;
@@ -564,8 +565,48 @@ test('TV mode: toggle is remembered, shows Up next, still fits one 1080p screen'
   await page.wait_for(`document.querySelector('.ktv-app-wrapper').classList.contains('tv-mode')`);
 }));
 
-test('tip QR: a wallet in Settings shows a Solana Pay code under the player that decodes to the link, fits TV and desktop', () => with_page({ width: 1920, height: 1080 }, async (page) => {
-  const wallet = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+// A real devnet USDC transfer (0.001 USDC to `tip_wallet`, with a memo). The mock RPC replays it for each "payment":
+// its first account key becomes the paid reference, and the memo and amount are set per payment.
+const tip_tx = JSON.parse(readFileSync(new URL('../fixtures/tip/devnet_usdc_transfer_with_memo.json', import.meta.url)));
+const tip_wallet = '75AjMdh7Gn1TLigfze541AVJGJ4TyqBEaRZk3pozfBza';
+
+/** Mock devnet RPC: nothing is paid until `pay(reference, { signature, memo, amount })`. `calls`: methods asked. */
+async function mock_devnet(page) {
+  const payments = new Map(); // signature -> payment
+  const calls = [];
+  await page.mock_json('https://api.devnet.solana.com*', (request) => {
+    const call = JSON.parse(request.postData);
+    calls.push(call.method);
+    switch (call.method) {
+      case 'getSignaturesForAddress': {
+        const paid = [...payments].filter(([, p]) => p.reference === call.params[0]);
+        return { jsonrpc: '2.0', id: call.id, result: paid.map(([signature]) => ({ signature, err: null })) };
+      }
+      case 'getTransaction': {
+        const { reference, memo, amount } = payments.get(call.params[0]);
+        const tx = structuredClone(tip_tx);
+        tx.result.transaction.message.accountKeys[0].pubkey = reference;
+        tx.result.transaction.message.instructions.find((ix) => ix.program === 'spl-memo').parsed = memo;
+        const pre = tx.result.meta.preTokenBalances.find((b) => b.owner === tip_wallet).uiTokenAmount.amount;
+        tx.result.meta.postTokenBalances.find((b) => b.owner === tip_wallet).uiTokenAmount.amount = String(BigInt(pre) + BigInt(amount));
+        return tx;
+      }
+      default:
+        return { jsonrpc: '2.0', id: call.id, error: { code: -32601, message: 'not mocked' } };
+    }
+  });
+  return { calls, pay: (reference, { signature, memo, amount }) => payments.set(signature, { reference, memo, amount }) };
+}
+
+const set_tip_wallet = async (page, wallet) => {
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'Settings').click()`);
+  await page.wait_for(`!!document.getElementById('tip_wallet')`);
+  await page.eval(`(() => { const i = document.getElementById('tip_wallet'); i.value = ${JSON.stringify(wallet)}; i.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+};
+
+test('tip QR: a wallet in Settings shows a Solana Pay code under the player that decodes to the link, fits TV and desktop; a tip on-chain shows under it', () => with_page({ width: 1920, height: 1080 }, async (page) => {
+  const wallet = tip_wallet;
+  const rpc = await mock_devnet(page);
   assert.equal(await page.eval(`document.querySelectorAll('.tip-strip').length`), 0, 'off until a wallet is set');
   await page.eval(`[...document.querySelectorAll('.shortcut-help button')].find((b) => b.textContent === 'Close').click()`);
   await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'Settings').click()`);
@@ -591,9 +632,18 @@ test('tip QR: a wallet in Settings shows a Solana Pay code under the player that
     return code?.rawValue ?? 'not found';
   })()`);
   if (decoded !== null) assert.equal(decoded, href, 'QR decodes to the Solana Pay link');
+  // S2: a guest pays; the booth finds it on-chain by the song's reference and shows it
+  assert.equal(await page.eval(`document.querySelector('.tip-received').textContent`), '', 'no tip yet');
+  const song_reference = new URL(href.replace('solana:', 'https://x/')).searchParams.get('reference');
+  rpc.pay(song_reference, { signature: 'song-tip-1', memo: 'ktv:00001', amount: 1000 });
+  await page.wait_for(`document.querySelector('.tip-received').textContent === '✓ Tip received: 0.001 USDC'`, 20000);
+  assert.ok(rpc.calls.includes('getTransaction'));
+  assert.match(await page.eval(`document.querySelector('.tip-toast').textContent`), /Garland for the singer! \+0\.001 USDC/);
+  assert.equal(await page.eval(`document.querySelector('.tip-received').getAttribute('role')`), 'status');
   // A new song gets a new reference (each tip is matched to the song it was for)
   await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
   await page.wait_for(`document.querySelector('.tip-qr-link')?.getAttribute('href') !== ${JSON.stringify(href)}`);
+  assert.equal(await page.eval(`document.querySelector('.tip-received').textContent`), '', 'tips belong to the song they were for');
   await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'TV').click()`);
   await page.wait_for(`document.querySelector('.ktv-app-wrapper').classList.contains('tv-mode')`);
   assert.equal(await page.eval(`document.documentElement.scrollHeight <= innerHeight`), true, 'TV mode still fits 1080p');
@@ -602,4 +652,42 @@ test('tip QR: a wallet in Settings shows a Solana Pay code under the player that
   await page.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
   await sleep(300);
   assert.equal(await page.eval(`document.documentElement.scrollHeight <= innerHeight`), true, 'desktop 1280x800 still fits');
+}));
+
+test('tip request: the room QR opens the phone page; a paid request plays next as ★ TIP with a garland, once', () => with_page({ width: 1920, height: 1080 }, async (page) => {
+  const rpc = await mock_devnet(page);
+  await page.eval(`[...document.querySelectorAll('.shortcut-help button')].find((b) => b.textContent === 'Close').click()`);
+  await set_tip_wallet(page, tip_wallet);
+  await page.wait_for(`!!document.querySelector('.tip-request-qr')`);
+  const request_page = await page.eval(`document.querySelector('.tip-request').href`);
+  assert.ok(request_page.startsWith(`${await page.eval('location.origin')}/request.html#to=${tip_wallet}&c=devnet&ref=`), request_page);
+  const room_reference = new URLSearchParams(new URL(request_page).hash.slice(1)).get('ref');
+  assert.equal(await page.eval(`document.documentElement.scrollHeight <= innerHeight`), true, 'both QRs fit 1080p');
+
+  // A guest pays 1 USDC with the request memo for a catalog song
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'Songbook').click()`);
+  await page.wait_for(`document.querySelectorAll('.song-code-tag').length > 0`);
+  const code = (await page.eval(`[...document.querySelectorAll('.song-code-tag')].at(-1).textContent`)).replace('#', '');
+  rpc.pay(room_reference, { signature: 'request-1', memo: `ktv:req:${code}`, amount: 1_000_000 });
+  await page.wait_for(`document.querySelector('.tip-toast')?.textContent.includes('★ TIP 1.00 USDC')`, 20000);
+  assert.match(await page.eval(`document.querySelector('.tip-toast').textContent`), /plays next/);
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Queue')).click()`);
+  await page.wait_for(`!!document.querySelector('.queue-item-card .tip-badge')`);
+  assert.equal(await page.eval(`document.querySelector('.queue-item-card .item-code').textContent`), `#${code}★ TIP`, 'first in the queue');
+  // The next polls see the same signature again: it is not queued twice
+  await page.click('.tip-toast .toast-close-btn');
+  await sleep(6000);
+  assert.equal(await page.eval(`document.querySelectorAll('.queue-item-card .tip-badge').length`), 1, 'acted on once');
+  assert.equal(await page.eval(`!!document.querySelector('.tip-toast')`), false, 'no second toast');
+
+  // The phone page builds the Solana Pay link for that room
+  await page.send('Page.navigate', { url: request_page });
+  await page.wait_for(`document.getElementById('form')?.hidden === false`);
+  assert.equal(await page.eval(`document.getElementById('pay').getAttribute('aria-disabled')`), 'true', 'no code yet');
+  await page.eval(`(() => { const i = document.getElementById('code'); i.value = '${code}x'; i.dispatchEvent(new Event('input')); })()`);
+  await page.eval(`[...document.querySelectorAll('.amounts button')].find((b) => b.textContent === '2').click()`);
+  assert.equal(await page.eval(`document.getElementById('pay').getAttribute('href')`),
+    `solana:${tip_wallet}?amount=2&spl-token=4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU&reference=${room_reference}`
+    + `&label=${encodeURIComponent('VIP ROOM 07')}&message=Request%20%23${code}&memo=ktv%3Areq%3A${code}`);
+  assert.equal(await page.eval(`document.getElementById('test_badge').hidden`), false, 'devnet is marked');
 }));

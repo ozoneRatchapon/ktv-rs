@@ -46,23 +46,61 @@ pub fn watch_fullscreen() -> futures_channel::mpsc::UnboundedReceiver<bool> {
     rx
 }
 
+/// This page's origin (`https://host`), for links a phone opens. `None` on the host.
+pub fn page_origin() -> Option<String> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        web_sys::window()?.location().origin().ok()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        None
+    }
+}
+
 /// GET a same-origin file as text (`None` on a network error or a non-2xx status). Always `None` on the host.
 pub async fn fetch_text(url: &str) -> Option<String> {
     #[cfg(target_arch = "wasm32")]
     {
-        use wasm_bindgen::JsCast;
-        use wasm_bindgen_futures::JsFuture;
-        let response: web_sys::Response = JsFuture::from(web_sys::window()?.fetch_with_str(url)).await.ok()?.dyn_into().ok()?;
-        if !response.ok() {
-            return None;
-        }
-        JsFuture::from(response.text().ok()?).await.ok()?.as_string()
+        response_text(web_sys::window()?.fetch_with_str(url)).await
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
         let _ = url;
         None
     }
+}
+
+/// POST a JSON body (a JSON-RPC call) and read the answer as text; gives up after `timeout_ms`.
+/// `None` on a network error, a timeout or a non-2xx status (an RPC rate limit is HTTP 429). Always `None` on the host.
+pub async fn post_json(url: &str, body: &str, timeout_ms: u32) -> Option<String> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let init = web_sys::RequestInit::new();
+        init.set_method("POST");
+        init.set_body(&wasm_bindgen::JsValue::from_str(body));
+        let headers = web_sys::Headers::new().ok()?;
+        headers.set("content-type", "application/json").ok()?;
+        init.set_headers(&headers);
+        init.set_signal(Some(&web_sys::AbortSignal::timeout_with_u32(timeout_ms)));
+        response_text(web_sys::window()?.fetch_with_str_and_init(url, &init)).await
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = (url, body, timeout_ms);
+        None
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+async fn response_text(request: js_sys::Promise) -> Option<String> {
+    use wasm_bindgen::JsCast;
+    use wasm_bindgen_futures::JsFuture;
+    let response: web_sys::Response = JsFuture::from(request).await.ok()?.dyn_into().ok()?;
+    if !response.ok() {
+        return None;
+    }
+    JsFuture::from(response.text().ok()?).await.ok()?.as_string()
 }
 
 /// Resolve after `ms` milliseconds (a `setTimeout`). Never resolves on the host, so a polling loop there just waits.

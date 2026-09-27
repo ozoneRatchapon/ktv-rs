@@ -19,10 +19,26 @@ impl SolanaCluster {
         }
     }
 
+    /// Name in the request page link (`c=devnet`), matching `public/request.js`.
+    pub const fn slug(self) -> &'static str {
+        match self {
+            Self::Devnet => "devnet",
+            Self::Mainnet => "mainnet",
+        }
+    }
+
     pub const fn label(self) -> &'static str {
         match self {
             Self::Devnet => "Devnet (test USDC)",
             Self::Mainnet => "Mainnet (real USDC)",
+        }
+    }
+
+    /// The free public RPC the booth checks tips with. Mainnet has none a browser may use (403).
+    pub const fn public_rpc(self) -> Option<&'static str> {
+        match self {
+            Self::Devnet => Some("https://api.devnet.solana.com"),
+            Self::Mainnet => None,
         }
     }
 
@@ -42,6 +58,19 @@ pub struct TipConfig {
     pub wallet: String,
     #[serde(default)]
     pub cluster: SolanaCluster,
+    /// Optional RPC for tip checks (a keyed Helius URL); empty uses the cluster's public RPC.
+    #[serde(default)]
+    pub rpc_url: String,
+}
+
+impl TipConfig {
+    /// Where to check tips: the typed RPC if it is allowed, else the cluster's public one. `None`: no check.
+    pub fn rpc_endpoint(&self) -> Option<String> {
+        match super::rpc::parse_rpc_url(&self.rpc_url) {
+            Ok(Some(url)) => Some(url),
+            _ => self.cluster.public_rpc().map(str::to_string),
+        }
+    }
 }
 
 /// Why a typed wallet address cannot receive tips.
@@ -76,4 +105,69 @@ pub struct TipRequest {
     pub message: String,
     /// Written on-chain with the transfer, so it is public: song code only, never a name.
     pub memo: String,
+}
+
+/// Why a typed RPC URL is not used (CSP `connect-src` would block it anyway).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RpcUrlError {
+    NotHttps,
+    HostNotAllowed,
+}
+
+impl RpcUrlError {
+    pub const fn message(self) -> &'static str {
+        match self {
+            Self::NotHttps => "RPC URL must start with https://",
+            Self::HostNotAllowed => "Only api.devnet.solana.com or a Helius URL (devnet/mainnet.helius-rpc.com)",
+        }
+    }
+}
+
+/// A tip found on-chain for the song on screen (plan 003 S2).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConfirmedTip {
+    pub signature: String,
+    /// USDC base units (6 decimals) the singer's wallet gained.
+    pub amount: u64,
+    /// The memo the wallet wrote (`ktv:<code>` from the QR), if any.
+    pub memo: Option<String>,
+}
+
+/// Why a transaction is not (yet) a tip.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TipCheckError {
+    /// Not answerable yet (the RPC has not indexed it): ask again on the next poll.
+    NotFound,
+    /// The RPC answered with a JSON-RPC error code.
+    Rpc(i64),
+    Malformed,
+    /// The transaction failed on-chain: no money moved.
+    Failed,
+    /// It does not carry this song's reference key.
+    WrongReference,
+    /// The singer's USDC balance did not go up (another token, another recipient, or a zero transfer).
+    NoPayment,
+}
+
+impl TipCheckError {
+    /// Worth asking about again later (vs. a settled "this is not a tip").
+    pub const fn is_retryable(self) -> bool {
+        matches!(self, Self::NotFound | Self::Rpc(_) | Self::Malformed)
+    }
+}
+
+/// USDC decimals on every cluster.
+pub const USDC_DECIMALS: u32 = 6;
+
+/// `1500000` → `"1.50"`, `1000` → `"0.001"`: at least cents, no trailing zeros past them.
+pub fn format_usdc(amount: u64) -> String {
+    let scale = 10u64.pow(USDC_DECIMALS);
+    let (whole, frac) = (amount / scale, amount % scale);
+    let digits = format!("{frac:06}");
+    let frac = digits.trim_end_matches('0');
+    let frac = match frac.len() {
+        0..=2 => &digits[..2],
+        _ => frac,
+    };
+    format!("{whole}.{frac}")
 }
