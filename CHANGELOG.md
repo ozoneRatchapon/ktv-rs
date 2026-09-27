@@ -3,7 +3,7 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.31.0] - 2026-09-28
+## [0.31.0] - 2026-09-28 (`c5a20bec`)
 ### Added
 - Melody score, for songs that have melody data on this device: how much of the tune you sang on the right note, in any octave (so low and high voices score alike), 100 at 80% of the tune's notes. It shows as **Melody** beside Tuning and on the result card. The note lane then also draws the tune (grey bars, moved to your octave) with 2 seconds of what is coming and a marker for now. No melody data ships yet: where it comes from is still being decided, so on every song today only Tuning shows.
 
