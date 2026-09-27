@@ -38,8 +38,9 @@ const _: Asset = asset!("/assets/main.css", AssetOptions::css().with_static_head
 // Classic scripts in the static <head>: they run before the wasm, so Rust calls them directly (no eval, see js_bridge)
 const _: Asset = asset!("/assets/ktv_sync.js", AssetOptions::js().with_static_head(true));
 const _: Asset = asset!("/assets/ktv_keys.js", AssetOptions::js().with_static_head(true));
-// The full songbook, fetched after the first paint (content-hashed, so cached for good)
+// The full songbook and its songs' original-vocal guides, fetched after the first paint (content-hashed, so cached for good)
 const LIBRARY_JSON: Asset = asset!("/assets/library.json");
+const MV_GUIDES_JSON: Asset = asset!("/assets/mv_guides.json");
 
 fn main() {
     dioxus::launch(App);
@@ -128,7 +129,18 @@ fn App() -> Element {
     // Full library: the curated catalog is usable at once; the rest joins when the fetch lands
     let mut song_library = use_signal(library::loaded);
     use_future(move || async move {
-        let Some(json) = app::browser::fetch_text(&LIBRARY_JSON.to_string()).await else { return };
+        let (guides, json) = futures_util::future::join(
+            app::browser::fetch_text(&MV_GUIDES_JSON.to_string()),
+            app::browser::fetch_text(&LIBRARY_JSON.to_string()),
+        )
+        .await;
+        // Guides first: library songs take their Vocal timing from them. Without them the library still works.
+        match guides.map(|guides| library::install_guides(&guides)) {
+            Some(Ok(())) => {}
+            Some(Err(err)) => dioxus::logger::tracing::warn!("assets/mv_guides.json unreadable: {err}"),
+            None => dioxus::logger::tracing::warn!("assets/mv_guides.json not fetched"),
+        }
+        let Some(json) = json else { return };
         match library::install(&json) {
             Ok(loaded) => song_library.set(loaded),
             Err(err) => dioxus::logger::tracing::warn!("assets/library.json unreadable: {err}"),
