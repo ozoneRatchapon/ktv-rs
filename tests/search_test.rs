@@ -119,3 +119,43 @@ fn test_typo_search_over_full_library_is_fast() {
     // Runs only after the exact and other-layout passes found nothing, once per keystroke
     assert!(elapsed.as_millis() < 250, "typo search over {} songs took {elapsed:?}", lib.songs().len());
 }
+
+fn full_library() -> Library {
+    let library = app::library::parse(include_str!("../assets/library.json")).expect("library parses");
+    Library::new(Box::leak(Box::new(app::library::Songbook::new(library))))
+}
+
+#[test]
+fn test_artist_and_title_typed_together_find_the_song() {
+    // Artist then title, as people say it: no single field holds both
+    assert_eq!(titles("ภูวศิษฐ์ รักไม่ไหว"), ["รักไม่ไหวแล้วโว้ย"]);
+    assert_eq!(titles("รักไม่ไหว โจอี้"), ["รักไม่ไหวแล้วโว้ย"]);
+    assert!(titles("ภูวศิษฐ์ zzzz").is_empty(), "every word must match");
+}
+
+#[test]
+fn test_title_matches_rank_before_artist_and_alias_matches() {
+    let lib = full_library();
+    let hits = search(builtin_catalog().iter().chain(lib.songs()), lib, "รัก").songs;
+    let starts = |s: &&app::types::Song| normalize(&s.title).starts_with("รัก");
+    let in_title = |s: &&app::types::Song| normalize(&s.title).contains("รัก");
+    let last_start = hits.iter().rposition(starts).expect("titles start with รัก");
+    let first_inside = hits.iter().position(|s| !starts(s)).expect("titles contain รัก later on");
+    let first_elsewhere = hits.iter().position(|s| !in_title(s)).unwrap_or(hits.len());
+    assert!(last_start < first_inside, "title starts ({last_start}) before title contains ({first_inside})");
+    assert!(hits[first_inside..first_elsewhere].iter().all(in_title), "then titles containing it, then the rest");
+    // A code is the best match of all
+    assert_eq!(search(builtin_catalog(), Library::default(), "10004").songs[0].code, "10004");
+}
+
+#[test]
+fn test_ranked_search_over_full_library_is_fast() {
+    let lib = full_library();
+    let all = builtin_catalog().iter().chain(lib.songs());
+    let start = std::time::Instant::now();
+    // One common letter: nearly every song matches and is ranked (the worst case per keystroke)
+    let hits = search(all, lib, "a");
+    let elapsed = start.elapsed();
+    assert!(hits.songs.len() > 1_000);
+    assert!(elapsed.as_millis() < 100, "ranking {} hits took {elapsed:?}", hits.songs.len());
+}
