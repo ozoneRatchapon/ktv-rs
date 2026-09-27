@@ -15,7 +15,6 @@ pub fn QueueView(
     on_move_up: EventHandler<usize>,
     on_move_down: EventHandler<usize>,
     on_clear_queue: EventHandler<()>,
-    on_adjust_item_key: EventHandler<(u64, i32)>,
     on_queue_song: EventHandler<Song>,
     on_play_song: EventHandler<Song>,
     on_simulate_end: EventHandler<()>,
@@ -101,34 +100,6 @@ pub fn QueueView(
                                 div { class: "item-artist", lang: "th", "{item.song.artist} • {item.song.channel}" }
                             }
 
-                            // Pre-set key for this song
-                            div { class: "item-key-adjust",
-                                button {
-                                    class: "item-key-btn",
-                                    title: "Lower key",
-                                    onclick: {
-                                        let qid = item.queue_id;
-                                        move |_| on_adjust_item_key.call((qid, -1))
-                                    },
-                                    "♭"
-                                }
-                                span { class: "item-key-val",
-                                    if item.key_shift > 0 {
-                                        "+{item.key_shift}"
-                                    } else {
-                                        "{item.key_shift}"
-                                    }
-                                }
-                                button {
-                                    class: "item-key-btn",
-                                    title: "Raise key",
-                                    onclick: {
-                                        let qid = item.queue_id;
-                                        move |_| on_adjust_item_key.call((qid, 1))
-                                    },
-                                    "♯"
-                                }
-                            }
 
                             // Reordering and delete actions
                             div { class: "item-actions",

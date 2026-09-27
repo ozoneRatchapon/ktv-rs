@@ -4,7 +4,7 @@ use app::timing::GuideOverrides;
 use app::types::{AppSettings, GuideTrack, QueueItem, Song};
 
 fn item(queue_id: u64, song: &Song) -> QueueItem {
-    QueueItem { queue_id, song: song.clone(), key_shift: 0, requester: "Test".to_string() }
+    QueueItem { queue_id, song: song.clone(), requester: "Test".to_string() }
 }
 
 fn custom_song() -> Song {
@@ -116,4 +116,15 @@ fn test_only_this_apps_keys_are_cleared() {
     for key in ["yt-player-quality", "ytidb::LAST_RESULT_ENTRY_KEY", "ktv", "my.ktv.key"] {
         assert!(!is_app_key(key), "{key}");
     }
+}
+
+#[test]
+fn test_session_saved_with_key_shift_still_loads() {
+    // Sessions from before v0.18.0 stored a key label per queue item; it is ignored now
+    let mut value = serde_json::to_value(Session { current: Some(item(1, &builtin_catalog()[0])), queue: vec![item(2, &builtin_catalog()[1])], next_queue_id: 3, custom_songs: Vec::new() }).unwrap();
+    value["current"]["key_shift"] = 2.into();
+    value["queue"][0]["key_shift"] = (-1).into();
+    let session = decode::<Session>(Some(&value.to_string())).expect("old session must decode");
+    assert_eq!(session.queue[0].queue_id, 2);
+    assert_eq!(session.current.unwrap().song.id, builtin_catalog()[0].id);
 }

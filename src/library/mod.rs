@@ -3,7 +3,9 @@
 //! until then only the curated `assets/catalog.json` songs are listed.
 
 mod load;
+mod mv;
 mod types;
 
 pub use load::{install, loaded, parse, ID_PREFIX};
+pub use mv::{suggested_video, timed_guide, MvGuide, MV_GUIDES};
 pub use types::{Library, LibraryChannel, LibraryFile, LibraryRow, Songbook};

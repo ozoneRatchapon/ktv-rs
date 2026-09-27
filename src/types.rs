@@ -42,7 +42,6 @@ pub struct GuideTrack {
 pub struct QueueItem {
     pub queue_id: u64,
     pub song: Song,
-    pub key_shift: i32,
     pub requester: String,
 }
 

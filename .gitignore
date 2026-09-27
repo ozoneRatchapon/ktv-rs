@@ -10,3 +10,4 @@
 /dist
 .wrangler
 __pycache__/
+tools/mv_candidates.json

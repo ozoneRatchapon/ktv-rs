@@ -73,3 +73,23 @@ class Codes(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MvGuides(unittest.TestCase):
+    def test_merge_keeps_timed_entries_and_adds_suggestions(self):
+        from match_mv import merge_guides
+        guides = {"timed": {"video_id": "AAAAAAAAAAA", "offset_secs": 2.5, "rate": 1.0},
+                  "stale": {"video_id": "BBBBBBBBBBB"}}
+        candidates = [{"karaoke_id": "timed", "video_id": "CCCCCCCCCCC"}, {"karaoke_id": "new", "video_id": "DDDDDDDDDDD"}]
+        merged = merge_guides(guides, candidates)
+        self.assertEqual(merged["timed"]["video_id"], "AAAAAAAAAAA", "a curated timing is never replaced")
+        self.assertEqual(merged["new"], {"video_id": "DDDDDDDDDDD"})
+        self.assertNotIn("stale", merged, "a suggestion no longer matched is dropped")
+
+    def test_artist_and_title_both_required(self):
+        from match_mv import best_mv
+        mvs = [{"title": "แพ้ใจ - ใหม่ เจริญปุระ 【OFFICIAL MV】", "secs": 250, "views": 10, "kind": "mv"},
+               {"title": "แพ้ใจ - คนอื่น 【OFFICIAL MV】", "secs": 250, "views": 99, "kind": "mv"}]
+        song = {"title": "แพ้ใจ", "artist": "ใหม่ เจริญปุระ", "secs": 250}
+        self.assertEqual(best_mv(song, mvs)["title"], mvs[0]["title"])
+        self.assertIsNone(best_mv({"title": "แพ้ใจ", "artist": "ศิลปินอื่น", "secs": 250}, mvs))

@@ -47,16 +47,18 @@ pub fn GuideTiming(
         draft.set(Some(guide));
     };
 
+    // A different MV has its own timeline: start from zero offset and normal speed
+    let mut set_video = move |id: &str| {
+        marks.set(Vec::new());
+        notice.set(Some("Guide video set. Turn on the guide, then nudge until the singer lines up.".to_string()));
+        on_save.call(timing::new_guide(id));
+    };
     let use_video = move |_| match parse_video_id(&video_input()) {
-        Some(id) => {
-            // A different MV has its own timeline: start from zero offset and normal speed
-            let guide = timing::new_guide(&id);
-            marks.set(Vec::new());
-            notice.set(Some("Guide video set. Turn on the guide, then nudge until the singer lines up.".to_string()));
-            on_save.call(guide);
-        }
+        Some(id) => set_video(&id),
         None => notice.set(Some("Not a YouTube video link or 11-character video ID".to_string())),
     };
+    // Library song without a guide: the official video tools/match_mv.py found for it, waiting to be timed
+    let suggested = if song.guide.is_none() { crate::library::suggested_video(&song.youtube_id) } else { None };
 
     let mark = move |_| {
         let Some(guide) = draft() else { return };
@@ -118,6 +120,25 @@ pub fn GuideTiming(
                 }
                 button { class: "ctrl-btn", onclick: use_video,
                     if song.guide.is_some() { "Change MV" } else { "Use MV" }
+                }
+            }
+
+            if let Some(id) = suggested {
+                div { class: "timing-row timing-suggestion",
+                    span { "Official video found: " }
+                    a {
+                        href: "https://www.youtube.com/watch?v={id}",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "repo-link",
+                        "check it on YouTube"
+                    }
+                    button {
+                        class: "ctrl-btn action-btn",
+                        title: "Use this official video as the guide, then line it up by ear",
+                        onclick: move |_| set_video(id),
+                        "Use suggested MV"
+                    }
                 }
             }
 

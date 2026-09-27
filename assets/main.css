@@ -924,15 +924,6 @@ body {
     gap: 10px;
 }
 
-.key-control-group {
-    display: flex;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border-glass);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
 .ctrl-btn {
     background: transparent;
     border: none;
@@ -947,14 +938,6 @@ body {
 
 .ctrl-btn:hover {
     background: rgba(255, 255, 255, 0.1);
-}
-
-.key-pill {
-    padding: 0 10px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--accent-amber);
-    letter-spacing: 0.5px;
 }
 
 /* Live mic pitch readout (display only, no scoring) */
@@ -1615,35 +1598,6 @@ body {
     color: var(--text-muted);
 }
 
-.key-transpose-row {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
-}
-
-.pitch-btn {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid var(--border-glass);
-    color: var(--text-primary);
-    font-family: var(--font-heading);
-    font-size: 12px;
-    font-weight: 700;
-    padding: 10px 0;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.pitch-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-}
-
-.pitch-btn.active {
-    background: rgba(255, 209, 102, 0.2);
-    border-color: var(--accent-amber);
-    color: var(--accent-amber);
-}
-
 .transport-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1878,33 +1832,6 @@ body {
 .item-artist {
     font-size: 11px;
     color: var(--text-muted);
-}
-
-.item-key-adjust {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 3px 6px;
-    border-radius: 6px;
-}
-
-.item-key-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-primary);
-    font-size: 12px;
-    font-weight: bold;
-    cursor: pointer;
-    padding: 2px 4px;
-}
-
-.item-key-val {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--accent-amber);
-    min-width: 18px;
-    text-align: center;
 }
 
 .item-actions {
@@ -2397,7 +2324,6 @@ body {
 .repo-link:hover {
     color: #ffffff;
 }
-
 
 /* Reference-free tuning score beside the live pitch readout */
 .tuning-score {
