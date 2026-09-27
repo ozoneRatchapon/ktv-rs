@@ -2,6 +2,7 @@
 // Run: tools/build_web.sh && npx wrangler dev --port 8788, then `node --test tests/e2e/app.test.mjs`.
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { launch, sleep } from './cdp.mjs';
 
 let browser;
@@ -564,8 +565,30 @@ test('TV mode: toggle is remembered, shows Up next, still fits one 1080p screen'
   await page.wait_for(`document.querySelector('.ktv-app-wrapper').classList.contains('tv-mode')`);
 }));
 
-test('tip QR: a wallet in Settings shows a Solana Pay code under the player that decodes to the link, fits TV and desktop', () => with_page({ width: 1920, height: 1080 }, async (page) => {
-  const wallet = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+// A real devnet USDC transfer (0.001 USDC to `wallet`, memo); the mock RPC swaps its first key for the song's reference
+const tip_tx = JSON.parse(readFileSync(new URL('../fixtures/tip/devnet_usdc_transfer_with_memo.json', import.meta.url)));
+const tip_signature = '4Lvx1q3oAd1AuZmthNvZ2sY9E6sMtiTz1i3yWmRMKhrZhUdM8gZHJ6iy9yV7uWnUywDqVGKZAtje4xAvVZrH1jVo';
+
+test('tip QR: a wallet in Settings shows a Solana Pay code under the player that decodes to the link, fits TV and desktop; a tip on-chain shows under it', () => with_page({ width: 1920, height: 1080 }, async (page) => {
+  const wallet = '75AjMdh7Gn1TLigfze541AVJGJ4TyqBEaRZk3pozfBza';
+  // Mock devnet RPC: no transactions until a tip is "sent" for `paid_reference`
+  let paid_reference = null;
+  const rpc_calls = [];
+  await page.mock_json('https://api.devnet.solana.com*', (request) => {
+    const call = JSON.parse(request.postData);
+    rpc_calls.push(call.method);
+    switch (call.method) {
+      case 'getSignaturesForAddress':
+        return { jsonrpc: '2.0', id: call.id, result: call.params[0] === paid_reference ? [{ signature: tip_signature, err: null }] : [] };
+      case 'getTransaction': {
+        const tx = structuredClone(tip_tx);
+        tx.result.transaction.message.accountKeys[0].pubkey = paid_reference;
+        return tx;
+      }
+      default:
+        return { jsonrpc: '2.0', id: call.id, error: { code: -32601, message: 'not mocked' } };
+    }
+  });
   assert.equal(await page.eval(`document.querySelectorAll('.tip-strip').length`), 0, 'off until a wallet is set');
   await page.eval(`[...document.querySelectorAll('.shortcut-help button')].find((b) => b.textContent === 'Close').click()`);
   await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'Settings').click()`);
@@ -591,9 +614,16 @@ test('tip QR: a wallet in Settings shows a Solana Pay code under the player that
     return code?.rawValue ?? 'not found';
   })()`);
   if (decoded !== null) assert.equal(decoded, href, 'QR decodes to the Solana Pay link');
+  // S2: a guest pays; the booth finds it on-chain by the song's reference and shows it
+  assert.equal(await page.eval(`document.querySelector('.tip-received').textContent`), '', 'no tip yet');
+  paid_reference = new URL(href.replace('solana:', 'https://x/')).searchParams.get('reference');
+  await page.wait_for(`document.querySelector('.tip-received').textContent === '✓ Tip received: 0.001 USDC'`, 20000);
+  assert.ok(rpc_calls.includes('getTransaction'));
+  assert.equal(await page.eval(`document.querySelector('.tip-received').getAttribute('role')`), 'status');
   // A new song gets a new reference (each tip is matched to the song it was for)
   await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
   await page.wait_for(`document.querySelector('.tip-qr-link')?.getAttribute('href') !== ${JSON.stringify(href)}`);
+  assert.equal(await page.eval(`document.querySelector('.tip-received').textContent`), '', 'tips belong to the song they were for');
   await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent === 'TV').click()`);
   await page.wait_for(`document.querySelector('.ktv-app-wrapper').classList.contains('tv-mode')`);
   assert.equal(await page.eval(`document.documentElement.scrollHeight <= innerHeight`), true, 'TV mode still fits 1080p');

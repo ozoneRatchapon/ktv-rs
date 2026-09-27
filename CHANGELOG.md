@@ -3,6 +3,10 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [Unreleased]
+### Added
+- Tips confirmed on-chain: while a song plays, the booth asks the Solana RPC for payments carrying that song's `reference` and shows "✓ Tip received: 1.50 USDC" under the QR (a screen-reader status line). A payment counts only if it succeeded and the singer's USDC balance went up; each is counted once. Devnet uses the free public RPC; Mainnet needs a Helius URL under Settings → Tip RPC, because the public mainnet RPC refuses browsers. Polls every 5 s and backs off to 60 s when offline or rate limited.
+
 ## [0.26.0] - 2026-09-28 (`39bae859`)
 ### Added
 - Tip the singer: set a Solana wallet under Settings → Tip Wallet and a Solana Pay QR code shows under the player. Guests pay USDC from their phone wallet at an amount they choose. Each song gets a fresh `reference` and the memo `ktv:<code>`. Devnet (test USDC) by default, Mainnet is opt-in. The QR is built in Rust/wasm as one SVG path, uses level L error correction for a bigger module size, and sits beside the video, never over it.

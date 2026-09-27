@@ -587,6 +587,16 @@ body {
     color: var(--accent-cyan);
 }
 
+.tip-received {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+}
+
+.tip-received:empty {
+    display: none;
+}
+
 /* Player Stage */
 .stage-player-side {
     display: flex;

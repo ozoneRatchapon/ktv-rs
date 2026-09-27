@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use crate::tip::{self, TipConfig, TipRequest};
+use crate::tip::{self, ConfirmedTip, TipConfig, TipExpectation, TipRequest};
 use crate::types::QueueItem;
 
 /// Plan 003 S1: a Solana Pay QR under the player. A guest scans it with a phone wallet and tips the singer
@@ -13,8 +13,22 @@ pub fn TipQr(item: QueueItem, config: TipConfig, room_name: String) -> Element {
     let reference = use_memo(use_reactive((&queue_id,), |_| {
         tip::reference_bytes().map(|bytes| tip::reference_from_bytes(&bytes))
     }));
-    let url = match (tip::parse_wallet(&config.wallet), reference()) {
-        (Ok(recipient), Some(reference)) => {
+    let recipient = tip::parse_wallet(&config.wallet).ok();
+
+    // S2: tips confirmed on-chain for this song. Restarts (and forgets) when the song, wallet or RPC changes.
+    let mut tips = use_signal(Vec::<ConfirmedTip>::new);
+    let watch_key = (reference(), recipient.clone(), config.rpc_endpoint(), config.cluster);
+    use_resource(use_reactive((&watch_key,), move |((reference, recipient, rpc, cluster),)| async move {
+        tips.set(Vec::new());
+        let (Some(reference), Some(recipient), Some(rpc)) = (reference, recipient, rpc) else {
+            return;
+        };
+        let expect = TipExpectation { reference: &reference, recipient: &recipient, mint: cluster.usdc_mint() };
+        tip::watch_tips(&rpc, expect, |tip| tips.write().push(tip)).await;
+    }));
+
+    let url = match (recipient, reference()) {
+        (Some(recipient), Some(reference)) => {
             let code = item.song.code;
             Some(tip::transfer_url(&TipRequest {
                 recipient,
@@ -33,6 +47,11 @@ pub fn TipQr(item: QueueItem, config: TipConfig, room_name: String) -> Element {
     };
     let size = qr.size;
     let is_test = config.cluster == tip::SolanaCluster::Devnet;
+    let received = match tips.read().as_slice() {
+        [] => String::new(),
+        [one] => format!("✓ Tip received: {} USDC", tip::format_usdc(one.amount)),
+        many => format!("✓ {} tips: {} USDC", many.len(), tip::format_usdc(many.iter().map(|t| t.amount).sum())),
+    };
 
     rsx! {
         div { class: "tip-strip", aria_label: "Tip the singer",
@@ -50,6 +69,8 @@ pub fn TipQr(item: QueueItem, config: TipConfig, room_name: String) -> Element {
             div { class: "tip-text",
                 span { class: "tip-title", "Tip the singer" }
                 span { class: "tip-sub", "Scan with Phantom or Solflare: USDC, you choose the amount" }
+                // Live region: present (empty) before the first tip, so screen readers announce it
+                span { class: "tip-received", role: "status", "{received}" }
                 if is_test {
                     span { class: "tip-test-badge", "DEVNET · test money" }
                 }

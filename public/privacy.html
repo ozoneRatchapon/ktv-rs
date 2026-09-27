@@ -57,7 +57,10 @@
         <li><strong>Google</strong>: only if you tap <em>Chords</em>, which opens a Google search for the song's title and artist
             in a new tab.</li>
         <li><strong>Solana (tips)</strong>: only if a wallet address is set under <em>Settings → Tip Wallet</em>. The app then shows a
-            Solana Pay QR code; it contacts no server to do so. A guest who scans it pays from their own wallet app, and that
+            Solana Pay QR code (drawn on this device). To show that a tip arrived, the app asks a Solana RPC server
+            (<code>api.devnet.solana.com</code> by default, or the Helius URL set under <em>Tip RPC</em>) every few seconds
+            for payments carrying the song's one-time <code>reference</code>; that server sees your IP address and those
+            public lookups, nothing else. A guest who scans it pays from their own wallet app, and that
             payment is <strong>public on the Solana blockchain forever</strong>: both wallet addresses, the amount, the time, and the memo
             (<code>ktv:</code> plus the song code, nothing else). KTV-RS never holds or touches the money. Use Devnet (test money)
             for demos.</li>

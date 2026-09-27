@@ -155,6 +155,28 @@ function session_client(browser, sessionId) {
       await send('Input.dispatchMouseEvent', { type: 'mousePressed', ...at });
       await send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...at });
     },
+    /** Answer every request matching `url_pattern` from `respond(request) -> body` (JSON, 200, CORS open),
+     *  so a test never depends on a third-party server (a Solana RPC). CORS preflights get an empty 204. */
+    async mock_json(url_pattern, respond) {
+      const cors = [
+        { name: 'access-control-allow-origin', value: '*' },
+        { name: 'access-control-allow-headers', value: 'content-type' },
+        { name: 'access-control-allow-methods', value: 'POST, OPTIONS' },
+      ];
+      browser.listeners.add(async (msg) => {
+        if (msg.sessionId !== sessionId || msg.method !== 'Fetch.requestPaused') return;
+        const { requestId, request } = msg.params;
+        const preflight = request.method === 'OPTIONS';
+        const body = preflight ? '' : JSON.stringify(await respond(request));
+        await send('Fetch.fulfillRequest', {
+          requestId,
+          responseCode: preflight ? 204 : 200,
+          responseHeaders: [...cors, { name: 'content-type', value: 'application/json' }],
+          body: Buffer.from(body).toString('base64'),
+        }).catch(() => { /* page closed mid-request */ });
+      });
+      await send('Fetch.enable', { patterns: [{ urlPattern: url_pattern }] });
+    },
     async screenshot(path) {
       const { data } = await send('Page.captureScreenshot', { format: 'png' });
       writeFileSync(path, Buffer.from(data, 'base64'));

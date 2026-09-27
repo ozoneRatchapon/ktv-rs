@@ -3,7 +3,7 @@
 # through Reflect (src/js_bridge.rs). 'wasm-unsafe-eval' is only for compiling the wasm module.
 # blob: in script-src: the mic AudioWorklet is loaded from a Blob URL (src/mic/web.rs).
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://i.ytimg.com; frame-src https://www.youtube-nocookie.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://i.ytimg.com; frame-src https://www.youtube-nocookie.com; connect-src 'self' https://api.devnet.solana.com https://devnet.helius-rpc.com https://mainnet.helius-rpc.com; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
   Permissions-Policy: microphone=(self), camera=(), geolocation=(), payment=(), usb=()
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
