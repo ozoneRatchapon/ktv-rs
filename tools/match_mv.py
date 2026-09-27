@@ -6,8 +6,8 @@ and the labels' official channels; nothing is downloaded. A candidate must name 
 be an official MV / music video / lyric video (not a teaser, live, cover, remix, playlist...), run about as long as
 the karaoke version, and embed (oEmbed, same rule as tools/link_check.py).
 
-The timing (offset / rate) cannot be measured without the audio, which YouTube's terms rule out, so candidates start
-unchecked: a curator lines each one up by ear in the app's Guide Timing Tools.
+The MV's timing (offset / rate) isn't measured (that needs the audio, which YouTube's terms rule out), so MV
+candidates start unchecked: a curator lines each one up by ear in the app's Guide Timing Tools.
 
 Writes tools/mv_candidates.json (every match, for review) and merges assets/mv_guides.json, the file the app reads:
 {"<karaoke video id>": {"video_id": "<MV id>"}} is a suggestion (unchecked); an entry that also has "offset_secs" and

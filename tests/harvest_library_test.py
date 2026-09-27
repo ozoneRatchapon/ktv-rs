@@ -83,9 +83,6 @@ class Codes(unittest.TestCase):
         self.assertEqual(retired, {30002: "gone"})
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class MvGuides(unittest.TestCase):
     def test_merge_keeps_timed_entries_and_adds_suggestions(self):
@@ -144,3 +141,7 @@ class OfficialAudioMerge(unittest.TestCase):
         self.assertEqual(base("เธอ (Tur)", normalize), normalize("เธอ"))
         self.assertTrue(OTHER_VERSION.search("ไม่มีครั้งสุดท้าย (อคูสติค เวอร์ชั่น)"))
         self.assertFalse(OTHER_VERSION.search("Nok Long Rung"))
+
+
+if __name__ == "__main__":
+    unittest.main()
