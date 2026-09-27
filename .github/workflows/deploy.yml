@@ -25,6 +25,7 @@ jobs:
   build:
     name: Build + e2e the release bundle
     runs-on: ubuntu-26.04
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -46,7 +47,7 @@ jobs:
         run: |
           $WRANGLER dev --port 8788 > wrangler-dev.log 2>&1 &
           for _ in $(seq 1 60); do curl -sf -o /dev/null http://localhost:8788/ && break; sleep 1; done
-          node --test tests/e2e/app.test.mjs || { cat wrangler-dev.log; exit 1; }
+          node --test --test-timeout=120000 tests/e2e/app.test.mjs || { cat wrangler-dev.log; exit 1; }
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dist
@@ -57,6 +58,7 @@ jobs:
     name: Deploy to Cloudflare
     needs: build
     runs-on: ubuntu-26.04
+    timeout-minutes: 25
     environment:
       name: production
       url: https://ktv-rs.solana-thailand.workers.dev/
@@ -83,7 +85,7 @@ jobs:
         env:
           KTV_URL: https://ktv-rs.solana-thailand.workers.dev/
         run: |
-          for _ in 1 2; do node --test tests/e2e/app.test.mjs && exit 0; echo "retry after cold start"; sleep 10; done
+          for _ in 1 2; do node --test --test-timeout=120000 tests/e2e/app.test.mjs && exit 0; echo "retry after cold start"; sleep 10; done
           exit 1
       # A release that breaks prod does not stay live; the failed run emails the owner
       - name: Roll back to the previous version

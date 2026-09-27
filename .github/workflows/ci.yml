@@ -21,6 +21,7 @@ jobs:
   rust:
     name: Rust tests + clippy (native, wasm)
     runs-on: ubuntu-26.04
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
@@ -36,6 +37,7 @@ jobs:
   js:
     name: Sync core tests + lint
     runs-on: ubuntu-26.04
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -54,6 +56,7 @@ jobs:
     name: Web release build
     needs: [rust, js]
     runs-on: ubuntu-26.04
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
@@ -75,7 +78,7 @@ jobs:
         run: |
           npx --yes wrangler@4.141.0 dev --port 8788 > wrangler-dev.log 2>&1 &
           for _ in $(seq 1 60); do curl -sf -o /dev/null http://localhost:8788/ && break; sleep 1; done
-          node --test tests/e2e/app.test.mjs || { cat wrangler-dev.log; exit 1; }
+          node --test --test-timeout=120000 tests/e2e/app.test.mjs || { cat wrangler-dev.log; exit 1; }
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ktv-rs-web
