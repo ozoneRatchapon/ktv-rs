@@ -481,6 +481,41 @@ test('practice: A then B loops the part, a new song clears it; Chords opens a we
   await page.wait_for(`window.KtvSync.debug().loop === null && document.querySelector('.practice-label').textContent.startsWith('Loop a part')`);
 }));
 
+test('count-in: tapping the beat sets the tempo (saved on this device), Count-in seeks 4 beats before the loop\'s A and runs until the part begins', () => with_page({}, async (page) => {
+  // A controllable clock and a recording Replay (YouTube playback is not needed, and CI often has none)
+  const install_clock = `(() => {
+    window.__clock = { base: 30, at: null };
+    window.__restarts = [];
+    window.KtvSync.time = () => window.__clock.at === null ? window.__clock.base : window.__clock.base + (performance.now() - window.__clock.at) / 1000;
+    window.KtvSync.restart = (t) => { window.__restarts.push(t); window.__clock = { base: t, at: performance.now() }; };
+  })()`;
+  const label = `document.querySelector('.tempo-label')?.textContent`;
+  await page.wait_for(`typeof window.KtvSync?.time === 'function'`);
+  await page.eval(install_clock);
+  assert.equal(await page.eval(label), 'Tap the beat');
+  assert.equal(await page.eval(`[...document.querySelectorAll('.tempo-tools button')].find((b) => b.textContent === 'Count-in').disabled`), true);
+  for (const [i, t] of [30, 30.5, 31, 31.5, 32].entries()) {
+    await page.eval(`window.__clock.base = ${t}`);
+    await page.click('.tempo-tap');
+    if (i < 3) await page.wait_for(`${label} === 'Tap ${3 - i} more'`);
+  }
+  await page.wait_for(`${label} === '♩ 120'`);
+  await page.reload();
+  await page.wait_for(`${label} === '♩ 120'`);
+  await page.eval(install_clock);
+  // Loop start A a little after the 40.0 beat: the part lands on 40.0, clicks at 38-39.5, playback from 37.0
+  await page.eval(`window.__clock.base = 40.1`);
+  await page.eval(`[...document.querySelectorAll('.practice-row .practice-btn')].find((b) => b.textContent === 'A').click()`);
+  await page.eval(`window.__clock.base = 45`);
+  await page.eval(`[...document.querySelectorAll('.tempo-tools button')].find((b) => b.textContent === 'Count-in').click()`);
+  await page.wait_for(`window.__restarts.length === 1`);
+  assert.equal(await page.eval(`window.__restarts[0]`), 37);
+  const count_in = `[...document.querySelectorAll('.tempo-tools button')].find((b) => b.textContent === 'Count-in')`;
+  await page.wait_for(`${count_in}.disabled`, 2000);
+  await page.wait_for(`!${count_in}.disabled`, 6000);
+  assert.ok(await page.eval(`window.KtvSync.time() >= 40`), 'busy until the part began');
+}));
+
 test('chords by ear: typed and tapped changes show as the song plays, transpose for display, saved on this device', () => with_page({}, async (page) => {
   const buttons = `[...document.querySelectorAll('.practice-row button')]`;
   const press = (label) => page.eval(`${buttons}.find((b) => b.textContent === ${JSON.stringify(label)}).click()`);

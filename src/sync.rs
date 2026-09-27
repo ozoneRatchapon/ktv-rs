@@ -18,10 +18,11 @@ pub enum SyncCommand {
     /// Karaoke iframe (re)mounted at this second.
     SetStart(u64),
     TogglePlayback,
-    SeekTo(u64),
+    /// Karaoke seconds (fractional: a count-in lands between whole seconds).
+    SeekTo(f64),
     SeekBy(i64),
     /// Replay: seek both players to this second and resume if paused.
-    Restart(u64),
+    Restart(f64),
     SwitchVocal { original: bool },
     /// Same song, new guide mapping (timing mode or a saved override); the vocal choice is kept.
     SetMapping { offset_secs: f32, rate: f32 },
@@ -46,9 +47,9 @@ impl SyncCommand {
             Self::LoadSong { offset_secs, rate } => ("load_song", vec![exact(offset_secs), exact(rate)]),
             Self::SetStart(sec) => ("set_start", vec![num(sec as f64)]),
             Self::TogglePlayback => ("toggle_playback", vec![]),
-            Self::SeekTo(sec) => ("seek_all", vec![num(sec as f64)]),
+            Self::SeekTo(sec) => ("seek_all", vec![num(sec)]),
             Self::SeekBy(delta) => ("seek_by", vec![num(delta as f64)]),
-            Self::Restart(sec) => ("restart", vec![num(sec as f64)]),
+            Self::Restart(sec) => ("restart", vec![num(sec)]),
             Self::SwitchVocal { original } => ("switch_vocal", vec![JsArg::Bool(original)]),
             Self::SetMapping { offset_secs, rate } => ("set_mapping", vec![exact(offset_secs), exact(rate)]),
             Self::SetMonitor(both) => ("set_monitor", vec![JsArg::Bool(both)]),

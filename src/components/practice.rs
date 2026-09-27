@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 
 use crate::components::chords::ChordLane;
+use crate::components::tempo::TempoTools;
 use crate::links::chords_search_url;
 use crate::sync::{self, SyncCommand};
 use crate::types::Song;
@@ -62,7 +63,7 @@ pub fn Practice(
                     }
                     end.set(Some(b));
                     SyncCommand::SetLoop { start: a, end: b }.run();
-                    SyncCommand::SeekTo(a as u64).run();
+                    SyncCommand::SeekTo(a).run();
                 },
                 "B"
             }
@@ -80,6 +81,7 @@ pub fn Practice(
                 }
             }
             span { class: "practice-label", role: "status", "{label}" }
+            TempoTools { song_id: song.id.clone(), fallback_sec, part_start: start() }
             a {
                 class: "ctrl-btn practice-chords",
                 href: chords_search_url(&song),

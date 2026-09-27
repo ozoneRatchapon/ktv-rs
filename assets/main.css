@@ -2902,3 +2902,19 @@ details.tuning-score {
     stroke-dasharray: 2 2;
     vector-effect: non-scaling-stroke;
 }
+
+/* Tap tempo + count-in (practice row) */
+.tempo-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tempo-tools .practice-btn {
+    white-space: nowrap;
+}
+
+.tempo-label {
+    min-width: 5ch;
+    font-variant-numeric: tabular-nums;
+}
