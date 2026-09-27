@@ -2838,3 +2838,52 @@ details.tuning-score {
     overflow-x: auto;
     user-select: all;
 }
+
+/* Phone remote (Keypad tab): on/off, the QR guests scan, what phones may do */
+.phone-remote {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.phone-remote-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.phone-remote-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.phone-remote-qr {
+    display: block;
+    width: 132px;
+    height: 132px;
+    border-radius: 8px;
+}
+
+.phone-remote-options {
+    flex: 1 1 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.phone-remote-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+}

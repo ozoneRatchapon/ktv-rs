@@ -44,11 +44,11 @@ jobs:
         with:
           node-version: 24
       # Pass the file, not the directory: Node 24 treats a directory argument as a module to run
-      - run: node --test tests/ktv_sync.test.cjs tests/ktv_keys.test.cjs tests/tip_request.test.cjs
+      - run: node --test tests/ktv_sync.test.cjs tests/ktv_keys.test.cjs tests/tip_request.test.cjs tests/room_protocol.test.mjs
       - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
           deno-version: v2.x
-      - run: deno lint assets/ktv_sync.js assets/ktv_keys.js assets/mic_worklet.js public/request.js tests/ktv_sync.test.cjs tests/ktv_keys.test.cjs tests/tip_request.test.cjs tests/e2e/
+      - run: deno lint assets/ktv_sync.js assets/ktv_keys.js assets/mic_worklet.js public/request.js public/remote.js public/song_search.js worker/ tests/room_protocol.test.mjs tests/ktv_sync.test.cjs tests/ktv_keys.test.cjs tests/tip_request.test.cjs tests/e2e/
       - run: python3 -m py_compile tools/link_check.py tools/title_aliases.py tools/harvest_library.py tools/match_mv.py tools/official_audio.py
       - run: python3 -m unittest discover -s tests -p "*_test.py"
 

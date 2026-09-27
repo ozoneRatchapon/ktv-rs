@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Production deploy: static web build -> Cloudflare Workers static assets (wrangler.jsonc).
-# Gitflow: releases ship from `main` only, clean and pushed. No D1/KV/DO bindings, so nothing to back up first.
+# Production deploy: static web build + phone-remote Worker (wrangler.jsonc). Fallback only: CI deploys on a v* tag.
+# Gitflow: releases ship from `main` only, clean and pushed. No D1/KV; the Room Durable Object keeps only a day of
+# relayed room state (no user data), so there is nothing to back up first.
 # `./deploy.sh --dry-run` builds and validates without uploading (any branch).
 set -euo pipefail
 cd "$(dirname "$0")"

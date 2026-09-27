@@ -8,6 +8,7 @@ pub mod player;
 pub mod practice;
 pub mod queue_view;
 pub mod quick_search;
+pub mod phone_remote;
 pub mod remote;
 pub mod score_card;
 pub mod settings;

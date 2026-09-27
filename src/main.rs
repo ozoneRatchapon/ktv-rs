@@ -10,6 +10,7 @@ use app::keys::{self, KeyAction};
 use app::library;
 use app::mc::{self, McEvent};
 use app::recommendation;
+use app::room::{self, PhoneCommand};
 use app::picks::Picks;
 use app::score::{self, TakeResult};
 use app::storage::{self, Session, GUIDES_KEY, PICKS_KEY, SCORES_KEY, SESSION_KEY, SETTINGS_KEY};
@@ -23,6 +24,7 @@ use components::{
     catalog_view::CatalogView,
     custom_add::CustomAdd,
     header::Header,
+    phone_remote::{use_room_link, PhoneRemotePanel},
     player::Player,
     queue_view::QueueView,
     quick_search::QuickSearch,
@@ -224,7 +226,7 @@ fn App() -> Element {
     };
 
     // Replay current song in place (same iframe): seek to its start and resume
-    let handle_replay_song = move |_: ()| {
+    let mut handle_replay_song = move |_: ()| {
         if let Some(curr) = current_song() {
             song_started_at.set(js_sys::Date::now());
             SyncCommand::Restart(curr.song.start_sec(intro_skipped())).run();
@@ -303,6 +305,40 @@ fn App() -> Element {
             request(song, Requester::Keypad, Placement::Back);
         }
     };
+
+    // Phone remote: guests queue songs from `/remote`; skip / pause / replay only if the host allows it
+    let remote_config = use_memo(move || settings().remote);
+    let room_state = use_memo(move || {
+        let playback = remote_config().allow_playback;
+        room::booth_state(&settings().room_name, current_song().as_ref(), &queue(), playback)
+    });
+    let on_phone_command = use_callback(move |cmd: PhoneCommand| -> Result<String, String> {
+        if let Some(reason) = room::refusal(&cmd, &remote_config.peek()) {
+            return Err(reason.to_string());
+        }
+        match cmd {
+            PhoneCommand::Queue { code } => {
+                let song = catalog::keypad_code(&code).and_then(song_by_code).ok_or(format!("No song with code {code}"))?;
+                let text = format!("Queued {code}: {} - {}", song.title, song.artist);
+                request(song, Requester::Phone, Placement::Back);
+                booth_notice.set(Some(format!("📱 {text}")));
+                Ok(text)
+            }
+            PhoneCommand::Skip => {
+                transition_to_next(false);
+                Ok("Skipped to the next song".to_string())
+            }
+            PhoneCommand::Pause => {
+                SyncCommand::TogglePlayback.run();
+                Ok("Play / pause".to_string())
+            }
+            PhoneCommand::Replay => {
+                handle_replay_song(());
+                Ok("Replaying from the start".to_string())
+            }
+        }
+    });
+    let room_link = use_room_link(remote_config, room_state, on_phone_command);
 
     // Booth keyboard and gamepad: type-to-search, Enter queues a typed code, Space pause, arrows seek, ? help,
     // next song (assets/ktv_keys.js)
@@ -559,6 +595,13 @@ fn App() -> Element {
                                 on_replay_song: handle_replay_song,
                                 on_speed_change: move |s| playback_speed.set(s),
                                 current_speed: playback_speed(),
+                                PhoneRemotePanel {
+                                config: remote_config(),
+                                status: (room_link.status)(),
+                                phone_url: (room_link.phone_url)(),
+                                on_config: move |config| settings.write().remote = config,
+                                    on_new_link: move |_| room_link.new_link(),
+                                }
                             }
                         },
                         KtvTab::CustomAdd => rsx! {

@@ -1,6 +1,8 @@
-# Cloudflare Workers & Pages Deployment Guide ☁️
+# Cloudflare Workers Deployment Guide ☁️
 
-This guide outlines how to deploy KTV-RS as a distributed edge application using **Cloudflare Pages** for the WASM frontend and **Cloudflare Workers (`workers-rs`) + Durable Objects** for real-time multi-device room synchronization.
+KTV-RS runs as one Cloudflare Worker (`ktv-rs`): static assets for the Dioxus WebAssembly app and the phone pages, plus a
+small JavaScript Worker with one Durable Object per room for the phone remote. Everything else (queue, scores, settings)
+lives in the booth's browser.
 
 ---
 
@@ -8,22 +10,17 @@ This guide outlines how to deploy KTV-RS as a distributed edge application using
 
 ```mermaid
 graph TD
-    subgraph Cloudflare Global Edge
-        Pages[Cloudflare Pages CDN] -->|Serves WASM & Assets| TV[Host TV Display]
-        Pages -->|Serves Mobile Remote| Phone[Guest Mobile Device]
-        
-        TV <-->|WebSocket Connection| Worker[Cloudflare Worker]
-        Phone <-->|WebSocket Connection| Worker
-        
-        Worker <--> DO[Durable Object: RoomInstance]
-        DO <--> D1[(Cloudflare D1 / LibSQL)]
+    subgraph Cloudflare edge
+        Assets[Static assets: dist/] -->|wasm app| Booth[Booth / TV browser]
+        Assets -->|/remote, /request| Phone[Guest phone]
+        Booth <-->|WebSocket /api/room/ID?role=booth| Worker[Worker: worker/index.js]
+        Phone <-->|WebSocket /api/room/ID?role=phone| Worker
+        Worker --> DO[Durable Object Room: worker/room.js]
     end
 ```
 
-* **Cloudflare Pages**: Global static hosting for compiled Dioxus WebAssembly binaries. Low latency (< 15ms in Bangkok/BKK).
-* **Cloudflare Workers (`workers-rs`)**: Serverless Rust V8 isolate responding to API routes and WebSocket upgrades.
-* **Durable Objects (DO)**: Strongly consistent state container per KTV room (e.g. `Room_BKK88`), keeping queue order, now-playing seek times, and live scoring in memory with zero database bottleneck.
-* **Shared Types**: Both Frontend (Dioxus) and Backend (Worker) share the exact same `Song`, `QueueItem`, and `RoomEvent` structs.
+* **Static assets** (`wrangler.jsonc` `assets`): served before any script runs; `run_worker_first: ["/api/*"]` sends only the API to the Worker.
+* **The booth owns the state.** The Room object only relays: phone commands to the booth, the booth's state (now playing, next five) to phones. It stores that last state for a day, nothing else.
 
 ---
 
@@ -47,82 +44,35 @@ Notes:
 * CSP `script-src 'self' 'wasm-unsafe-eval' blob:`: no `'unsafe-eval'` (the app never uses `document::eval`; see `src/js_bridge.rs`), `blob:` for the mic AudioWorklet (Blob URL). A new `document::eval` would break under this CSP, and the e2e suite (which fails on CSP violations) would catch it.
 * Local preview of the exact prod bundle + headers: `npx wrangler@4.141.0 dev` after `tools/build_web.sh`.
 * "Pushed to main" is not "deployed": check `npx wrangler@4.141.0 deployments list`.
-* The room server below is **not built yet**. Durable Object bindings are currently blocked by the Cloudflare versions-API `10013` / PUT `10021` issue, so the phone remote should start with WebRTC or KV polling.
+* The versions-API `10013` / PUT `10021` errors that once blocked Durable Object bindings were rechecked on 2026-09-28 with a throwaway DO Worker: deploy, `versions upload` and DO storage all worked, so the phone remote (section 2) ships as a DO.
 
 ---
 
-## 2. (Planned) Room WebSocket Server with `workers-rs`
+## 2. Phone remote: Worker + Durable Object (live)
 
-### Project Configuration (`wrangler.toml`)
-```toml
-name = "ktv-room-worker"
-main = "build/worker/shim.mjs"
-compatibility_date = "2024-09-01"
+Files: `worker/index.js` (router: path, `Upgrade`, same-Origin, `role`), `worker/room.js` (the `Room` Durable Object),
+`worker/protocol.js` (pure validation, tested by `tests/room_protocol.test.mjs`); booth side `src/room/` + `src/components/phone_remote.rs`;
+phone page `public/remote.html` + `public/remote.js`.
 
-[durable_objects]
-bindings = [
-  { name = "ROOMS", class_name = "KtvRoomDO" }
-]
-
-[[migrations]]
-tag = "v1"
-new_classes = ["KtvRoomDO"]
-```
-
-### Worker Entry Point (`worker/src/lib.rs`)
-```rust
-use worker::*;
-use serde::{Deserialize, Serialize};
-
-#[durable_object]
-pub struct KtvRoomDO {
-    state: State,
-    clients: Vec<WebSocket>,
-    queue: Vec<String>,
-}
-
-#[durable_object]
-impl DurableObject for KtvRoomDO {
-    fn new(state: State, _env: Env) -> Self {
-        Self {
-            state,
-            clients: Vec::new(),
-            queue: Vec::new(),
-        }
-    }
-
-    async fn fetch(&mut self, req: Request) -> Result<Response> {
-        let pair = WebSocketPair::new()?;
-        let server_ws = pair.server;
-        server_ws.accept()?;
-        
-        self.clients.push(server_ws);
-        
-        Response::from_websocket(pair.client)
-    }
-}
-
-#[event(fetch)]
-pub async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
-    let router = Router::new();
-    
-    router
-        .get_async("/room/:room_code/ws", |_, ctx| async move {
-            let room_code = ctx.param("room_code").unwrap();
-            let namespace = ctx.env.durable_object("ROOMS")?;
-            let id = namespace.id_from_name(room_code)?;
-            let stub = id.get_stub()?;
-            stub.fetch_with_request(ctx.req).await
-        })
-        .run(req, env)
-        .await
-}
-```
+* **Room id = SHA-256(booth key)**, first 22 base64url chars. The booth keeps a 32-byte random key in `localStorage` (`ktv.room.v1`)
+  and proves it with a `hello` message; the Worker stores no key, and the room id in the QR cannot be turned back into it.
+  Rust (`room::room_of`) and JS (`room_of`) are checked against the same vector.
+* **WebSocket Hibernation API**: sockets are accepted with `ctx.acceptWebSocket`, per-socket data lives in attachments, so an idle
+  room is evicted and costs nothing. SQLite-backed class (`new_sqlite_classes`), the one the Free plan allows.
+* **Limits**: phone messages ≤ 256 B and a token bucket (5, then 1 per 10 s); booth messages ≤ 8 KB; 32 phones per room; at most
+  4 booth sockets that have not proven the key. Skip / pause / replay are refused by the booth unless the host ticks
+  *Phones may skip, pause and replay*.
+* **New link** sends `close_room`: phones get close code 4004 ("scan again") and the room's storage is deleted.
+* Why JavaScript, not `workers-rs`: the Worker is a ~150-line relay with no shared logic beyond the wire format; plain JS has no
+  build step or wasm cold start, and the wire format is pinned by tests on both sides.
+* **Rollback caveat**: Cloudflare blocks a rollback when a Durable Object class change (a `migrations` entry) lies between the
+  live version and the target ([docs](https://developers.cloudflare.com/workers/configuration/versions-and-deployments/rollbacks/)).
+  So the deploy workflow's automatic rollback cannot return from v0.30.0 (which adds `Room`) to v0.29.x; the pre-deploy e2e
+  (same bundle and Worker under `wrangler dev`) is the guard, and a bad release is fixed by rolling forward.
 
 ---
 
-## 3. Benefits of Pure Rust Cloudflare Stack
+## 3. Cost on the Free plan
 
-1. **Zero Serialization Drift**: Message schemas (`AddSong`, `SkipVote`, `PitchScore`) are shared across crates, completely preventing client/server protocol mismatch bugs.
-2. **Sub-15ms Latency in Thailand**: Cloudflare runs PoP nodes in Bangkok, providing instant response times when guests interact with room remotes on mobile devices.
-3. **Cost Efficiency**: Cloudflare Pages is 100% free with unlimited bandwidth, and Workers offer generous free-tier invocation limits for party and personal use.
+Workers Free covers 100k requests/day; Durable Objects on SQLite are on the Free plan too. The booth holds one socket while the
+remote is on, phones close theirs when the page is hidden, and hibernation means idle sockets do not bill duration.

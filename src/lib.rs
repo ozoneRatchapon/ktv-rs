@@ -12,6 +12,7 @@ pub mod mic;
 pub mod picks;
 pub mod pitch;
 pub mod recommendation;
+pub mod room;
 pub mod score;
 pub mod search;
 pub mod storage;

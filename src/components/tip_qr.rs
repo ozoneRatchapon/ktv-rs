@@ -90,7 +90,7 @@ pub fn request_page(config: &TipConfig, reference: &str, room_name: &str) -> Opt
 }
 
 #[component]
-fn QrSvg(qr: QrPath, class: &'static str, label: &'static str) -> Element {
+pub fn QrSvg(qr: QrPath, class: &'static str, label: &'static str) -> Element {
     let size = qr.size;
     rsx! {
         svg {

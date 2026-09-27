@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::mc::McVoice;
+use crate::room::RemoteConfig;
 use crate::tip::TipConfig;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -79,6 +80,9 @@ pub struct AppSettings {
     /// Plan 003 A3: spoken MC between songs (off until chosen).
     #[serde(default)]
     pub mc_voice: McVoice,
+    /// Phone remote: guests queue songs from `/remote` (off until the host turns it on in the Keypad tab).
+    #[serde(default)]
+    pub remote: RemoteConfig,
 }
 
 impl Default for AppSettings {
@@ -94,6 +98,7 @@ impl Default for AppSettings {
             tv_mode: false,
             tip: TipConfig::default(),
             mc_voice: McVoice::Off,
+            remote: RemoteConfig::default(),
         }
     }
 }

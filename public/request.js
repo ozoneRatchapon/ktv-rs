@@ -9,42 +9,7 @@ const USDC_MINT = {
 };
 const BASE58_KEY = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const SONG_CODE = /^[0-9]{5}$/;
-
-/** Search text as the booth compares it (src/search/normalize.rs): lower case, letters and digits only, Thai tone
- *  marks (U+0E47–U+0E4D) dropped. `\p{Alphabetic}` keeps Thai vowel signs, as Rust's `is_alphanumeric` does. */
-function normalize(text) {
-    return text.toLowerCase().replace(/[\u0E47-\u0E4D]/g, '').replace(/[^\p{Alphabetic}\p{N}]/gu, '');
-}
-
-/** `/songs.txt` lines (`code \t title \t artist \t aliases`) → songs with a search key per field. */
-function parse_songs(text) {
-    return text.split('\n').filter(Boolean).map((line) => {
-        const [code, title = '', artist = '', aliases = ''] = line.split('\t');
-        return { code, title, artist, keys: [normalize(title), normalize(artist), normalize(aliases)] };
-    });
-}
-
-/** Best matches first, as on the booth: code, title (start, inside), artist, aliases, then every word somewhere. */
-function find_songs(songs, query, limit = 30) {
-    const needle = normalize(query);
-    if (!needle) return [];
-    const words = query.split(/\s+/).map(normalize).filter(Boolean);
-    const rank = ({ code, keys: [title, artist, aliases] }) => {
-        if (code === query.trim()) return 0;
-        if (title.startsWith(needle)) return 1;
-        if (title.includes(needle)) return 2;
-        if (artist.includes(needle)) return 3;
-        if (aliases.includes(needle)) return 4;
-        if (words.length > 1 && words.every((w) => title.includes(w) || artist.includes(w) || aliases.includes(w))) return 5;
-        return -1;
-    };
-    return songs
-        .map((song, i) => ({ song, i, r: rank(song) }))
-        .filter(({ r }) => r >= 0)
-        .sort((a, b) => a.r - b.r || a.i - b.i)
-        .slice(0, limit)
-        .map(({ song }) => song);
-}
+const { attach_search, find_songs, normalize, parse_songs } = typeof module !== 'undefined' ? require('./song_search.js') : KtvSongSearch;
 
 /** The booth's `#to=…&c=…&ref=…&room=…` fragment, or null if anything is missing or malformed. */
 function parse_room(hash) {
@@ -94,36 +59,10 @@ function main() {
     form.addEventListener('submit', (e) => e.preventDefault());
     update();
 
-    // Song search: the index loads on first use (≈200 KB compressed), so a guest who knows the code never pays for it
-    const search = document.getElementById('song_search');
-    const results = document.getElementById('results');
-    let songs = null;
-    const show = () => {
-        results.replaceChildren(...find_songs(songs ?? [], search.value).map((song) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            const code_span = Object.assign(document.createElement('span'), { className: 'code', textContent: song.code });
-            const artist_span = Object.assign(document.createElement('span'), { className: 'artist', textContent: song.artist });
-            button.append(code_span, song.title, artist_span);
-            button.lang = 'th';
-            button.addEventListener('click', () => {
-                code.value = song.code;
-                search.value = song.title;
-                results.replaceChildren();
-                update();
-            });
-            const item = document.createElement('li');
-            item.append(button);
-            return item;
-        }));
-    };
-    search.addEventListener('input', async () => {
-        if (!songs) {
-            songs = [];
-            const response = await fetch('/songs.txt').catch(() => null);
-            songs = response?.ok ? parse_songs(await response.text()) : [];
-        }
-        show();
+    // Song search: a tap fills in the code
+    attach_search(document.getElementById('song_search'), document.getElementById('results'), (song) => {
+        code.value = song.code;
+        update();
     });
 }
 

@@ -30,6 +30,8 @@ pub enum Requester {
     AutoDj,
     /// Paid on-chain from the phone request page (plan 003 S3).
     Tip,
+    /// Queued from a guest's phone through the room remote.
+    Phone,
 }
 
 impl Requester {
@@ -42,6 +44,7 @@ impl Requester {
             Self::AddUrl => "YouTube Direct",
             Self::AutoDj => "Smart Auto-DJ",
             Self::Tip => "★ TIP",
+            Self::Phone => "📱 Phone",
         }
     }
 }

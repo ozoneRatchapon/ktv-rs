@@ -13,6 +13,8 @@ pub fn Remote(
     on_replay_song: EventHandler<()>,
     on_speed_change: EventHandler<f32>,
     current_speed: f32,
+    /// Shown under the keypad (the phone remote panel).
+    children: Element,
 ) -> Element {
     let mut input_code = use_signal(String::new);
     let mut message_feedback = use_signal(|| None::<String>);
@@ -178,6 +180,7 @@ pub fn Remote(
                         }
                     }
                 }
+                {children}
             }
         }
     }
