@@ -1,7 +1,7 @@
 // Minimal Chrome DevTools Protocol driver for the e2e tests: no npm dependencies, Node 24 built-ins only.
 // KTV_URL = app under test (default: local `wrangler dev`), CHROME_BIN = browser binary.
 import { spawn } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -137,6 +137,17 @@ function session_client(browser, sessionId) {
     },
     async click(selector) {
       await page.eval(`document.querySelector(${JSON.stringify(selector)}).click()`);
+    },
+    /** A real (trusted) mouse click at the centre of the first element matching `selector`: user activation. */
+    async tap(selector) {
+      const box = JSON.parse(await page.eval(`JSON.stringify(document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect())`));
+      const at = { x: box.x + box.width / 2, y: box.y + box.height / 2, button: 'left', clickCount: 1 };
+      await send('Input.dispatchMouseEvent', { type: 'mousePressed', ...at });
+      await send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...at });
+    },
+    async screenshot(path) {
+      const { data } = await send('Page.captureScreenshot', { format: 'png' });
+      writeFileSync(path, Buffer.from(data, 'base64'));
     },
   };
   return page;
