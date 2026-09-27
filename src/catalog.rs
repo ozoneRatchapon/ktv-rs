@@ -25,6 +25,15 @@ pub fn find_song(catalog: &[Song], library: Library, matches: impl Fn(&Song) -> 
     catalog.iter().chain(library.songs()).find(|s| matches(s))
 }
 
+/// Digits in a keypad song code (catalog, library and custom songs alike).
+pub const CODE_LEN: usize = 5;
+
+/// The search text as a keypad code, if that is all it is (surrounding spaces allowed): what Enter queues.
+pub fn keypad_code(query: &str) -> Option<&str> {
+    let code = query.trim();
+    (code.len() == CODE_LEN && code.bytes().all(|b| b.is_ascii_digit())).then_some(code)
+}
+
 /// Songs added by URL have ids `custom_<youtube id>`.
 pub const CUSTOM_ID_PREFIX: &str = "custom_";
 

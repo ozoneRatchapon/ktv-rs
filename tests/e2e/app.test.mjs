@@ -411,7 +411,8 @@ test('keyboard: a keyboard-focused button takes Space; after a mouse click Space
   await page.wait_for(`${now_title} === ${JSON.stringify(title)}`);
   await page.wait_for(`document.querySelector('.sr-only[role=status]').textContent.startsWith('Now singing: ' + ${JSON.stringify(title)})`);
   // Mouse user: a real click on ☆, then Space must not click it again (it would un-star the song)
-  const rect = await page.eval(`JSON.stringify(${card('10001')}.querySelector('.fav-btn').getBoundingClientRect())`);
+  // Scrolled into view first: a real click lands at on-screen coordinates
+  const rect = await page.eval(`(() => { const b = ${card('10001')}.querySelector('.fav-btn'); b.scrollIntoView({ block: 'center' }); return JSON.stringify(b.getBoundingClientRect()); })()`);
   const { x, y, width, height } = JSON.parse(rect);
   for (const type of ['mousePressed', 'mouseReleased']) {
     await page.send('Input.dispatchMouseEvent', { type, x: x + width / 2, y: y + height / 2, button: 'left', clickCount: 1 });
@@ -420,6 +421,50 @@ test('keyboard: a keyboard-focused button takes Space; after a mouse click Space
   await page.key(' ');
   await sleep(300);
   assert.ok(await page.eval(`${card('10001')}.querySelector('.fav-btn').classList.contains('on')`), 'still starred');
+}));
+
+test('booth input: a typed code + Enter queues it, an unknown code says so; a game controller pauses and skips', () => with_page({}, async (page) => {
+  await page.eval(`document.activeElement?.blur()`);
+  const start = await page.eval(queue_titles);
+  for (const c of '10001') await page.key(c);
+  await page.wait_for(`${search_value} === '10001'`);
+  await page.key('Enter');
+  await page.wait_for(`${search_value} === ''`);
+  await page.wait_for(`document.querySelector('.auto-dj-toast')?.textContent.includes('Queued 10001')`);
+  assert.deepEqual(await page.eval(queue_titles), [...start, 'รักแล้วยอมได้']);
+  await page.eval(`document.activeElement?.blur()`);
+  for (const c of '89999') await page.key(c);
+  await page.key('Enter');
+  await page.wait_for(`document.querySelector('.auto-dj-toast')?.textContent.includes('No song with code 89999')`);
+  assert.equal(await page.eval(search_value), '89999', 'kept so it can be corrected');
+  await page.key('Escape');
+
+  // A standard-mapping controller (the Gamepad API cannot be driven from CDP, so the page's pad list is stubbed)
+  // Browsers poll pads (and run animation frames) only in the visible tab
+  await page.send('Page.bringToFront');
+  await page.wait_for(`document.visibilityState === 'visible'`);
+  await page.eval(`(() => {
+    const buttons = Array.from({ length: 17 }, () => ({ pressed: false }));
+    window.__pad = { index: 0, connected: true, mapping: 'standard', buttons };
+    window.__polls = 0;
+    navigator.getGamepads = () => { window.__polls += 1; return [window.__pad]; };
+    window.dispatchEvent(new Event('gamepadconnected'));
+  })()`);
+  // A button already down on the first poll counts as held, not pressed: start pressing once polling runs
+  await page.wait_for(`window.__polls > 1`);
+  const press = async (i) => {
+    await page.eval(`window.__pad.buttons[${i}].pressed = true`);
+    await sleep(100);
+    await page.eval(`window.__pad.buttons[${i}].pressed = false`);
+    await sleep(100);
+  };
+  const paused = `window.KtvSync.debug().paused`;
+  const was_paused = await page.eval(paused);
+  await press(0);
+  await page.wait_for(`${paused} === ${!was_paused}`);
+  const before = await page.eval(now_title);
+  await press(9);
+  await page.wait_for(`${now_title} !== ${JSON.stringify(before)}`);
 }));
 
 test('privacy: the note is served, and Clear my data (two taps) resets this device', () => with_page({}, async (page) => {

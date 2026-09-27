@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::sync::LazyLock;
 
-use app::catalog::{builtin_catalog, find_song, CUSTOM_CODES};
+use app::catalog::{builtin_catalog, find_song, keypad_code, CUSTOM_CODES};
 use app::library::{self, Library, Songbook, ID_PREFIX};
 use app::picks::{Picks, Shelf};
 use app::search::search;
@@ -29,7 +29,7 @@ fn test_library_is_well_formed() {
     for song in *SONGS {
         assert!(song.id.starts_with(ID_PREFIX), "{}: id prefix", song.id);
         assert!(is_youtube_id(&song.youtube_id), "{}: bad youtube_id", song.id);
-        assert!(song.code.len() == 5 && song.code.bytes().all(|b| b.is_ascii_digit()), "{}: code must be 5 digits", song.id);
+        assert_eq!(keypad_code(&song.code), Some(song.code.as_str()), "{}: code must be 5 digits", song.id);
         assert!(!song.title.trim().is_empty() && !song.artist.trim().is_empty(), "{}: empty title/artist", song.id);
         assert!(song.intro_skip_secs < song.duration_secs, "{}: intro skip past the end", song.id);
         assert_eq!(song.guide, app::library::timed_guide(&song.youtube_id), "{}: a guide only from a timed mv_guides entry", song.id);

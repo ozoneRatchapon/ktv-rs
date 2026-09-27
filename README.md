@@ -74,14 +74,19 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 | Key | Action |
 | :--- | :--- |
 | **Any Character / Number** | Type-to-Search across the catalog |
+| **`Enter`** | Queue the song whose 5-digit code is typed (works with a USB number pad) |
 | **`Backspace` / `Delete`** | Delete character from search query |
 | **`Escape`** | Clear search query |
-| **`Space`** | Toggle Play / Pause |
+| **`Space`** / media **⏯** | Toggle Play / Pause |
+| Media **⏭** | Next song |
 | **`ArrowLeft`** | Jump backward 5 seconds |
 | **`ArrowRight`** | Jump forward 5 seconds |
 | **`?`** | Show / hide the shortcut list (also the **?** button in the header; open on a first visit) |
 
 A button reached with `Tab` keeps `Space`/`Enter`; after a mouse click `Space` is always pause.
+
+**Game controller** (any pad the browser reports with the standard layout, e.g. Xbox / PlayStation over USB or
+Bluetooth): **A** play / pause, **B** clear search, **D-pad ← / →** 5 s back / forward, **Start** next song.
 
 ---
 

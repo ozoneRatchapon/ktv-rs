@@ -121,7 +121,8 @@ fn App() -> Element {
     let intro_skipped = use_signal(|| true);
     let mut anticipator = use_signal(SleepTimeAnticipator::new);
     let mut song_started_at = use_signal(js_sys::Date::now);
-    let mut auto_dj_notice = use_signal(|| None::<String>);
+    // One-line toast: Auto-DJ picks, songs queued by keypad code
+    let mut booth_notice = use_signal(|| None::<String>);
     let mut search_query = use_signal(String::new);
 
     // Full library: the curated catalog is usable at once; the rest joins when the fetch lands
@@ -141,30 +142,6 @@ fn App() -> Element {
         spawn(async move {
             while let Some(on) = changes.next().await {
                 is_fullscreen.set(on);
-            }
-        });
-    });
-
-    // Booth keyboard: type-to-search, Space pause, arrows seek, ? help (assets/ktv_keys.js)
-    use_effect(move || {
-        let mut messages = keys::install();
-        spawn(async move {
-            while let Some(msg) = messages.next().await {
-                let Some(action) = KeyAction::parse(&msg) else { continue };
-                match action {
-                    KeyAction::Type(c) => {
-                        search_query.write().push(c);
-                        active_tab.set(KtvTab::Catalog);
-                    }
-                    KeyAction::Backspace => {
-                        search_query.write().pop();
-                        active_tab.set(KtvTab::Catalog);
-                    }
-                    KeyAction::ClearSearch => search_query.set(String::new()),
-                    KeyAction::TogglePlayback => SyncCommand::TogglePlayback.run(),
-                    KeyAction::SeekBy(secs) => SyncCommand::SeekBy(secs).run(),
-                    KeyAction::ToggleHelp => show_help.toggle(),
-                }
             }
         });
     });
@@ -207,11 +184,11 @@ fn App() -> Element {
         // Picks computed while the finished song is still on stage, so Auto-DJ never repeats it
         let ant_set = anticipated_set();
         if booth.write().advance() {
-            auto_dj_notice.set(None);
+            booth_notice.set(None);
         } else if let Some(rec) = anticipator().wake_consume(&ant_set) {
             // Queue is empty: Auto-DJ plays the top anticipated pick
             let (title, artist, reason) = (&rec.song.title, &rec.song.artist, &rec.reason);
-            auto_dj_notice.set(Some(format!("🧠 Auto-DJ: queue is empty, playing next: {title} - {artist} ({reason})")));
+            booth_notice.set(Some(format!("🧠 Auto-DJ: queue is empty, playing next: {title} - {artist} ({reason})")));
             let mut song = rec.song;
             timing::apply_overrides([&mut song], &guide_overrides.peek());
             booth.write().add(song, Requester::AutoDj, Placement::Now);
@@ -260,6 +237,44 @@ fn App() -> Element {
             request(song, Requester::Keypad, Placement::Back);
         }
     };
+
+    // Booth keyboard and gamepad: type-to-search, Enter queues a typed code, Space pause, arrows seek, ? help,
+    // next song (assets/ktv_keys.js)
+    use_effect(move || {
+        let mut messages = keys::install();
+        spawn(async move {
+            while let Some(msg) = messages.next().await {
+                let Some(action) = KeyAction::parse(&msg) else { continue };
+                match action {
+                    KeyAction::Type(c) => {
+                        search_query.write().push(c);
+                        active_tab.set(KtvTab::Catalog);
+                    }
+                    KeyAction::Backspace => {
+                        search_query.write().pop();
+                        active_tab.set(KtvTab::Catalog);
+                    }
+                    KeyAction::ClearSearch => search_query.set(String::new()),
+                    KeyAction::TogglePlayback => SyncCommand::TogglePlayback.run(),
+                    KeyAction::SeekBy(secs) => SyncCommand::SeekBy(secs).run(),
+                    KeyAction::ToggleHelp => show_help.toggle(),
+                    KeyAction::Submit => {
+                        let query = search_query();
+                        let Some(code) = catalog::keypad_code(&query) else { continue };
+                        match song_by_code(code) {
+                            Some(song) => {
+                                booth_notice.set(Some(format!("Queued {code}: {} - {}", song.title, song.artist)));
+                                request(song, Requester::Keypad, Placement::Back);
+                                search_query.set(String::new());
+                            }
+                            None => booth_notice.set(Some(format!("No song with code {code}"))),
+                        }
+                    }
+                    KeyAction::NextSong => transition_to_next(false),
+                }
+            }
+        });
+    });
 
     let handle_move_up = move |index: usize| booth.write().move_up(index);
     let handle_move_down = move |index: usize| booth.write().move_down(index);
@@ -340,13 +355,13 @@ fn App() -> Element {
             }
 
             // Auto-DJ Toast Notification
-            if let Some(notice) = auto_dj_notice() {
+            if let Some(notice) = booth_notice() {
                 div { class: "auto-dj-toast",
                     span { class: "toast-icon", "✨" }
                     span { "{notice}" }
                     button {
                         class: "toast-close-btn",
-                        onclick: move |_| auto_dj_notice.set(None),
+                        onclick: move |_| booth_notice.set(None),
                         "✕"
                     }
                 }

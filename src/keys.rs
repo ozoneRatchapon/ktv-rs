@@ -1,5 +1,5 @@
-//! Booth keyboard bridge: `assets/ktv_keys.js` (a classic script in the static `<head>`) turns keydowns into
-//! messages, [`KeyAction::parse`] types them.
+//! Booth keyboard and game-controller bridge: `assets/ktv_keys.js` (a classic script in the static `<head>`) turns
+//! keydowns and gamepad presses into messages, [`KeyAction::parse`] types them.
 
 use futures_channel::mpsc::UnboundedReceiver;
 
@@ -20,6 +20,10 @@ pub enum KeyAction {
     /// Seek by this many seconds.
     SeekBy(i64),
     ToggleHelp,
+    /// Enter: queue the song whose 5-digit code is the whole search.
+    Submit,
+    /// Media "next track" key or gamepad Start.
+    NextSong,
 }
 
 impl KeyAction {
@@ -29,6 +33,8 @@ impl KeyAction {
             "HELP" => return Some(Self::ToggleHelp),
             "SPACE" => return Some(Self::TogglePlayback),
             "BACKSPACE" => return Some(Self::Backspace),
+            "ENTER" => return Some(Self::Submit),
+            "NEXT" => return Some(Self::NextSong),
             _ => {}
         }
         let (tag, value) = msg.split_once(':')?;

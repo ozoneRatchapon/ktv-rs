@@ -11,6 +11,8 @@ fn test_parse_every_message() {
     assert_eq!(KeyAction::parse("CHAR:a"), Some(KeyAction::Type('a')));
     assert_eq!(KeyAction::parse("CHAR:ก"), Some(KeyAction::Type('ก')), "Thai keyboard input");
     assert_eq!(KeyAction::parse("CHAR::"), Some(KeyAction::Type(':')));
+    assert_eq!(KeyAction::parse("ENTER"), Some(KeyAction::Submit));
+    assert_eq!(KeyAction::parse("NEXT"), Some(KeyAction::NextSong));
 }
 
 #[test]
@@ -23,7 +25,7 @@ fn test_parse_rejects_garbage() {
 #[test]
 fn test_js_sends_only_messages_rust_parses() {
     // Contract with assets/ktv_keys.js: every message literal it emits has a parser arm here
-    for literal in ["'ESC'", "'HELP'", "'SPACE'", "'BACKSPACE'", "'SEEK_REL:'", "'CHAR:'"] {
+    for literal in ["'ESC'", "'HELP'", "'SPACE'", "'BACKSPACE'", "'SEEK_REL:'", "'CHAR:'", "'ENTER'", "'NEXT'"] {
         assert!(KEYS_JS.contains(literal), "ktv_keys.js no longer sends {literal}");
     }
     assert!(KEYS_JS.contains("root.KtvKeysCore = api"), "install() entry point used by keys::install");
