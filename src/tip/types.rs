@@ -19,6 +19,14 @@ impl SolanaCluster {
         }
     }
 
+    /// Name in the request page link (`c=devnet`), matching `public/request.js`.
+    pub const fn slug(self) -> &'static str {
+        match self {
+            Self::Devnet => "devnet",
+            Self::Mainnet => "mainnet",
+        }
+    }
+
     pub const fn label(self) -> &'static str {
         match self {
             Self::Devnet => "Devnet (test USDC)",

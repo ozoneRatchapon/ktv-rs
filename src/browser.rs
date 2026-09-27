@@ -46,6 +46,18 @@ pub fn watch_fullscreen() -> futures_channel::mpsc::UnboundedReceiver<bool> {
     rx
 }
 
+/// This page's origin (`https://host`), for links a phone opens. `None` on the host.
+pub fn page_origin() -> Option<String> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        web_sys::window()?.location().origin().ok()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        None
+    }
+}
+
 /// GET a same-origin file as text (`None` on a network error or a non-2xx status). Always `None` on the host.
 pub async fn fetch_text(url: &str) -> Option<String> {
     #[cfg(target_arch = "wasm32")]

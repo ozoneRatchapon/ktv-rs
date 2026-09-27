@@ -3,4 +3,4 @@
 mod ops;
 mod types;
 
-pub use types::{Booth, Placement, Requester};
+pub use types::{is_tip_request, Booth, Placement, Requester};

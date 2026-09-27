@@ -14,6 +14,7 @@ use app::score::{self, TakeResult};
 use app::storage::{self, Session, GUIDES_KEY, PICKS_KEY, SCORES_KEY, SESSION_KEY, SETTINGS_KEY};
 use app::sync::SyncCommand;
 use app::timing::{self, GuideOverrides, SavedTiming};
+use app::tip::{self, ConfirmedTip, TipAction};
 use app::types;
 
 use catalog::builtin_catalog;
@@ -28,7 +29,8 @@ use components::{
     settings::Settings,
     score_card::ScoreCard,
     shortcuts::ShortcutHelp,
-    tip_qr::TipQr,
+    tip_qr::{self, TipQr, TipRequestWatch},
+    tip_toast::TipToast,
     up_next::UpNext,
 };
 use recommendation::{SleepTimeAnticipator, SongTelemetry};
@@ -240,6 +242,30 @@ fn App() -> Element {
     let handle_play_song = move |song: Song| request(song, Requester::Singer, Placement::Now);
     let handle_queue_song = move |song: Song| request(song, Requester::Guest, Placement::Back);
     let handle_queue_next_song = move |song: Song| request(song, Requester::Priority, Placement::Next);
+    // Plan 003 S3: tips from both QRs. A request memo with enough USDC queues its song next as ★ TIP; every tip
+    // gets a garland toast. Each signature is acted on once, even when a watcher restarts and sees it again.
+    let room_reference =
+        use_hook(|| tip::reference_bytes().map(|bytes| tip::reference_from_bytes(&bytes)).unwrap_or_default());
+    let mut tips_handled = use_signal(HashSet::<String>::new);
+    let mut tip_notice = use_signal(|| None::<(String, String)>);
+    let handle_tip = move |confirmed: ConfirmedTip| {
+        if !tips_handled.write().insert(confirmed.signature.clone()) {
+            return;
+        }
+        let amount = tip::format_usdc(confirmed.amount);
+        let text = match tip::tip_action(&confirmed) {
+            TipAction::Request(code) => match song_by_code(&code) {
+                Some(song) => {
+                    let text = format!("★ TIP {amount} USDC: {} - {} plays next", song.title, song.artist);
+                    request(song, Requester::Tip, Placement::Next);
+                    text
+                }
+                None => format!("Garland for the singer! +{amount} USDC (no song with code {code})"),
+            },
+            TipAction::Garland => format!("Garland for the singer! +{amount} USDC"),
+        };
+        tip_notice.set(Some((confirmed.signature, text)));
+    };
     let handle_play_by_code = move |code: String| {
         if let Some(song) = song_by_code(&code) {
             request(song, Requester::Keypad, Placement::Now);
@@ -380,6 +406,13 @@ fn App() -> Element {
                 }
             }
 
+            if let Some((signature, text)) = tip_notice() {
+                TipToast { key: "{signature}", text, on_close: move |_| tip_notice.set(None) }
+            }
+            if !room_reference.is_empty() {
+                TipRequestWatch { config: settings().tip, reference: room_reference.clone(), on_tip: handle_tip }
+            }
+
             // Main Split Stage
             main { class: "ktv-split-stage",
                 // Left / Main Player Viewport
@@ -406,7 +439,13 @@ fn App() -> Element {
                         },
                     }
                     if let Some(item) = current_song() {
-                        TipQr { item, config: settings().tip, room_name: settings().room_name }
+                        TipQr {
+                            item,
+                            config: settings().tip,
+                            room_name: settings().room_name,
+                            request_page: tip_qr::request_page(&settings().tip, &room_reference, &settings().room_name),
+                            on_tip: handle_tip,
+                        }
                     }
                     if settings().tv_mode {
                         UpNext { queue: queue() }

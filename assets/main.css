@@ -597,6 +597,75 @@ body {
     display: none;
 }
 
+.tip-request {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+    text-align: center;
+    text-decoration: none;
+    max-width: 150px;
+}
+
+.tip-request-qr {
+    width: 120px;
+    height: 120px;
+    border-radius: 6px;
+}
+
+.tv-mode .tip-request-qr {
+    width: 150px;
+    height: 150px;
+}
+
+.tip-badge {
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: var(--accent-amber);
+    color: #0b0d13;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+/* Bottom right, over the side panel: never in front of the YouTube player */
+.tip-toast {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    max-width: min(560px, calc(100vw - 48px));
+    z-index: 101;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    border-radius: 30px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.96) 0%, rgba(255, 0, 127, 0.92) 100%);
+    box-shadow: 0 8px 30px rgba(245, 158, 11, 0.45);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    animation: fadeIn 0.3s ease;
+}
+
+.tip-garland {
+    font-size: 22px;
+    display: inline-block;
+    animation: garland-swing 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes garland-swing {
+    from { transform: rotate(-8deg); }
+    to { transform: rotate(8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tip-garland { animation: none; }
+}
+
 /* Player Stage */
 .stage-player-side {
     display: flex;

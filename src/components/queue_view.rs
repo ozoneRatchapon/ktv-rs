@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use crate::booth;
 use crate::components::score_card::ScoreHistory;
 use crate::recommendation::AnticipatedRecommendation;
 use crate::score::{LeaderRow, TakeResult};
@@ -97,7 +98,11 @@ pub fn QueueView(
                             div { class: "item-rank", "#{idx + 1}" }
 
                             div { class: "item-info",
-                                div { class: "item-code", "#{item.song.code}" }
+                                div { class: "item-code", "#{item.song.code}"
+                                    if booth::is_tip_request(item) {
+                                        span { class: "tip-badge", "★ TIP" }
+                                    }
+                                }
                                 div { class: "item-title", lang: "th", "{item.song.title}" }
                                 div { class: "item-artist", lang: "th", "{item.song.artist} • {item.song.channel}" }
                             }

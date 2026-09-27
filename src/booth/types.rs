@@ -28,6 +28,8 @@ pub enum Requester {
     Keypad,
     AddUrl,
     AutoDj,
+    /// Paid on-chain from the phone request page (plan 003 S3).
+    Tip,
 }
 
 impl Requester {
@@ -39,6 +41,12 @@ impl Requester {
             Self::Keypad => "Remote Code",
             Self::AddUrl => "YouTube Direct",
             Self::AutoDj => "Smart Auto-DJ",
+            Self::Tip => "★ TIP",
         }
     }
+}
+
+/// Whether a queued song was paid for on-chain (plan 003 S3): the queue and Up next mark it.
+pub fn is_tip_request(item: &QueueItem) -> bool {
+    item.requester == Requester::Tip.label()
 }

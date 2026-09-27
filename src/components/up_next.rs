@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 
+use crate::booth;
 use crate::types::QueueItem;
 
 /// Songs shown in TV mode's "Up next" strip.
@@ -17,6 +18,9 @@ pub fn UpNext(queue: Vec<QueueItem>) -> Element {
             for item in queue.iter().take(SHOWN) {
                 div { key: "{item.queue_id}", class: "up-next-item",
                     span { class: "up-next-code", "#{item.song.code}" }
+                    if booth::is_tip_request(item) {
+                        span { class: "tip-badge", "★ TIP" }
+                    }
                     span { class: "up-next-title", lang: "th", "{item.song.title}" }
                     span { class: "up-next-artist", lang: "th", "{item.song.artist}" }
                 }

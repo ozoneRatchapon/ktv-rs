@@ -1,0 +1,32 @@
+// Unit tests for the phone request page (public/request.js). Run: node --test tests/tip_request.test.cjs
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { USDC_MINT, parse_room, request_link } = require('../public/request.js');
+
+const WALLET = '75AjMdh7Gn1TLigfze541AVJGJ4TyqBEaRZk3pozfBza';
+const REFERENCE = 'GVJJ7rdGiXr5xaYbRwRbjfaJL7fmwRygFi1H6aGqDveb';
+const hash = (c = 'devnet') => `#to=${WALLET}&c=${c}&ref=${REFERENCE}&room=%E0%B8%AB%E0%B9%89%E0%B8%AD%E0%B8%87%201`;
+
+test('mints match the Rust side (src/tip/types.rs)', () => {
+    const rust = fs.readFileSync(path.join(__dirname, '../src/tip/types.rs'), 'utf8');
+    assert.ok(rust.includes(`Self::Devnet => "${USDC_MINT.devnet}"`));
+    assert.ok(rust.includes(`Self::Mainnet => "${USDC_MINT.mainnet}"`));
+});
+
+test('the room comes from the fragment and must be complete', () => {
+    assert.deepEqual(parse_room(hash()), { wallet: WALLET, cluster: 'devnet', reference: REFERENCE, name: 'ห้อง 1' });
+    assert.equal(parse_room(''), null);
+    assert.equal(parse_room(hash('testnet')), null, 'unknown cluster');
+    assert.equal(parse_room(hash().replace(REFERENCE, '0OIl')), null, 'reference not base58');
+    assert.equal(parse_room(`#c=devnet&ref=${REFERENCE}`), null, 'no wallet');
+});
+
+test('the link is a Solana Pay transfer with the request memo', () => {
+    const link = request_link(parse_room(hash('mainnet')), '12345', '2');
+    assert.equal(link,
+        `solana:${WALLET}?amount=2&spl-token=${USDC_MINT.mainnet}&reference=${REFERENCE}`
+        + '&label=%E0%B8%AB%E0%B9%89%E0%B8%AD%E0%B8%87%201&message=Request%20%2312345&memo=ktv%3Areq%3A12345');
+});
