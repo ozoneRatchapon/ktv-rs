@@ -1216,11 +1216,13 @@ body {
     background: rgba(255, 255, 255, 0.1);
 }
 
-/* Live mic pitch readout (display only, no scoring) */
+/* Live mic pitch readout, note lane and tuning score; wraps on phones so the score is never clipped */
 .pitch-meter {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
+    max-width: 100%;
 }
 
 .pitch-readout {

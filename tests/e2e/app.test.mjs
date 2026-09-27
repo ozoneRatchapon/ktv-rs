@@ -116,12 +116,22 @@ for (const [kind, custom, notice, status] of [
 }
 
 for (const width of [1280, 900, 600, 375]) {
-  test(`every player control is reachable at ${width}px`, () => with_page({ width }, async (page) => {
+  test(`every player control is reachable at ${width}px`, () => with_page({ width, fake_mic: true }, async (page) => {
     await sleep(300);
     const clipped = await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')]
       .filter((b) => { const r = b.getBoundingClientRect(); return r.width === 0 || r.left < 0 || r.right > innerWidth; })
       .map((b) => b.textContent)`);
     assert.deepEqual(clipped, []);
+    // With the mic on, the readout, note lane and Tuning score all stay inside the player card (it clips)
+    await page.eval(`[...document.querySelectorAll('.pitch-meter button')].find((b) => b.textContent.startsWith('Mic')).click()`);
+    await page.wait_for(`!!document.querySelector('.pitch-meter .tuning-score')`);
+    const outside = await page.eval(`(() => {
+      const card = document.querySelector('.player-container').getBoundingClientRect();
+      return [...document.querySelectorAll('.pitch-meter > *')]
+        .filter((e) => { const r = e.getBoundingClientRect(); return r.left < card.left || r.right > card.right; })
+        .map((e) => e.className);
+    })()`);
+    assert.deepEqual(outside, [], 'mic meter fits the player');
     assert.ok(await page.eval(`document.querySelector('.player-main-controls-row button') !== null`), 'controls rendered');
     assert.ok(await page.eval(`document.querySelector('.song-titles').getBoundingClientRect().width >= 100`), 'title not squeezed');
     assert.ok(await page.eval(`document.documentElement.scrollWidth <= innerWidth`), 'no sideways page scroll');

@@ -3,7 +3,11 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.29.0] - 2026-09-28
+## [0.29.1] - 2026-09-28
+### Fixed
+- Phones: with the mic on, the Tuning score (and on narrow phones the note lane) ran off the right edge of the player and was cut off. The mic row now wraps inside the player at any width.
+
+## [0.29.0] - 2026-09-28 (`a39a2669`)
 ### Added
 - Note lane beside the mic readout: your held notes from the last 8 seconds on a semitone grid (a bar on a line is in tune, between lines is off; cyan / amber / red repeat it at a glance). It sits in the player bar, never over the video.
 - Phrase score: after each breath (about half a second of quiet) the phrase you just sang gets its own tuning score, on the same 0-100 scale as the song. It needs two held notes. Like the song score it cannot know the melody, so it measures tuning, not the right notes.
