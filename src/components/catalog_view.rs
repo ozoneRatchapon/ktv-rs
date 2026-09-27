@@ -100,6 +100,9 @@ pub fn CatalogView(
                         strong { lang: "th", "{retyped}" }
                     }
                 }
+                if hits.fuzzy {
+                    span { class: "retyped-text", role: "status", "No exact match: showing the closest (a typo or two)" }
+                }
             }
 
             // Song list grid

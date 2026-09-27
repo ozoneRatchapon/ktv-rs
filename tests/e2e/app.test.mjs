@@ -156,7 +156,8 @@ test('queue: Queue appends, Insert goes first, Play replaces, Next Song advances
   await page.wait_for(`${now_title} === ${JSON.stringify(inserted)}`);
   assert.deepEqual(await page.eval(queue_titles), [...start, queued]);
   await page.reload();
-  assert.equal(await page.eval(now_title), inserted);
+  // The app shell mounts before the player renders its song: wait for it rather than read once
+  await page.wait_for(`${now_title} === ${JSON.stringify(inserted)}`);
   assert.deepEqual(await page.eval(queue_titles), [...start, queued]);
 }));
 
@@ -355,6 +356,14 @@ test('practice: A then B loops the part, a new song clears it; Chords opens a we
   assert.equal(await page.eval(`document.querySelector('.practice-chords').rel`), 'noopener noreferrer');
   await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
   await page.wait_for(`window.KtvSync.debug().loop === null && document.querySelector('.practice-label').textContent.startsWith('Loop a part')`);
+}));
+
+test('search: a typo still finds the song, and says it is showing close matches', () => with_page({}, async (page) => {
+  await page.wait_for(`parseInt(document.querySelector('.catalog-meta-row .count-text')?.textContent.replace(/\\D/g, ''), 10) > 5000`);
+  await page.eval(`document.activeElement?.blur()`);
+  for (const key of 'bodyslan') await page.key(key);
+  await page.wait_for(`document.querySelector('.catalog-meta-row [role=status]')?.textContent.startsWith('No exact match')`);
+  assert.ok(await page.eval(`[...document.querySelectorAll('.song-artist')].some((a) => /bodyslam/i.test(a.textContent))`));
 }));
 
 test('favourites and recently sung shelves', () => with_page({}, async (page) => {

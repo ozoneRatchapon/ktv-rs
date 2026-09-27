@@ -3,7 +3,11 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.21.0] - 2026-09-27
+## [0.22.0] - 2026-09-27
+### Added
+- Search forgives typos: when nothing matches as typed (or on the other keyboard layout), songs one typo away (two for longer queries) are listed, closest first, with a note saying so. "bodyslan" finds Bodyslam, "รักไม่ไวแล้ว" finds รักไม่ไหวแล้วโว้ย.
+
+## [0.21.0] - 2026-09-27 (`393cd275`)
 ### Added
 - Genres for ~2,100 library songs, taken from the label that publishes the song's official video: **Luk Thung** (GRAMMY GOLD, 1,367 songs), **Rock** (Genie Records, 512) and **Indie** (all of Smallroom, 250). The genre chips and Auto-DJ's "your usual genre" now include them. Songs from labels that mix genres stay without one rather than get a guess.
 ### Changed
