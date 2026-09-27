@@ -3,7 +3,7 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [Unreleased]
+## [0.27.0] - 2026-09-28
 ### Added
 - Request a song with a tip: a second, smaller QR beside the tip code opens a phone page (`/request.html`, plain HTML + JS, no wasm). The guest types the 5-digit song code, picks 0.5 / 1 / 2 / 5 USDC and pays in Phantom or Solflare. The booth finds the payment by the room's `reference`, and a request memo (`ktv:req:<code>`) with at least 0.10 USDC plays that song next, marked **★ TIP** in the queue and Up next. The room details ride in the link's `#fragment`, so no server logs them.
 - Garland toast when a tip lands: "Garland for the singer! +1.50 USDC", or the requested song. It sits bottom right, never over the video, and closes after 8 s. Each on-chain payment is acted on once.
