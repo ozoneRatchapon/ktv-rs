@@ -3,7 +3,7 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.22.0] - 2026-09-27
+## [0.22.0] - 2026-09-27 (`6f7ad715`)
 ### Added
 - Search forgives typos: when nothing matches as typed (or on the other keyboard layout), songs one typo away (two for longer queries) are listed, closest first, with a note saying so. "bodyslan" finds Bodyslam, "รักไม่ไวแล้ว" finds รักไม่ไหวแล้วโว้ย.
 
