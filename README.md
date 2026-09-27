@@ -127,7 +127,7 @@ cargo clippy --fix --allow-dirty --quiet
 * **Settings → Tip Wallet**: paste a Solana address and a QR code appears under the player. A guest scans it with Phantom or Solflare and tips the singer in **USDC**, choosing the amount in their wallet; the booth never holds a wallet or keys.
 * Each song gets a fresh Solana Pay `reference`, and the memo is `ktv:<song code>`, so a tip can be matched to the song it was for. **Tip Network** defaults to **Devnet** (test money); switch to Mainnet only to take real USDC.
 * The code is drawn beside the video, never over it, and is rendered in Rust/wasm. Payments are public on-chain (see the privacy note).
-* **Request a song with a tip**: the smaller QR opens a phone page; the guest types a song code, picks an amount and pays. At least 0.10 USDC plays that song next, marked **★ TIP**, with a garland toast on the booth. The blockchain is the relay, so there is no backend or account.
+* **Request a song with a tip**: the smaller QR opens a phone page; the guest searches the songbook (or types a code), picks an amount and pays. At least 0.10 USDC plays that song next, marked **★ TIP**, with a garland toast on the booth. The blockchain is the relay, so there is no backend or account.
 * **Tips show when they land**: the booth polls the Solana RPC for the song's `reference` (`getSignaturesForAddress` → `getTransaction`), counts a payment only if it succeeded and the singer's USDC balance rose, and shows the running total under the QR. Devnet uses the free public RPC; for Mainnet, set a Helius URL under **Settings → Tip RPC** (the public mainnet RPC refuses browsers).
 
 ### 11. Spoken MC

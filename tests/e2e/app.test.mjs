@@ -690,6 +690,14 @@ test('tip request: the room QR opens the phone page; a paid request plays next a
     `solana:${tip_wallet}?amount=2&spl-token=4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU&reference=${room_reference}`
     + `&label=${encodeURIComponent('VIP ROOM 07')}&message=Request%20%23${code}&memo=ktv%3Areq%3A${code}`);
   assert.equal(await page.eval(`document.getElementById('test_badge').hidden`), false, 'devnet is marked');
+  // Or find the song by name: the index loads on first search, with the booth's codes
+  await page.eval(`(() => { const i = document.getElementById('song_search'); i.value = 'รักไมไหวแลว'; i.dispatchEvent(new Event('input')); })()`);
+  await page.wait_for(`document.querySelectorAll('#results button').length > 0`);
+  assert.match(await page.eval(`document.querySelector('#results button').textContent`), /^10004รักไม่ไหวแล้วโว้ย/);
+  await page.eval(`document.querySelector('#results button').click()`);
+  assert.equal(await page.eval(`document.getElementById('code').value`), '10004');
+  assert.match(await page.eval(`document.getElementById('pay').getAttribute('href')`), /&memo=ktv%3Areq%3A10004$/);
+  assert.equal(await page.eval(`document.querySelectorAll('#results li').length`), 0, 'results close on pick');
 }));
 
 test('MC voice: off by default; when on, each new song is announced once in the chosen language', () => with_page({}, async (page) => {

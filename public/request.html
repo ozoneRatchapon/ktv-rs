@@ -22,6 +22,12 @@
         #pay[aria-disabled="true"] { background: #2a3142; color: #8a97ab; pointer-events: none; }
         .badge { color: #00f5d4; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; }
         #error { color: #fca5a5; }
+        #song_search { font-size: 18px; letter-spacing: normal; }
+        #results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; }
+        #results:empty { display: none; }
+        #results button { width: 100%; text-align: left; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid #2a3142; background: #141926; color: #e2e8f0; }
+        #results .code { color: #00f5d4; font-weight: 700; margin-right: 8px; }
+        #results .artist { display: block; color: #8a97ab; font-size: 14px; }
         a { color: #00f5d4; }
     </style>
 </head>
@@ -31,7 +37,11 @@
     <p class="muted" id="room"></p>
     <p id="error" role="alert" hidden>This link is incomplete. Scan the room's "Request a song" code again.</p>
     <form id="form" hidden>
-        <label for="code">Song code (5 digits, from the songbook on screen)
+        <label for="song_search">Find a song
+            <input id="song_search" name="song_search" type="search" autocomplete="off" placeholder="Title or artist (ไทย / English)" />
+        </label>
+        <ul id="results" aria-label="Songs found"></ul>
+        <label for="code">Song code (5 digits)
             <input id="code" name="code" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" autocomplete="off" required />
         </label>
         <fieldset class="amounts">

@@ -20,4 +20,6 @@ rm dx-build.log
 rm -rf dist
 cp -R "$out" dist
 cp deploy/_headers dist/_headers
+# Song index for the phone request page (/request): the booth's own codes, built from the same library
+cargo run --quiet --locked --example songs_index > dist/songs.txt
 echo "staged $(du -sh dist | cut -f1) in dist/"
