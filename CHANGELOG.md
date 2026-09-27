@@ -3,13 +3,13 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.17.3] - 2026-09-27
+## [0.17.3] - 2026-09-27 (`f1913264`)
 ### Changed
 - Faster start: preparing the full songbook for search takes ~30x less time (25 ms → 0.8 ms natively), which removes a brief freeze on slower phones a few seconds after the page opens.
 ### Fixed
 - The highlighted **Play** button (shown when the browser blocked autoplay) had low-contrast white text; it is now dark on amber (WCAG AA).
 
-## [0.17.2] - 2026-09-27
+## [0.17.2] - 2026-09-27 (`90bad3d8`)
 ### Added
 - Link previews: sharing the site in LINE, Facebook, X or Discord shows a KTV-RS card with a Thai title and description. The search description is now in Thai and English.
 ### Changed
