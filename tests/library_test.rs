@@ -110,3 +110,14 @@ fn test_songbook_video_finds_curated_and_library_but_not_custom() {
     assert_eq!(songbook_video(&catalog, lib(), "zzzzzzzzzzz"), None, "an Add URL song is not a songbook song");
     assert_eq!(songbook_video(&catalog, Library::default(), &listed.youtube_id), None, "library not loaded yet");
 }
+
+#[test]
+fn test_retired_codes_are_not_reused() {
+    let retired: std::collections::HashMap<String, String> =
+        serde_json::from_str(include_str!("../tools/retired_codes.json")).expect("tools/retired_codes.json must parse");
+    for song in *SONGS {
+        if let Some(vid) = retired.get(&song.code) {
+            assert_eq!(vid, &song.youtube_id, "code {} was retired from {vid}, now given to {}", song.code, song.title);
+        }
+    }
+}

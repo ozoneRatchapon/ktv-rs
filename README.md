@@ -54,7 +54,7 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 ### 7. Auto-DJ Recommendation Engine
 * **Dwell Telemetry**: Records active singing duration per track.
 * **Early-skip pruning**: A song skipped early (under 30 seconds or 20% of its length) rules its artist and genre out of Auto-DJ picks for the session.
-* **Auto Fallback**: Automatically continues music playback with the top anticipated recommendation when the queue finishes.
+* **Auto Fallback**: Automatically continues music playback with the top anticipated recommendation when the queue finishes, drawn from the whole songbook (artists you sang through bring up their other songs).
 
 ### 8. Install as an App
 * Chrome/Edge: **Install**; iPhone/iPad Safari: **Share → Add to Home Screen**. KTV-RS then opens in its own window, which suits a booth PC or TV.
