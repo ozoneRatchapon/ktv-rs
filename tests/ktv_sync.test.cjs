@@ -28,7 +28,7 @@ function fake_env(stored = {}) {
 
 // Karaoke reports its time; guide reports time + state (as YouTube infoDelivery does)
 function report(sync, karaoke_sec, guide_sec, guide_state = YT_STATE.PLAYING) {
-    sync.on_message(false, { event: 'infoDelivery', info: { currentTime: karaoke_sec } });
+    sync.on_message(false, { event: 'infoDelivery', info: { currentTime: karaoke_sec, playerState: YT_STATE.PLAYING } });
     if (guide_sec !== undefined) {
         sync.on_message(true, { event: 'infoDelivery', info: { currentTime: guide_sec, playerState: guide_state } });
     }
@@ -445,8 +445,9 @@ test('karaoke clock waits for the player: blocked autoplay does not run the time
     const env = fake_env();
     const sync = core.create_sync(env);
     sync.set_start(18);
+    // What a blocked player sends: position 0 (it has not moved to the start second yet), before and after its state
+    sync.on_message(false, { event: 'infoDelivery', info: { currentTime: 0 } });
     karaoke_state(sync, YT_STATE.UNSTARTED);
-    // What a blocked player sends: position 0 (it has not moved to the start second yet)
     sync.on_message(false, { event: 'infoDelivery', info: { currentTime: 0, playerState: YT_STATE.UNSTARTED } });
     sync.on_message(false, { event: 'infoDelivery', info: { currentTime: 0 } });
     env.advance(2000);
