@@ -72,6 +72,30 @@ def parse_artist_first(title):
     return song, artist, ""
 
 
+def parse_title_colon(title):
+    """RS: `ชื่อเพลง : ศิลปิน [Official Karaoke]`."""
+    text = TAG.sub(" ", title).strip()
+    if " : " not in text:
+        return None
+    song, artist = (part.strip() for part in text.split(" : ", 1))
+    return song, artist, ""
+
+
+def parse_smallroom(title):
+    """Smallroom: `ศิลปิน - ชื่อเพลง | English title [Karaoke]` (the English title becomes the alias), or
+    `ศิลปิน "ชื่อเพลง" [Karaoke]`."""
+    text = TAG.sub(" ", title).replace(" – ", " - ").strip()
+    quoted = re.fullmatch(r'(.+?)\s+"([^"]+)"', text)
+    if " - " in text:
+        artist, song = split_dash(text)
+    elif quoted:
+        artist, song = quoted.group(1).strip(), quoted.group(2).strip()
+    else:
+        return None
+    song, _, alias = (part.strip() for part in song.partition(" | "))
+    return song, artist, alias
+
+
 def split_dash(text):
     left, right = text.split(" - ", 1)
     return left.strip(), right.strip()
@@ -85,6 +109,11 @@ CHANNELS = [
      "codes": (50001, 54999), "intro_skip_secs": 0, "parse": parse_artist_first},
     {"name": "Muzik Move Karaoke", "url": "https://www.youtube.com/@MuzikMoveKaraoke/videos",
      "codes": (55001, 59999), "intro_skip_secs": 0, "parse": parse_title_first},
+    # Official karaoke playlists the owner picked (2026-09-27)
+    {"name": "RS Music", "url": "https://www.youtube.com/playlist?list=PLjDkybQo87xcodQNh4aRmiK01RPPbhYOE",
+     "codes": (60001, 64999), "intro_skip_secs": 0, "parse": parse_title_colon},
+    {"name": "Smallroom Karaoke", "url": "https://www.youtube.com/playlist?list=PLPwrZWY_sW-g0CW1kQd9WatoRizcOGRS-",
+     "codes": (65001, 69999), "intro_skip_secs": 0, "parse": parse_smallroom},
 ]
 
 

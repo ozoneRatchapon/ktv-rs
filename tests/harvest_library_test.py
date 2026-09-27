@@ -7,7 +7,8 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tools"))
-from harvest_library import assign_codes, parse_artist_first, parse_gmm, parse_title_first, retire_codes  # noqa: E402
+from harvest_library import (  # noqa: E402
+    assign_codes, parse_artist_first, parse_gmm, parse_smallroom, parse_title_colon, parse_title_first, retire_codes)
 
 
 class ParseGmm(unittest.TestCase):
@@ -49,6 +50,17 @@ class ParseOtherLabels(unittest.TestCase):
 
     def test_artist_first(self):
         self.assertEqual(parse_artist_first("ศิลปิน - ชื่อเพลง [Official Karaoke]"), ("ชื่อเพลง", "ศิลปิน", ""))
+
+    def test_rs_title_colon(self):
+        self.assertEqual(parse_title_colon("ใจเหลือเหลือ : Dr.fuu [Official Karaoke]"), ("ใจเหลือเหลือ", "Dr.fuu", ""))
+        self.assertEqual(parse_title_colon("คนเก่ง : เต๋า สมชาย [Official karaoke]"), ("คนเก่ง", "เต๋า สมชาย", ""))
+        self.assertIsNone(parse_title_colon("NA"))
+
+    def test_smallroom(self):
+        self.assertEqual(parse_smallroom("MOOR - แต่งงาน | Will you marry me? [Karaoke]"), ("แต่งงาน", "MOOR", "Will you marry me?"))
+        self.assertEqual(parse_smallroom("SLUR – เพราะทุกครั้ง | TEARS [Karaoke]"), ("เพราะทุกครั้ง", "SLUR", "TEARS"))
+        self.assertEqual(parse_smallroom('yarinda "เพ่ง" [Karaoke]'), ("เพ่ง", "yarinda", ""))
+        self.assertEqual(parse_smallroom("LEMONSOUP - บางคน [Karaoke]"), ("บางคน", "LEMONSOUP", ""))
 
 
 class Codes(unittest.TestCase):
