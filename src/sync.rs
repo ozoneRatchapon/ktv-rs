@@ -27,6 +27,9 @@ pub enum SyncCommand {
     SetMapping { offset_secs: f32, rate: f32 },
     /// Timing mode: keep karaoke audio audible under the guide so misalignment is heard as an echo.
     SetMonitor(bool),
+    /// Practice: play karaoke seconds `start..end` over and over (a new song clears it).
+    SetLoop { start: f64, end: f64 },
+    ClearLoop,
 }
 
 /// The installed core (`window.KtvSync`) and its loader (`window.KtvSyncCore`).
@@ -49,6 +52,8 @@ impl SyncCommand {
             Self::SwitchVocal { original } => ("switch_vocal", vec![JsArg::Bool(original)]),
             Self::SetMapping { offset_secs, rate } => ("set_mapping", vec![exact(offset_secs), exact(rate)]),
             Self::SetMonitor(both) => ("set_monitor", vec![JsArg::Bool(both)]),
+            Self::SetLoop { start, end } => ("set_loop", vec![num(start), num(end)]),
+            Self::ClearLoop => ("set_loop", vec![num(-1.0), num(-1.0)]),
         }
     }
 

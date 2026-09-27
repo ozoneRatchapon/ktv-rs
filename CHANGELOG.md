@@ -3,6 +3,12 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.20.0] - 2026-09-27
+### Added
+- Musician tools under the time bar: a **practice loop** (A at the start of a part, B at its end: it replays A→B until ✕ or the next song) and **Chords ↗**, a web search for the song's chords in a new tab.
+### Fixed
+- The time under the player waits until the video has really started (it could run a second or two ahead while a slow video loaded) and settles on the right second when the browser blocks autoplay.
+
 ## [0.19.0] - 2026-09-27 (`6f016748`)
 ### Added
 - **RS** (100 songs, keypad 60001+) and **Smallroom** (250 songs, 65001+) official karaoke playlists: 8,542 songs in all. Smallroom's English titles are searchable too.

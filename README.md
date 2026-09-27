@@ -33,6 +33,8 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 * Custom HTML5 timeline scrubber slider showing formatted `current_time` and `total_time` (`mm:ss`).
 * Dedicated on-screen **`-10s`** and **`+10s`** jump buttons for repeating tricky vocal passages or skipping guitar solos.
 * Keyboard arrow navigation: **`ArrowLeft`** (-5s) and **`ArrowRight`** (+5s).
+* **Practice loop** for musicians and singers: **A** at the start of a part, **B** at its end, and it plays A→B over and over (✕ or a new song ends it).
+* **Chords ↗** opens a web search for the song's chords. KTV-RS ships no chord sheets: they are the chord sites' own work, and the audio cannot be analysed inside a YouTube player.
 
 ### 4. Synchronized Vocal Switcher with Intro Offset Compensation
 * **Karaoke Mode**: Official backing track with lyrics.
