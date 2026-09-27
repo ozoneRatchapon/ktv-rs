@@ -358,6 +358,43 @@ test('practice: A then B loops the part, a new song clears it; Chords opens a we
   await page.wait_for(`window.KtvSync.debug().loop === null && document.querySelector('.practice-label').textContent.startsWith('Loop a part')`);
 }));
 
+test('chords by ear: typed and tapped changes show as the song plays, transpose for display, saved on this device', () => with_page({}, async (page) => {
+  const buttons = `[...document.querySelectorAll('.practice-row button')]`;
+  const press = (label) => page.eval(`${buttons}.find((b) => b.textContent === ${JSON.stringify(label)}).click()`);
+  const now_chord = `document.querySelector('.chord-now-name')?.textContent`;
+  const notice = `document.querySelector('.chord-editor .timing-notice')?.textContent`;
+  const type = async (text) => {
+    await page.eval(`document.getElementById('chord_name').focus()`);
+    for (const c of text) await page.key(c);
+    await page.key('Enter');
+  };
+  await press('Chords by ear');
+  await page.wait_for(`!!document.getElementById('chord_name')`);
+  await type('Hm');
+  await page.wait_for(`${notice}?.startsWith('A chord starts with a note')`);
+  await page.eval(`document.getElementById('chord_name').value = ''; document.getElementById('chord_name').dispatchEvent(new Event('input', { bubbles: true }))`);
+  await type('am');
+  await page.wait_for(`${now_chord} === 'Am'`);
+  assert.equal(await page.eval(search_value), '', 'typing a chord does not type into the song search');
+  // The next change 10 s on, tapped from the palette of chords used so far
+  await page.eval(`[...document.querySelectorAll('.player-quick-controls button')].find((b) => b.textContent === '-10s').click()`);
+  await sleep(300);
+  await page.eval(`document.querySelector('.chord-palette button').click()`);
+  await page.wait_for(`document.querySelectorAll('.chord-marks li').length === 2`);
+  await page.eval(`[...document.querySelectorAll('.chord-shift button')][1].click()`);
+  await page.wait_for(`${now_chord} === 'A#m' && document.querySelector('.chord-shift-label').textContent === 'Key: +1'`);
+  const saved = JSON.parse(await page.eval(`localStorage.getItem('ktv.chords.v1')`));
+  const [chart] = Object.values(saved);
+  assert.deepEqual(chart.map((m) => m.chord), ['Am', 'Am'], 'stored as entered, not transposed');
+  await page.reload();
+  await page.wait_for(`${now_chord} === 'Am'`);
+  await press('Edit chords');
+  await page.wait_for(`document.querySelectorAll('.chord-mark-remove').length === 2`);
+  await page.eval(`document.querySelector('.chord-mark-remove').click()`);
+  await page.eval(`document.querySelector('.chord-mark-remove').click()`);
+  await page.wait_for(`!document.querySelector('.chord-now') && localStorage.getItem('ktv.chords.v1') === '{}'`);
+}));
+
 test('search: a typo still finds the song, and says it is showing close matches', () => with_page({}, async (page) => {
   await page.wait_for(`parseInt(document.querySelector('.catalog-meta-row .count-text')?.textContent.replace(/\\D/g, ''), 10) > 5000`);
   await page.eval(`document.activeElement?.blur()`);

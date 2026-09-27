@@ -35,6 +35,7 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 * Keyboard arrow navigation: **`ArrowLeft`** (-5s) and **`ArrowRight`** (+5s).
 * **Practice loop** for musicians and singers: **A** at the start of a part, **B** at its end, and it plays A→B over and over (✕ or a new song ends it).
 * **Chords ↗** opens a web search for the song's chords. KTV-RS ships no chord sheets: they are the chord sites' own work, and the audio cannot be analysed inside a YouTube player.
+* **Chords by ear**: while the song plays, type a chord (`Am`, `F#m7`, `G/B`) and press Enter, or tap one you already used, at each change. The player then shows the chord sounding now and the next one; **− / +** transposes the display (e.g. for a capo) without changing what you entered. Charts stay on this device (**Copy chart** exports JSON).
 
 ### 4. Synchronized Vocal Switcher with Intro Offset Compensation
 * **Karaoke Mode**: Official backing track with lyrics.
