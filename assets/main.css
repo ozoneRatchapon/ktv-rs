@@ -2335,10 +2335,11 @@ body {
     cursor: not-allowed;
 }
 
+/* Dark text: white on this amber was 3.2:1 (WCAG AA needs 4.5:1) */
 .ctrl-btn.pause-active {
     background: #d97706 !important;
     border-color: #f59e0b !important;
-    color: #ffffff !important;
+    color: #0b0d13 !important;
 }
 
 /* Legal Transparency & Developer Portfolio Card */
