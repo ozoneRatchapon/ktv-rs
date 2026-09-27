@@ -1,6 +1,6 @@
 name: Link rot
 
-# Weekly: every karaoke + guide video in assets/catalog.json must still be public and embeddable.
+# Weekly: every video the app plays (curated catalog, full library, official MVs) must still be public and embeddable.
 on:
   schedule:
     - cron: "0 2 * * 1" # Monday 09:00 Asia/Bangkok
@@ -23,11 +23,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh label create link-rot --color B60205 --description "Dead catalog video" --force
+          gh label create link-rot --color B60205 --description "Dead video in the songbook" --force
           open=$(gh issue list --label link-rot --state open --json number --jq '.[0].number')
           if [ -n "$open" ]; then
             gh issue comment "$open" --body-file report.md
           else
-            gh issue create --title "Link rot: dead catalog videos" --label link-rot --body-file report.md
+            gh issue create --title "Link rot: dead songbook videos" --label link-rot --body-file report.md
           fi
           exit 1

@@ -61,3 +61,7 @@ terms):
 4. **Share on GitHub** (or Copy JSON), and add `"offset_secs"` and `"rate"` to the song's entry in `assets/mv_guides.json`.
 
 Then `cargo test --test library_test` (entries must be library songs; timed ones reach the song, untimed ones do not).
+
+The same run tags library songs with a **genre** where the label decides it (`GENRE_BY_CHANNEL` in the tool: GRAMMY
+GOLD → Luk Thung, Genierock → Rock) and writes it to `assets/library.json` (`genres` per channel; a label-wide
+`genre` such as Smallroom's Indie comes from `CHANNELS` in `tools/harvest_library.py`). A re-harvest keeps them.

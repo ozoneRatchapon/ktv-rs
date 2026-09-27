@@ -3,7 +3,13 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.20.0] - 2026-09-27
+## [0.21.0] - 2026-09-27
+### Added
+- Genres for ~2,100 library songs, taken from the label that publishes the song's official video: **Luk Thung** (GRAMMY GOLD, 1,367 songs), **Rock** (Genie Records, 512) and **Indie** (all of Smallroom, 250). The genre chips and Auto-DJ's "your usual genre" now include them. Songs from labels that mix genres stay without one rather than get a guess.
+### Changed
+- The weekly link check covers every video the app plays (9,459: curated, full library, official MVs), not only the 43 curated songs.
+
+## [0.20.0] - 2026-09-27 (`30a9f845`)
 ### Added
 - Musician tools under the time bar: a **practice loop** (A at the start of a part, B at its end: it replays A→B until ✕ or the next song) and **Chords ↗**, a web search for the song's chords in a new tab.
 ### Fixed

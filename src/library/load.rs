@@ -13,8 +13,10 @@ static LIBRARY: OnceLock<Songbook> = OnceLock::new();
 pub fn parse(json: &str) -> Result<Vec<Song>, serde_json::Error> {
     let file: LibraryFile = serde_json::from_str(json)?;
     let songs = file.channels.into_iter().flat_map(|channel| {
-        let (name, intro_skip_secs) = (channel.name, channel.intro_skip_secs);
+        let (name, intro_skip_secs, genre, genres) = (channel.name, channel.intro_skip_secs, channel.genre, channel.genres);
         channel.songs.into_iter().map(move |LibraryRow(youtube_id, code, duration_secs, title, artist, alias)| Song {
+            // Genre where the label tells it; otherwise none (the genre chips skip the song)
+            category: genres.get(&youtube_id).or(genre.as_ref()).cloned().unwrap_or_default(),
             id: format!("{ID_PREFIX}{youtube_id}"),
             guide: timed_guide(&youtube_id),
             code: code.to_string(),
@@ -25,7 +27,6 @@ pub fn parse(json: &str) -> Result<Vec<Song>, serde_json::Error> {
             duration_secs,
             // A short song must still start before its end
             intro_skip_secs: intro_skip_secs.min(duration_secs / 4),
-            category: String::new(),
             channel: name.clone(),
             is_favorite: false,
         })

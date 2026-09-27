@@ -105,3 +105,20 @@ class MvGuides(unittest.TestCase):
         song = {"title": "แพ้ใจ", "artist": "ใหม่ เจริญปุระ", "secs": 250}
         self.assertEqual(best_mv(song, mvs)["title"], mvs[0]["title"])
         self.assertIsNone(best_mv({"title": "แพ้ใจ", "artist": "ศิลปินอื่น", "secs": 250}, mvs))
+
+
+class LibraryJson(unittest.TestCase):
+    def test_to_json_round_trips_genres(self):
+        import json
+        from harvest_library import to_json
+        library = {"channels": [
+            {"name": "A", "intro_skip_secs": 18, "genres": {"v2": "Rock", "v1": "Luk Thung"},
+             "songs": [["v1", 30001, 200, "t", "a", ""], ["v2", 30002, 210, "u", "b", ""]]},
+            {"name": "B", "intro_skip_secs": 0, "genre": "Indie", "genres": {}, "songs": [["v3", 65001, 190, "x", "y", ""]]},
+        ]}
+        back = json.loads(to_json(library))
+        self.assertEqual(back["channels"][0]["genres"], {"v1": "Luk Thung", "v2": "Rock"})
+        self.assertNotIn("genre", back["channels"][0])
+        self.assertEqual(back["channels"][1]["genre"], "Indie")
+        self.assertNotIn("genres", back["channels"][1], "empty maps are left out")
+        self.assertEqual(to_json(back), to_json(library), "stable output")

@@ -113,7 +113,7 @@ CHANNELS = [
     {"name": "RS Music", "url": "https://www.youtube.com/playlist?list=PLjDkybQo87xcodQNh4aRmiK01RPPbhYOE",
      "codes": (60001, 64999), "intro_skip_secs": 0, "parse": parse_title_colon},
     {"name": "Smallroom Karaoke", "url": "https://www.youtube.com/playlist?list=PLPwrZWY_sW-g0CW1kQd9WatoRizcOGRS-",
-     "codes": (65001, 69999), "intro_skip_secs": 0, "parse": parse_smallroom},
+     "codes": (65001, 69999), "intro_skip_secs": 0, "parse": parse_smallroom, "genre": "Indie"},
 ]
 
 
@@ -150,8 +150,8 @@ def harvest(channel, curated_ids, old_codes, check_embed):
     assign_codes(songs, channel["codes"], old_codes)
     songs.sort(key=lambda s: s["code"])
     print(f"{channel['name']}: {len(songs)} songs ({skipped} skipped)", file=sys.stderr)
-    return {"name": channel["name"], "intro_skip_secs": channel["intro_skip_secs"],
-            "songs": [[s["vid"], s["code"], s["secs"], s["title"], s["artist"], s["alias"]] for s in songs]}
+    return {"name": channel["name"], "intro_skip_secs": channel["intro_skip_secs"], "genre": channel.get("genre"),
+            "genres": {}, "songs": [[s["vid"], s["code"], s["secs"], s["title"], s["artist"], s["alias"]] for s in songs]}
 
 
 def assign_codes(songs, code_range, old_codes):
@@ -178,13 +178,20 @@ def retire_codes(old_codes, library, retired):
 
 
 def to_json(library):
-    """One song per line, so a re-harvest diffs as added / removed / changed songs."""
+    """One song (and one per-song genre) per line, so a re-harvest diffs as added / removed / changed songs.
+    A channel may carry `genre` (every song's) and `genres` ({video id: genre}, from tools/match_mv.py)."""
     compact = lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":"))  # noqa: E731
     channels = []
     for ch in library["channels"]:
+        head = f'  {{"name":{compact(ch["name"])},"intro_skip_secs":{ch["intro_skip_secs"]}'
+        if ch.get("genre"):
+            head += f',"genre":{compact(ch["genre"])}'
+        genres = ch.get("genres") or {}
+        if genres:
+            lines = ",\n".join(f"    {compact(vid)}:{compact(genres[vid])}" for vid in sorted(genres))
+            head += ',"genres":{\n' + lines + "\n  }"
         rows = ",\n".join(f"    {compact(row)}" for row in ch["songs"])
-        head = f'  {{"name":{compact(ch["name"])},"intro_skip_secs":{ch["intro_skip_secs"]},"songs":[\n'
-        channels.append(f"{head}{rows}\n  ]}}")
+        channels.append(f'{head},"songs":[\n{rows}\n  ]}}')
     return '{"channels":[\n' + ",\n".join(channels) + "\n]}\n"
 
 
@@ -197,11 +204,18 @@ def main():
             retired = {int(code): vid for code, vid in json.load(f).items()}
     # a returning video gets its retired code back; the previous library wins otherwise
     old_codes = {vid: code for code, vid in retired.items()}
+    old_genres = {}
     if os.path.exists(LIBRARY):
         with open(LIBRARY, encoding="utf-8") as f:
-            old_codes.update({row[0]: row[1] for ch in json.load(f)["channels"] for row in ch["songs"]})
+            previous = json.load(f)["channels"]
+        old_codes.update({row[0]: row[1] for ch in previous for row in ch["songs"]})
+        old_genres = {ch["name"]: ch.get("genres", {}) for ch in previous}
     check_embed = "--skip-embed-check" not in sys.argv
     library = {"channels": [harvest(ch, curated_ids, old_codes, check_embed) for ch in CHANNELS]}
+    # Per-song genres come from tools/match_mv.py; keep them for the songs still listed
+    for ch in library["channels"]:
+        kept = {row[0] for row in ch["songs"]}
+        ch["genres"] = {vid: g for vid, g in old_genres.get(ch["name"], {}).items() if vid in kept}
     with open(LIBRARY, "w", encoding="utf-8") as f:
         f.write(to_json(library))
     retire_codes(old_codes, library, retired)
