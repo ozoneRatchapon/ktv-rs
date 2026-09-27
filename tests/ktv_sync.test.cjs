@@ -160,6 +160,19 @@ test('scrub while paused seeks both players with the PAIR lead but keeps the gui
     assert.equal(sync.debug().karaoke_time, 60);
 });
 
+test('time() is the karaoke clock the debug snapshot reports (mic frames read it ~47 times a second)', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.load_song(0, 1);
+    report(sync, 10, 0);
+    env.advance(250);
+    assert.equal(sync.time(), 10.25);
+    assert.equal(sync.time(), sync.debug().karaoke_time);
+    sync.set_paused(true);
+    env.advance(1000);
+    assert.equal(sync.time(), 10.25, 'paused: the clock stands still');
+});
+
 test('pause freezes karaoke time; resume restarts the guide with the PAIR lead', () => {
     const env = fake_env();
     const sync = core.create_sync(env);

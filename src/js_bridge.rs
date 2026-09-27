@@ -83,6 +83,18 @@ pub fn call(object: &str, method: &str, args: &[JsArg]) -> Option<JsValueOut> {
 pub struct JsValueOut(#[cfg(target_arch = "wasm32")] wasm_bindgen::JsValue);
 
 impl JsValueOut {
+    /// The value itself as a number (`None` if it is not one).
+    pub fn as_f64(&self) -> Option<f64> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.0.as_f64()
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            None
+        }
+    }
+
     pub fn f64(&self, key: &str) -> Option<f64> {
         #[cfg(target_arch = "wasm32")]
         {

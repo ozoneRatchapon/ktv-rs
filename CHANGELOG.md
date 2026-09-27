@@ -3,6 +3,14 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.31.0] - 2026-09-28
+### Added
+- Melody score, for songs that have melody data on this device: how much of the tune you sang on the right note, in any octave (so low and high voices score alike), 100 at 80% of the tune's notes. It shows as **Melody** beside Tuning and on the result card. The note lane then also draws the tune (grey bars, moved to your octave) with 2 seconds of what is coming and a marker for now. No melody data ships yet: where it comes from is still being decided, so on every song today only Tuning shows.
+
+### Changed
+- The note lane follows the song's clock: it stands still while the video is paused and starts clean after seeking back or Replay.
+- The mic reads the video clock through a lighter call (47 times a second, it no longer builds the whole sync snapshot).
+
 ## [0.30.0] - 2026-09-28 (`ed91d65e`)
 ### Added
 - Phone remote (Keypad → Phone remote, off until the host turns it on). Guests scan the QR with a phone camera and get a page with the song on stage, the next five, song search and a 5-digit code box: *Add to the queue* puts the song at the back, marked 📱 Phone, and the phone is told what happened ("Queued 10001: …" or "No song with code …"). Skip, pause and replay buttons appear on phones only if the host ticks *Phones may skip, pause and replay*. The booth shows how many phones are connected; *New link* (two taps) makes a new code and sends phones on the old one away.

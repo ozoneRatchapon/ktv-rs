@@ -23,6 +23,9 @@ pub struct TakeResult {
     /// When the take ended (ms since the epoch); 0 for takes saved before this was kept.
     #[serde(default)]
     pub sung_at_ms: f64,
+    /// Melody score of the take, when the song had melody data on this device.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub melody_score: Option<u8>,
 }
 
 impl TakeResult {
@@ -37,7 +40,12 @@ impl TakeResult {
             mean_abs_cents,
             singer: None,
             sung_at_ms,
+            melody_score: None,
         })
+    }
+
+    pub fn with_melody_score(self, melody_score: Option<u8>) -> Self {
+        Self { melody_score, ..self }
     }
 
     pub fn summary(&self) -> TuningSummary {

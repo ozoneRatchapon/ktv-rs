@@ -41,6 +41,9 @@ pub fn ScoreCard(
                 div { class: "score-card-verdict", "{verdict}" }
                 div { class: "score-card-song", lang: "th", "{result.title} · {result.artist}" }
                 div { class: "score-card-detail", "Tuning · {notes} held notes · on average {cents:.0}¢ off" }
+                if let Some(melody) = result.melody_score {
+                    div { class: "score-card-detail score-card-melody", "Melody {melody} · right notes, any octave" }
+                }
                 if result.score().is_some() {
                     match result.singer.clone() {
                         Some(name) => rsx! {

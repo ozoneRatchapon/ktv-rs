@@ -2887,3 +2887,18 @@ details.tuning-score {
     color: var(--text-secondary);
     cursor: pointer;
 }
+
+/* Melody targets in the note lane (only when the song has melody data): behind the singer's bars */
+.lane-target {
+    fill: rgba(255, 255, 255, 0.16);
+    stroke: rgba(255, 255, 255, 0.35);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+.lane-now {
+    stroke: var(--accent-cyan);
+    stroke-width: 1;
+    stroke-dasharray: 2 2;
+    vector-effect: non-scaling-stroke;
+}

@@ -273,6 +273,47 @@ test('mic: room check, noise gate, held notes give a Tuning score, a phrase scor
   assert.deepEqual(JSON.parse(board), { leaders: ['Pim'], recent: [`${sung} · Pim`] }, 'history and name survive reload');
 }));
 
+test('melody score: with a melody saved on this device, the lane draws the tune in the singer\'s octave, the right note in another octave scores high, a wrong note pulls it down, and the result card shows it', () => with_page({ fake_mic: true }, async (page) => {
+  const melody_value = `document.querySelector('.melody-score .tuning-value')?.textContent ?? ''`;
+  await page.wait_for(`!!localStorage.getItem('ktv.session.v1')`);
+  assert.equal(await page.eval(`!!document.querySelector('.melody-score')`), false, 'no melody data, no melody score');
+  // The tune: A3 for the whole song (no melody ships; plan 002 item 7)
+  await page.eval(`(() => {
+    const id = JSON.parse(localStorage.getItem('ktv.session.v1')).current.song.id;
+    localStorage.setItem('ktv.melodies.v1', JSON.stringify({ [id]: [[0, 900, 57]] }));
+  })()`);
+  await page.reload();
+  await page.eval(`[...document.querySelectorAll('.pitch-meter button')].find((b) => b.textContent.startsWith('Mic')).click()`);
+  await page.wait_for(`!!window.__mic_gain`);
+  await page.wait_for(`document.querySelector('.pitch-note')?.textContent !== 'Room check…'`, 6000);
+  await page.wait_for(`!!document.querySelector('.melody-score')`);
+  // A4: the right note an octave up
+  await page.eval(`window.__mic.frequency.value = 440; window.__mic_gain.gain.value = 0.3`);
+  await page.wait_for(`/^\\d+$/.test(${melody_value})`, 8000);
+  await sleep(1500);
+  const right = Number(await page.eval(melody_value));
+  assert.ok(right >= 90, `right note, other octave: ${right}`);
+  // A held note is drawn once it ends: take a breath
+  await page.eval(`window.__mic_gain.gain.value = 0`);
+  await page.wait_for(`!!document.querySelector('.note-lane-plot .lane-note')`, 3000);
+  await page.eval(`window.__mic_gain.gain.value = 0.3`);
+  const lane = JSON.parse(await page.eval(`JSON.stringify({
+    targets: document.querySelectorAll('.note-lane-plot .lane-target').length,
+    now: !!document.querySelector('.note-lane-plot .lane-now'),
+    target_y: document.querySelector('.note-lane-plot .lane-target')?.getAttribute('y'),
+    bar_y: document.querySelector('.note-lane-plot .lane-note')?.getAttribute('y'),
+  })`));
+  assert.ok(lane.targets >= 1 && lane.now, `tune drawn with a now marker: ${JSON.stringify(lane)}`);
+  // Target (height 0.9 row) and sung bar (0.6 row) centred on the same row: the tune moved to the singer's octave
+  assert.ok(Math.abs(Number(lane.target_y) - Number(lane.bar_y)) < 10, `same row: ${JSON.stringify(lane)}`);
+  // B4: a whole tone off
+  await page.eval(`window.__mic.frequency.value = 493.88`);
+  await page.wait_for(`Number(${melody_value}) < ${right} - 20`, 10000);
+  await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
+  await page.wait_for(`!!document.querySelector('.score-card-melody')`);
+  assert.match(await page.eval(`document.querySelector('.score-card-melody').textContent`), /^Melody \d+ · right notes, any octave$/);
+}));
+
 test('phone remote: the Keypad QR opens /remote, a phone sees the stage, queues by code, playback buttons only when the host allows, a new link sends old phones away', () => with_page({}, async (booth) => {
   const status = `document.querySelector('.phone-remote [role=status]')?.textContent ?? ''`;
   await booth.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Keypad')).click()`);

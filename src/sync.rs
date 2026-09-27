@@ -102,7 +102,7 @@ impl SyncEvent {
 /// Karaoke playback position with sub-second precision (`Time` events are whole seconds).
 /// `None` before the sync core is installed.
 pub fn karaoke_time() -> Option<f64> {
-    js_bridge::call(CORE, "debug", &[])?.f64("karaoke_time")
+    js_bridge::call(CORE, "time", &[])?.as_f64()
 }
 
 /// Wire the sync core (once per page; a remount only rebinds the channel) and return its event messages.
