@@ -3,7 +3,7 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.29.1] - 2026-09-28
+## [0.29.1] - 2026-09-28 (`1f92489e`)
 ### Fixed
 - Phones: with the mic on, the Tuning score (and on narrow phones the note lane) ran off the right edge of the player and was cut off. The mic row now wraps inside the player at any width.
 
