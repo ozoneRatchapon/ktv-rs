@@ -1,9 +1,14 @@
 use dioxus::prelude::*;
 
-use crate::mic::{Mic, MicError};
+use crate::mic::{Mic, MicError, HOP_SIZE};
 use crate::pitch::{rms, Mpm, MpmConfig, NoiseGate, NoteReading};
-use crate::score::{TakeResult, TuningScorer, TuningSummary, MIN_SCORED_NOTES, PERFECT_CENTS, RANDOM_CENTS};
+use crate::score::{
+    LaneView, NoteLane, TakeResult, TuningScorer, TuningSummary, MIN_PHRASE_NOTES, MIN_SCORED_NOTES, PERFECT_CENTS, RANDOM_CENTS,
+};
 use crate::types::Song;
+
+/// Seconds of singing the note lane shows.
+const LANE_SECONDS: f32 = 8.0;
 
 #[derive(Debug, Clone, PartialEq)]
 enum MicState {
@@ -25,6 +30,8 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
     // First second after the mic opens: measuring the room for the noise gate
     let mut room_check = use_signal(|| false);
     let mut summary = use_signal(TuningSummary::default);
+    let mut lane = use_signal(LaneView::default);
+    let mut phrase = use_signal(|| None::<u8>);
     let mut current_take = use_signal(|| take);
     // Song of the take being scored: guide edits change `song` without starting a new take
     let song_meta = (song.id, song.title, song.artist);
@@ -38,6 +45,8 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
             }
             current_take.set(take);
             summary.set(TuningSummary::default());
+            lane.set(LaneView::default());
+            phrase.set(None);
         }
         take_song.set(song_meta);
     }));
@@ -50,11 +59,15 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
         }
         state.set(MicState::Starting);
         summary.set(TuningSummary::default());
+        lane.set(LaneView::default());
+        phrase.set(None);
         room_check.set(true);
         spawn(async move {
             let started = Mic::start(move |sample_rate| {
                 let mut detector = Mpm::new(MpmConfig::singing(sample_rate));
                 let mut scorer = TuningScorer::new();
+                let mut notes = NoteLane::new();
+                let window = (LANE_SECONDS * sample_rate / HOP_SIZE as f32) as u64;
                 let mut gate = NoiseGate::new();
                 let mut scored_take = *current_take.peek();
                 move |frame: &[f32]| {
@@ -66,10 +79,16 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
                     if *current_take.peek() != scored_take {
                         scored_take = *current_take.peek();
                         scorer = TuningScorer::new();
+                        notes = NoteLane::new();
                     }
-                    // ~47 frames/s: only re-render when the shown note changes or a held note is judged
-                    if scorer.push(estimate.map(|est| est.midi())).is_some() {
+                    // ~47 frames/s: only re-render when the shown note changes, a held note is judged or a phrase ends
+                    let judged = scorer.push(estimate.map(|est| est.midi()));
+                    if judged.is_some() {
                         summary.set(scorer.summary());
+                    }
+                    if notes.push(estimate.is_some(), judged) {
+                        lane.set(notes.view(window));
+                        phrase.set(notes.phrase_score());
                     }
                     let next = estimate.map(|est| est.reading());
                     if *reading.peek() != next {
@@ -120,7 +139,58 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
                         (false, None) => rsx! { span { class: "pitch-note idle", "—" } },
                     }
                 }
+                NoteLaneView { view: lane(), phrase: phrase() }
                 TuningBadge { summary: summary() }
+            }
+        }
+    }
+}
+
+/// The singer's held notes over the last few seconds on a semitone grid: a bar on a line is in tune, a bar
+/// between lines is off. Colour repeats it for a quick glance. Then the last phrase's score.
+#[component]
+fn NoteLaneView(view: LaneView, phrase: Option<u8>) -> Element {
+    // One row per semitone with half a row of margin above and below, y grows downward
+    let rows = (view.high - view.low + 1).max(1) as f32;
+    let y = move |midi: f32| (view.high as f32 + 0.5 - midi) / rows * 100.0;
+    let row = 100.0 / rows;
+    let label = match phrase {
+        Some(score) => format!("Last phrase {score}"),
+        None => "Your held notes".to_string(),
+    };
+    rsx! {
+        div { class: "note-lane", title: "Your held notes, last {LANE_SECONDS:.0} s: on a line = on a semitone. Phrase score after each breath (needs {MIN_PHRASE_NOTES} held notes).",
+            svg {
+                class: "note-lane-plot",
+                view_box: "0 0 100 100",
+                preserve_aspect_ratio: "none",
+                role: "img",
+                "aria-label": "{label}",
+                for midi in view.low..=view.high {
+                    line { key: "g{midi}", class: "lane-grid", x1: "0", x2: "100", y1: "{y(midi as f32)}", y2: "{y(midi as f32)}" }
+                }
+                for (i, bar) in view.bars.iter().enumerate() {
+                    rect {
+                        key: "{i}",
+                        class: match bar.cents.abs() {
+                            c if c <= PERFECT_CENTS => "lane-note good",
+                            c if c < RANDOM_CENTS => "lane-note near",
+                            _ => "lane-note off",
+                        },
+                        x: "{bar.x0 * 100.0}",
+                        width: "{((bar.x1 - bar.x0) * 100.0).max(1.0)}",
+                        y: "{y(bar.midi) - row * 0.3}",
+                        height: "{row * 0.6}",
+                        rx: "1",
+                    }
+                }
+            }
+            span { class: "note-lane-phrase",
+                span { class: "tuning-label", "Phrase" }
+                match phrase {
+                    Some(score) => rsx! { span { class: "tuning-value", "{score}" } },
+                    None => rsx! { span { class: "tuning-value idle", "—" } },
+                }
             }
         }
     }
