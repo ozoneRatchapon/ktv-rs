@@ -168,8 +168,15 @@ test('first visit, autoplay blocked: the clock waits, Play shows, Space starts t
     assert.equal(await page.eval(`window.KtvSync.debug().karaoke_state`), -1, 'YouTube: unstarted');
     await page.eval(`document.activeElement?.blur()`);
     await page.key(' '); // a trusted key press is the user gesture autoplay needs
-    await page.wait_for(`window.KtvSync.debug().karaoke_state === 1 && ${button} === 'Pause'`);
-    await page.wait_for(`${time} !== ${JSON.stringify(start)}`);
+    await page.wait_for(`${button} === 'Pause'`);
+    // YouTube may refuse to play for a datacenter IP (CI); either way the time moves only while it plays
+    const state = `window.KtvSync.debug().karaoke_state`;
+    await page.wait_for(`${state} === 1 || ${button} === 'Play'`, 10000);
+    if (await page.eval(`${state} === 1`)) {
+      await page.wait_for(`${time} !== ${JSON.stringify(start)}`);
+    } else {
+      assert.equal(await page.eval(time), start, 'YouTube did not start the video: the time still waits');
+    }
     assert.deepEqual(page.errors, [], 'console errors');
   } finally {
     await page.close();

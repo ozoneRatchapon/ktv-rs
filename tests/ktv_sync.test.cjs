@@ -446,6 +446,9 @@ test('karaoke clock waits for the player: blocked autoplay does not run the time
     const sync = core.create_sync(env);
     sync.set_start(18);
     karaoke_state(sync, YT_STATE.UNSTARTED);
+    // What a blocked player sends: position 0 (it has not moved to the start second yet)
+    sync.on_message(false, { event: 'infoDelivery', info: { currentTime: 0, playerState: YT_STATE.UNSTARTED } });
+    sync.on_message(false, { event: 'infoDelivery', info: { currentTime: 0 } });
     env.advance(2000);
     assert.equal(sync.debug().karaoke_time, 18, 'unstarted: time stays at the start second');
     sync.progress();

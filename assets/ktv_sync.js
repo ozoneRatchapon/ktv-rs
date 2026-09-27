@@ -232,12 +232,15 @@
                 if (info && typeof info.playbackRate === 'number') st.guide_rate_now = info.playbackRate;
                 return;
             }
-            if (info && typeof info.currentTime === 'number') {
+            const state = data && typeof data.info === 'number' ? data.info : info && info.playerState;
+            // An unstarted or cued player reports 0, not the start second it will play from: not a position
+            const known = typeof state === 'number' ? state : st.karaoke_state;
+            const unstarted = known === YT_STATE.UNSTARTED || known === YT_STATE.CUED;
+            if (info && typeof info.currentTime === 'number' && !unstarted) {
                 st.video_time = info.currentTime;
                 st.video_at = env.now();
             }
             if (data && data.info === YT_STATE.ENDED) st.send('ended');
-            const state = data && typeof data.info === 'number' ? data.info : info && info.playerState;
             if (typeof state !== 'number') return;
             if (state === YT_STATE.PLAYING && st.karaoke_state !== YT_STATE.PLAYING) {
                 // Started (or resumed after buffering): extrapolate from now, not from when it stalled
