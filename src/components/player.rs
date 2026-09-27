@@ -25,6 +25,9 @@ pub fn Player(
     on_save_guide: EventHandler<GuideTrack>,
     on_revert_guide: EventHandler<()>,
     on_take_end: EventHandler<TakeResult>,
+    /// The current song's guide was timed automatically (official audio), not by ear: say so next to the nudges.
+    #[props(default)]
+    auto_timed: bool,
 ) -> Element {
     let mut is_guide_vocal = use_signal(|| false);
     let mut is_guide_failed = use_signal(|| false);
@@ -251,6 +254,30 @@ pub fn Player(
                                             span { "Vocal: Original" }
                                         } else {
                                             span { "Vocal: Karaoke" }
+                                        }
+                                    }
+                                }
+
+                                // Anyone can fix a guide that is a little off: ±0.5 s, saved on this device
+                                if let (true, false, Some(guide)) = (is_guide_vocal(), is_guide_failed(), song.guide.clone()) {
+                                    div { class: "vocal-nudge",
+                                        span { class: "vocal-nudge-label",
+                                            if auto_timed { "Auto-timed. Out of step?" } else { "Out of step?" }
+                                        }
+                                        button {
+                                            class: "ctrl-btn practice-btn",
+                                            title: "The singer comes before the music: hold the vocal back 0.5 s (saved on this device)",
+                                            onclick: {
+                                                let guide = guide.clone();
+                                                move |_| on_save_guide.call(crate::timing::nudge(&guide, -0.5))
+                                            },
+                                            "Vocal ahead"
+                                        }
+                                        button {
+                                            class: "ctrl-btn practice-btn",
+                                            title: "The singer comes after the music: bring the vocal 0.5 s forward (saved on this device)",
+                                            onclick: move |_| on_save_guide.call(crate::timing::nudge(&guide, 0.5)),
+                                            "Vocal behind"
                                         }
                                     }
                                 }

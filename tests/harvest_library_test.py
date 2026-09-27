@@ -122,3 +122,25 @@ class LibraryJson(unittest.TestCase):
         self.assertEqual(back["channels"][1]["genre"], "Indie")
         self.assertNotIn("genres", back["channels"][1], "empty maps are left out")
         self.assertEqual(to_json(back), to_json(library), "stable output")
+
+
+class OfficialAudioMerge(unittest.TestCase):
+    def test_audio_timing_beats_suggestions_but_never_hand_timing(self):
+        from match_mv import merge_guides
+        guides = {"hand": {"video_id": "HHHHHHHHHHH", "offset_secs": -17.9, "rate": 1.0},
+                  "old_auto": {"video_id": "OOOOOOOOOOO", "offset_secs": -18.2, "rate": 1.0, "auto": True},
+                  "lost_auto": {"video_id": "LLLLLLLLLLL", "offset_secs": -18.2, "rate": 1.0, "auto": True}}
+        candidates = [{"karaoke_id": "new", "video_id": "MVMVMVMVMVM"}, {"karaoke_id": "hand", "video_id": "MVMVMVMVMV2"}]
+        audio = {"new": "AAAAAAAAAAA", "hand": "BBBBBBBBBBB", "lost_auto": None}
+        merged = merge_guides(guides, candidates, audio)
+        self.assertEqual(merged["hand"]["video_id"], "HHHHHHHHHHH", "a curator's timing wins")
+        self.assertEqual(merged["new"], {"video_id": "AAAAAAAAAAA", "offset_secs": -18.2, "rate": 1.0, "auto": True})
+        self.assertIn("old_auto", merged, "not re-checked this run: kept")
+        self.assertNotIn("lost_auto", merged, "re-checked and no longer found: dropped")
+
+    def test_title_base_drops_bracketed_names(self):
+        from match_mv import normalize
+        from official_audio import OTHER_VERSION, base
+        self.assertEqual(base("เธอ (Tur)", normalize), normalize("เธอ"))
+        self.assertTrue(OTHER_VERSION.search("ไม่มีครั้งสุดท้าย (อคูสติค เวอร์ชั่น)"))
+        self.assertFalse(OTHER_VERSION.search("Nok Long Rung"))

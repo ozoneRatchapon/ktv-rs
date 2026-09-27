@@ -366,6 +366,23 @@ test('search: a typo still finds the song, and says it is showing close matches'
   assert.ok(await page.eval(`[...document.querySelectorAll('.song-artist')].some((a) => /bodyslam/i.test(a.textContent))`));
 }));
 
+test('auto-timed vocal: an official-audio song has Vocal at once, and ±0.5 s fixes it on this device', () => with_page({}, async (page) => {
+  await page.wait_for(`parseInt(document.querySelector('.catalog-meta-row .count-text')?.textContent.replace(/\\D/g, ''), 10) > 5000`);
+  // ผิดตรงไหน - เบิร์ด ธงไชย (GMM Karaoke 34201): official audio StGwcpcGP7E at -18.2 s
+  await page.eval(`document.activeElement?.blur()`);
+  for (const key of '34201') await page.key(key);
+  await page.wait_for(`document.querySelector('.song-card .song-code-tag')?.textContent === '#34201'`);
+  await page.eval(`document.querySelector('.song-card .play-now').click()`);
+  await page.wait_for(`document.querySelector('.now-title').textContent === 'ผิดตรงไหน'`);
+  const vocal = `[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent.startsWith('Vocal:'))`;
+  await page.wait_for(`!!${vocal}`);
+  await page.eval(`${vocal}.click()`);
+  await page.wait_for(`document.querySelector('.vocal-nudge-label')?.textContent === 'Auto-timed. Out of step?'`);
+  await page.eval(`[...document.querySelectorAll('.vocal-nudge button')].find((b) => b.textContent === 'Vocal behind').click()`);
+  await page.wait_for(`JSON.parse(localStorage.getItem('ktv.guides.v1') ?? '{}')['yt_4W_T9DPufmQ']?.offset_secs === -17.7`);
+  await page.wait_for(`document.querySelector('.vocal-nudge-label')?.textContent === 'Out of step?'`);
+}));
+
 test('favourites and recently sung shelves', () => with_page({}, async (page) => {
   const chip = (label) => `[...document.querySelectorAll('.chip')].find((c) => c.textContent === ${JSON.stringify(label)})`;
   const titles = `[...document.querySelectorAll('.song-title')].map((e) => e.textContent)`;
