@@ -191,7 +191,7 @@ pub fn Player(
                                     oninput: move |evt| {
                                         if let Ok(target) = evt.value().parse::<u64>() {
                                             current_playback_sec.set(target);
-                                            SyncCommand::SeekTo(target).run();
+                                            SyncCommand::SeekTo(target as f64).run();
                                         }
                                     },
                                 }
@@ -219,7 +219,7 @@ pub fn Player(
                                         let curr = current_playback_sec();
                                         let target = curr.saturating_sub(10);
                                         current_playback_sec.set(target);
-                                        SyncCommand::SeekTo(target).run();
+                                        SyncCommand::SeekTo(target as f64).run();
                                     },
                                     "-10s"
                                 }
@@ -232,7 +232,7 @@ pub fn Player(
                                         let curr = current_playback_sec();
                                         let target = (curr + 10).min(u64::from(song.duration_secs));
                                         current_playback_sec.set(target);
-                                        SyncCommand::SeekTo(target).run();
+                                        SyncCommand::SeekTo(target as f64).run();
                                     },
                                     "+10s"
                                 }

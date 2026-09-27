@@ -3,7 +3,14 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.31.0] - 2026-09-28
+## [0.32.0] - 2026-09-28
+### Added
+- Count-in for practising (musician tools row): tap **Tap** along with the beat four times or more and the song's tempo is saved on this device (♩ 96). **Count-in** then jumps to four beats before the loop's A (or before where the song is) and clicks them in, a higher click on the first, so the part starts on the beat. Taps that slip or skip a beat do not bend the tempo; a pause of two seconds starts the tapping over.
+
+### Fixed
+- Setting a loop's B jumped back to A rounded down to the whole second; it now jumps to A exactly.
+
+## [0.31.0] - 2026-09-28 (`c5a20bec`)
 ### Added
 - Melody score, for songs that have melody data on this device: how much of the tune you sang on the right note, in any octave (so low and high voices score alike), 100 at 80% of the tune's notes. It shows as **Melody** beside Tuning and on the result card. The note lane then also draws the tune (grey bars, moved to your octave) with 2 seconds of what is coming and a marker for now. No melody data ships yet: where it comes from is still being decided, so on every song today only Tuning shows.
 

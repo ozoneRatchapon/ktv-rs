@@ -167,3 +167,48 @@ pub async fn sleep_ms(ms: i32) {
         std::future::pending::<()>().await;
     }
 }
+
+#[cfg(target_arch = "wasm32")]
+thread_local! {
+    /// One audio context for count-in clicks, made on the first tap (browsers start audio only from a gesture).
+    static CLICKS: std::cell::RefCell<Option<web_sys::AudioContext>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Get the click sound ready. Call from a click handler: the first call makes the audio context.
+pub fn prepare_clicks() {
+    #[cfg(target_arch = "wasm32")]
+    CLICKS.with(|cell| {
+        let mut ctx = cell.borrow_mut();
+        if ctx.is_none() {
+            *ctx = web_sys::AudioContext::new().ok();
+        }
+        if let Some(ctx) = ctx.as_ref() {
+            let _ = ctx.resume();
+        }
+    });
+}
+
+/// Short clicks `delays` seconds from now on the audio clock (sample-accurate); the first is higher, like a
+/// metronome's downbeat. Negative delays are skipped. Needs [`prepare_clicks`] first; no-op on the host.
+pub fn clicks_in(delays: &[f64]) {
+    #[cfg(target_arch = "wasm32")]
+    CLICKS.with(|cell| {
+        let Some(ctx) = cell.borrow().clone() else { return };
+        let now = ctx.current_time();
+        for (i, &delay) in delays.iter().enumerate().filter(|(_, d)| **d >= 0.0) {
+            let at = now + delay;
+            let (Ok(osc), Ok(gain)) = (ctx.create_oscillator(), ctx.create_gain()) else { return };
+            osc.frequency().set_value(if i == 0 { 1500.0 } else { 1000.0 });
+            let level = gain.gain();
+            let _ = level.set_value_at_time(0.0, at);
+            let _ = level.linear_ramp_to_value_at_time(0.6, at + 0.002);
+            let _ = level.exponential_ramp_to_value_at_time(0.001, at + 0.06);
+            if osc.connect_with_audio_node(&gain).is_ok() && gain.connect_with_audio_node(&ctx.destination()).is_ok() {
+                let _ = osc.start_with_when(at);
+                let _ = osc.stop_with_when(at + 0.07);
+            }
+        }
+    });
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = delays;
+}

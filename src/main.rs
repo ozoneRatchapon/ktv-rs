@@ -229,7 +229,7 @@ fn App() -> Element {
     let mut handle_replay_song = move |_: ()| {
         if let Some(curr) = current_song() {
             song_started_at.set(js_sys::Date::now());
-            SyncCommand::Restart(curr.song.start_sec(intro_skipped())).run();
+            SyncCommand::Restart(curr.song.start_sec(intro_skipped()) as f64).run();
         }
     };
 

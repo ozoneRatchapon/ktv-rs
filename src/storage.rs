@@ -23,6 +23,8 @@ pub const CHORDS_KEY: &str = "ktv.chords.v1";
 pub const ROOM_KEY: &str = "ktv.room.v1";
 /// [`crate::score::StoredMelodies`]: per-song melodies for the melody score (none ship; see plan 002 item 7).
 pub const MELODIES_KEY: &str = "ktv.melodies.v1";
+/// [`crate::tempo::BeatGrids`]: beat grids tapped in for the count-in, by song id.
+pub const TEMPO_KEY: &str = "ktv.tempo.v1";
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Session {
