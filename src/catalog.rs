@@ -25,6 +25,19 @@ pub fn find_song(catalog: &[Song], library: Library, matches: impl Fn(&Song) -> 
     catalog.iter().chain(library.songs()).find(|s| matches(s))
 }
 
+/// Songs added by URL have ids `custom_<youtube id>`.
+pub const CUSTOM_ID_PREFIX: &str = "custom_";
+
+pub fn custom_song_id(youtube_id: &str) -> String {
+    format!("{CUSTOM_ID_PREFIX}{youtube_id}")
+}
+
+/// The curated or library song for this video, if any (songs added by URL do not count),
+/// so Add URL can queue the known song instead of making a custom copy of it.
+pub fn songbook_video<'a>(catalog: &'a [Song], library: Library, youtube_id: &str) -> Option<&'a Song> {
+    find_song(catalog, library, |s| s.youtube_id == youtube_id && !s.id.starts_with(CUSTOM_ID_PREFIX))
+}
+
 /// Genre names used by `category` in `assets/catalog.json`.
 pub const CATEGORIES: [&str; 6] = ["Rock", "Pop", "Indie", "Modern", "Luk Thung", "Classic 90s"];
 

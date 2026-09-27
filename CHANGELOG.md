@@ -3,7 +3,16 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.15.0] - 2026-09-27
+## [0.16.0] - 2026-09-27
+### Added
+- Auto-DJ now picks from the whole songbook, not only the curated songs: sing an artist through and their other songs come up next.
+- 11 more GMM Karaoke songs whose titles were written slightly differently (8,189 songs in all).
+### Fixed
+- **Add URL** with a video that is already in the songbook queues that song (its own keypad code and intro skip) instead of adding a duplicate, and says so.
+- About 160 library songs showed "Original Karaoke" or a stray bracket after the artist name, or a "(ซนซน 40 ปี GMM GRAMMY)" tag in the title; they read cleanly now and search better.
+- A skipped library song no longer stops Auto-DJ from choosing any other library song.
+
+## [0.15.0] - 2026-09-27 (`44dc6a23`)
 ### Added
 - Full songbook: every official karaoke upload from **GMM Karaoke** (~7,900 songs), **Whattheduck** and **Muzik Move Karaoke**, ~8,200 songs in all. It loads in the background after the page opens; search, keypad codes, favourites and the queue all work with it. GMM's romanised titles are searchable ("kam ka sa ka la sin").
 - The song list shows 60 songs at a time with **Show more** (type to narrow it down).

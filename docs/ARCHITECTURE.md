@@ -32,21 +32,20 @@ In Dioxus 0.7, signals implement `Copy` and reactive dependencies are tracked au
 * **`auto_dj_anticipations`**: `Memo<Vec<AnticipatedSong>>`
 
 ### Sleep-Time Auto-DJ Memoization
-When the queue length changes or songs are finished, the app evaluates recommendation candidates in a `use_memo` hook:
+When the queue, the current song or the session's taste weights change, the app re-scores Auto-DJ candidates in a
+`use_memo` hook, so the pick is ready the moment the queue runs dry:
 ```rust
-let auto_dj_anticipations = use_memo(move || {
-    let anticipator = SleepTimeAnticipator::new();
-    let current_id = current_song().map(|item| item.song.id);
-    let queue_ids = song_queue().into_iter().map(|q| q.song.id).collect();
-    anticipator.anticipate_next(
-        &catalog(),
-        &telemetry_history(),
-        current_id.as_deref(),
-        &queue_ids,
-        3,
-    )
+let anticipated_set = use_memo(move || {
+    let queued_ids: HashSet<String> = queue.read().iter().map(|it| it.song.id.clone()).collect();
+    let curr_id = current_song().map(|c| c.song.id);
+    let songs = catalog.read();
+    let candidates = songs.iter().chain(song_library().songs());
+    anticipator.read().sleep_compute(candidates, &queued_ids, curr_id.as_deref(), 4)
 });
 ```
+Candidates are the booth's catalog, then the full library (§4). `sleep_compute` scores songs by reference and clones
+only the top picks; ties keep that order, so curated songs lead until an artist or genre earns weight. Library songs
+have no genre, so the empty genre never gains or loses weight (one early skip would otherwise prune the whole library).
 
 ---
 

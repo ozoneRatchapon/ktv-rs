@@ -4,8 +4,10 @@ Two files:
 - [`assets/library.json`](../assets/library.json): the **full library**, every official karaoke upload of each label's
   channel, generated. Refresh it (new uploads, removed videos) with `python3 tools/harvest_library.py`: it reads channel
   metadata with `yt-dlp --flat-playlist` (nothing downloaded), parses titles, skips longplays/medleys/"with vocals"
-  uploads, checks every video is embeddable, and keeps each video's keypad code. Add a label by adding a channel
-  (URL, code range, intro skip, title parser) to `CHANNELS` in the tool. Then `cargo test --test library_test`.
+  uploads, checks every video is embeddable, and keeps each video's keypad code. A code whose video leaves the library
+  goes to [`tools/retired_codes.json`](../tools/retired_codes.json) and is never given to another song (commit it with
+  the library). Add a label by adding a channel (URL, code range, intro skip, title parser) to `CHANNELS` in the tool.
+  Then `python3 -m unittest discover -s tests -p "*_test.py"` (title parsing) and `cargo test --test library_test`.
 - [`assets/catalog.json`](../assets/catalog.json): the **curated catalog**, hand-picked songs with a genre, measured
   intro and optionally a guide timing, compiled into the app. A video in the catalog is left out of the library.
 

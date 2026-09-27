@@ -8,7 +8,8 @@ assets/catalog.json and duplicate uploads of the same song. Every video is check
 YouTube oEmbed (same rule as tools/link_check.py), so the app never lists a song it cannot play.
 
 Keypad codes are stable: a video keeps the code it got in the previous assets/library.json, and new
-videos take the next free code in their channel's range.
+videos take the next free code in their channel's range. A code whose video leaves the library is recorded
+in tools/retired_codes.json and never given out again, so a keypad code always means one song.
 
 Usage: python3 tools/harvest_library.py [--skip-embed-check]
 """
@@ -25,18 +26,25 @@ from link_check import status  # noqa: E402  (oEmbed: 200 = public + embeddable)
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 CATALOG = os.path.join(ROOT, "assets", "catalog.json")
 LIBRARY = os.path.join(ROOT, "assets", "library.json")
+RETIRED = os.path.join(ROOT, "tools", "retired_codes.json")  # {"code": "youtube id it belonged to"}
 
 MIN_SECS, MAX_SECS = 60, 600  # shorter: teasers/Shorts; longer: longplays and medleys
 # "มีเสียงร้อง" = with the singer's vocals, i.e. not a karaoke track
 SKIP_WORDS = re.compile(r"longplay|best hits|song book|medley|non-?stop|รวมเพลง|มีเสียงร้อง", re.I)
 TAG = re.compile(r"\s*\[[^\]]*\]\s*")
+UNCLOSED_TAG = re.compile(r"\s*\[[^\]]*$")  # "ศิลปิน [ Original Karaoke" (no closing bracket)
+# "Uploaded", "Original Karaoke ]", "( Original Karaoke )", "[ Original Karaokeo ]" at the end
+TRAILER = re.compile(r"\s*[\[({]?\s*(Uploaded|Original Karaoke\w*)\s*[\])}]?$", re.I)
+GMM_EVENT = re.compile(r"\s*\([^)]*GMM GRAMMY[^)]*\)")  # "(ซนซน 40 ปี GMM GRAMMY)"
+LOOSE_DASH = re.compile(r"(?<=\S)\s+-(?=[^\s-])|(?<=[^\s-])-\s+(?=\S)")
 ROMANISED = re.compile(r"\s*\(([A-Za-z0-9' .,&!?-]*-[A-Za-z0-9' .,&!?-]*)\)\s*")
 
 
 def parse_gmm(title):
     """`คาราโอเกะ ชื่อเพลง (Rom-an-ised) - ศิลปิน [ Original Karaoke ]` -> (title, artist, alias)."""
     text = re.sub(r"^คาราโอเ+กะ\s*", "", title).replace(" – ", " - ")
-    text = re.sub(r"\s*Uploaded$", "", TAG.sub(" ", text)).strip()
+    text = UNCLOSED_TAG.sub("", TAG.sub(" ", text))
+    text = GMM_EVENT.sub("", TRAILER.sub("", text.strip()))
     match = ROMANISED.search(text)
     alias = ""
     if match:
@@ -44,6 +52,8 @@ def parse_gmm(title):
         head, tail = text[: match.start()], text[match.end():]
         # "ชื่อ (Rom-an) - ศิลปิน", or the dash was dropped: "ชื่อ (Rom-an)ศิลปิน"
         text = f"{head} - {tail[2:] if tail.startswith('- ') else tail.lstrip('- ')}"
+    elif " - " not in text:  # the separator missing a space: "ชื่อ -ศิลปิน", "ชื่อ- ศิลปิน"
+        text = LOOSE_DASH.sub(" - ", text, count=1)
     return split_dash(text) + (alias,) if " - " in text else None
 
 
@@ -116,8 +126,10 @@ def harvest(channel, curated_ids, old_codes, check_embed):
 
 
 def assign_codes(songs, code_range, old_codes):
+    """`old_codes` (youtube id -> code) covers the previous library and retired codes: none of those
+    codes goes to a different video."""
     first, last = code_range
-    taken = set()
+    taken = {code for code in old_codes.values() if first <= code <= last}
     for s in songs:
         code = old_codes.get(s["vid"])
         s["code"] = code if code is not None and first <= code <= last else None
@@ -125,6 +137,15 @@ def assign_codes(songs, code_range, old_codes):
     free = (c for c in range(first, last + 1) if c not in taken)
     for s in (s for s in songs if s["code"] is None):
         s["code"] = next(free)  # StopIteration = range full: widen it above
+
+
+def retire_codes(old_codes, library, retired):
+    """Update `retired` (code -> youtube id): codes of videos that left the library join it, and a
+    video that came back takes its code out again (assign_codes gave it the same code)."""
+    kept = {row[0] for ch in library["channels"] for row in ch["songs"]}
+    retired.update({code: vid for vid, code in old_codes.items() if vid not in kept})
+    for code in [code for code, vid in retired.items() if vid in kept]:
+        del retired[code]
 
 
 def to_json(library):
@@ -141,16 +162,25 @@ def to_json(library):
 def main():
     with open(CATALOG, encoding="utf-8") as f:
         curated_ids = {s["youtube_id"] for s in json.load(f)}
-    old_codes = {}
+    retired = {}
+    if os.path.exists(RETIRED):
+        with open(RETIRED, encoding="utf-8") as f:
+            retired = {int(code): vid for code, vid in json.load(f).items()}
+    # a returning video gets its retired code back; the previous library wins otherwise
+    old_codes = {vid: code for code, vid in retired.items()}
     if os.path.exists(LIBRARY):
         with open(LIBRARY, encoding="utf-8") as f:
-            old_codes = {row[0]: row[1] for ch in json.load(f)["channels"] for row in ch["songs"]}
+            old_codes.update({row[0]: row[1] for ch in json.load(f)["channels"] for row in ch["songs"]})
     check_embed = "--skip-embed-check" not in sys.argv
     library = {"channels": [harvest(ch, curated_ids, old_codes, check_embed) for ch in CHANNELS]}
     with open(LIBRARY, "w", encoding="utf-8") as f:
         f.write(to_json(library))
+    retire_codes(old_codes, library, retired)
+    with open(RETIRED, "w", encoding="utf-8") as f:
+        f.write(json.dumps({str(code): retired[code] for code in sorted(retired)}, indent=0) + "\n")
     total = sum(len(ch["songs"]) for ch in library["channels"])
-    print(f"wrote {total} songs to assets/library.json ({os.path.getsize(LIBRARY) // 1024} KB)", file=sys.stderr)
+    print(f"wrote {total} songs to assets/library.json ({os.path.getsize(LIBRARY) // 1024} KB), "
+          f"{len(retired)} retired codes", file=sys.stderr)
 
 
 if __name__ == "__main__":
