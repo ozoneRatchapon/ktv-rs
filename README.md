@@ -35,6 +35,7 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 * Keyboard arrow navigation: **`ArrowLeft`** (-5s) and **`ArrowRight`** (+5s).
 * **Practice loop** for musicians and singers: **A** at the start of a part, **B** at its end, and it plays A→B over and over (✕ or a new song ends it).
 * **Chords ↗** opens a web search for the song's chords. KTV-RS ships no chord sheets: they are the chord sites' own work, and the audio cannot be analysed inside a YouTube player.
+* **Chords by ear**: while the song plays, type a chord (`Am`, `F#m7`, `G/B`) and press Enter, or tap one you already used, at each change. The player then shows the chord sounding now and the next one; **− / +** transposes the display (e.g. for a capo) without changing what you entered. Charts stay on this device (**Copy chart** exports JSON).
 
 ### 4. Synchronized Vocal Switcher with Intro Offset Compensation
 * **Karaoke Mode**: Official backing track with lyrics.
@@ -65,7 +66,7 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 ### 9. Mic Pitch Meter & Tuning Score
 * **Mic: On** shows the note you are singing (e.g. `A4 +12¢`), detected in Rust/wasm (McLeod pitch method) from an AudioWorklet. Mic audio never leaves the device. For its first second it measures the room, then ignores anything not clearly louder than the room.
 * **Tuning 0–100** rates how exactly your held notes land on a semitone (after 3 held notes). It does not know the song's melody, so it cannot tell whether they are the right notes; tap the badge for the full explanation.
-* When a song ends, a result card shows that take's score; **Queue → Recent scores** keeps the last 20 on this device.
+* When a song ends, a result card shows that take's score; type who sang (or tap a name used before) and **Queue → Party leaderboard** ranks each singer's best take of the last 12 hours. **Recent scores** lists the latest 20. Names and scores stay on this device (**Settings → Clear my data** removes them).
 
 ---
 
@@ -74,14 +75,19 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 | Key | Action |
 | :--- | :--- |
 | **Any Character / Number** | Type-to-Search across the catalog |
+| **`Enter`** | Queue the song whose 5-digit code is typed (works with a USB number pad) |
 | **`Backspace` / `Delete`** | Delete character from search query |
 | **`Escape`** | Clear search query |
-| **`Space`** | Toggle Play / Pause |
+| **`Space`** / media **⏯** | Toggle Play / Pause |
+| Media **⏭** | Next song |
 | **`ArrowLeft`** | Jump backward 5 seconds |
 | **`ArrowRight`** | Jump forward 5 seconds |
 | **`?`** | Show / hide the shortcut list (also the **?** button in the header; open on a first visit) |
 
 A button reached with `Tab` keeps `Space`/`Enter`; after a mouse click `Space` is always pause.
+
+**Game controller** (any pad the browser reports with the standard layout, e.g. Xbox / PlayStation over USB or
+Bluetooth): **A** play / pause, **B** clear search, **D-pad ← / →** 5 s back / forward, **Start** next song.
 
 ---
 

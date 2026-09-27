@@ -5,7 +5,8 @@ use serde::{Deserialize, Serialize};
 use super::types::TuningSummary;
 
 /// Takes kept in the history (older ones drop off).
-pub const MAX_RESULTS: usize = 20;
+/// Enough for a long party night (a take is ~150 bytes in storage).
+pub const MAX_RESULTS: usize = 100;
 
 /// One finished take the mic listened to.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -16,11 +17,17 @@ pub struct TakeResult {
     pub notes: u32,
     /// Duration-weighted mean |cents off| over judged notes.
     pub mean_abs_cents: f32,
+    /// Who sang, if someone typed it on the result card (stays on this device).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub singer: Option<String>,
+    /// When the take ended (ms since the epoch); 0 for takes saved before this was kept.
+    #[serde(default)]
+    pub sung_at_ms: f64,
 }
 
 impl TakeResult {
     /// `None` when no held note was judged (mic on but silent): nothing worth keeping.
-    pub fn new(song_id: &str, title: &str, artist: &str, summary: TuningSummary) -> Option<Self> {
+    pub fn new(song_id: &str, title: &str, artist: &str, summary: TuningSummary, sung_at_ms: f64) -> Option<Self> {
         let mean_abs_cents = summary.mean_abs_cents?;
         Some(Self {
             song_id: song_id.to_string(),
@@ -28,6 +35,8 @@ impl TakeResult {
             artist: artist.to_string(),
             notes: summary.notes,
             mean_abs_cents,
+            singer: None,
+            sung_at_ms,
         })
     }
 

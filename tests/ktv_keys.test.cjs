@@ -17,6 +17,9 @@ test('booth keys map to messages', () => {
     assert.deepEqual(press('ArrowRight'), { msg: 'SEEK_REL:5', prevent: true });
     assert.deepEqual(press('a'), { msg: 'CHAR:a', prevent: false });
     assert.deepEqual(press('ก'), { msg: 'CHAR:ก', prevent: false });
+    assert.deepEqual(press('Enter'), { msg: 'ENTER', prevent: true }, 'keypad code + Enter');
+    assert.deepEqual(press('MediaPlayPause'), { msg: 'SPACE', prevent: true });
+    assert.deepEqual(press('MediaTrackNext'), { msg: 'NEXT', prevent: true });
 });
 
 test('keys are left alone while typing, with modifiers, or when not printable', () => {
@@ -25,7 +28,8 @@ test('keys are left alone while typing, with modifiers, or when not printable', 
     assert.equal(press('c', { metaKey: true }), null, 'copy');
     assert.equal(press('r', { ctrlKey: true }), null, 'reload');
     assert.equal(press('a', { altKey: true }), null);
-    for (const key of ['Shift', 'Tab', 'Enter', 'F5', 'ArrowUp']) assert.equal(press(key), null, key);
+    for (const key of ['Shift', 'Tab', 'F5', 'ArrowUp', 'MediaStop']) assert.equal(press(key), null, key);
+    assert.equal(press('Enter', {}, FOCUS.TEXT), null, 'Enter in a form submits the form');
 });
 
 test('focus_kind: text fields, keyboard-focused controls, everything else', () => {
@@ -108,4 +112,62 @@ test('a Space the booth handled has its keyup cancelled (no click on a mouse-foc
     win.document.activeElement = { tagName: 'INPUT' };
     win.fire('keydown', { key: ' ', preventDefault: () => {} });
     assert.equal(up(), false);
+});
+
+test('pad_presses: only buttons that just went down, only mapped ones', () => {
+    const up = Array(17).fill(false);
+    const down = (...ids) => up.map((_, i) => ids.includes(i));
+    assert.deepEqual(keys.pad_presses(up, down(0)), ['SPACE']);
+    assert.deepEqual(keys.pad_presses(down(0), down(0)), [], 'held is not pressed again');
+    assert.deepEqual(keys.pad_presses(up, down(1, 9, 14, 15)), ['ESC', 'NEXT', 'SEEK_REL:-5', 'SEEK_REL:5']);
+    assert.deepEqual(keys.pad_presses(up, down(2, 3, 12)), [], 'unmapped buttons');
+});
+
+// Fake window with a gamepad whose buttons the test sets, and a frame queue the test runs
+function pad_win() {
+    const win = fake_win();
+    const frames = [];
+    const pad = { index: 0, connected: true, mapping: 'standard', buttons: Array.from({ length: 17 }, () => ({ pressed: false })) };
+    win.pads = [pad];
+    win.navigator = { getGamepads: () => win.pads };
+    win.requestAnimationFrame = (fn) => frames.push(fn);
+    win.frame = () => { const fns = frames.splice(0); fns.forEach((fn) => fn()); return fns.length; };
+    win.set = (i, pressed) => { pad.buttons[i].pressed = pressed; };
+    return win;
+}
+
+test('gamepad: polls only while connected, one message per press', () => {
+    const win = pad_win();
+    const got = [];
+    keys.install(win, (m) => got.push(m));
+    assert.equal(win.frame(), 0, 'no polling before a pad connects');
+    win.set(0, true); // held while connecting: not a press
+    win.fire('gamepadconnected');
+    win.fire('gamepadconnected');
+    assert.equal(win.frame(), 1, 'one poll loop even if several pads connect');
+    win.frame();
+    assert.deepEqual(got, []);
+    win.set(0, false);
+    win.frame();
+    win.set(0, true);
+    win.frame();
+    win.frame();
+    win.set(9, true);
+    win.frame();
+    assert.deepEqual(got, ['SPACE', 'NEXT']);
+    win.pads = [null];
+    win.frame();
+    assert.equal(win.frame(), 0, 'stops polling once no pad is left');
+});
+
+test('gamepad: non-standard mappings are ignored', () => {
+    const win = pad_win();
+    const got = [];
+    win.pads[0].mapping = '';
+    keys.install(win, (m) => got.push(m));
+    win.fire('gamepadconnected');
+    win.frame();
+    win.set(0, true);
+    assert.equal(win.frame(), 0);
+    assert.deepEqual(got, []);
 });

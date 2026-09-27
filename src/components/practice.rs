@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 
+use crate::components::chords::ChordLane;
 use crate::links::chords_search_url;
 use crate::sync::{self, SyncCommand};
 use crate::types::Song;
@@ -12,7 +13,8 @@ fn format_mark(secs: f64) -> String {
     format!("{:02}:{:02}", whole / 60, whole % 60)
 }
 
-/// Musician tools under the scrubber: loop a section (A then B) to practise it, and look up the song's chords.
+/// Musician tools under the scrubber: loop a section (A then B) to practise it, look up the song's chords, or
+/// enter them by ear ([`ChordLane`]).
 #[component]
 pub fn Practice(
     song: Song,
@@ -86,6 +88,7 @@ pub fn Practice(
                 title: "Search the web for this song's chords (opens a new tab)",
                 "Chords ↗"
             }
+            ChordLane { song_id: song.id.clone(), fallback_sec }
         }
     }
 }

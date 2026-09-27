@@ -1,16 +1,18 @@
 use std::collections::HashSet;
 use std::sync::LazyLock;
 
-use app::catalog::{builtin_catalog, find_song, CUSTOM_CODES};
+use app::catalog::{builtin_catalog, find_song, keypad_code, CUSTOM_CODES};
 use app::library::{self, Library, Songbook, ID_PREFIX};
 use app::picks::{Picks, Shelf};
 use app::search::search;
 use app::types::Song;
 
 const LIBRARY_JSON: &str = include_str!("../assets/library.json");
+const MV_GUIDES_JSON: &str = include_str!("../assets/mv_guides.json");
 
-/// Parsed once and leaked, as the app keeps it for the page's life.
+/// Parsed once and leaked, as the app keeps it for the page's life (guides first, as the app installs them).
 static BOOK: LazyLock<&'static Songbook> = LazyLock::new(|| {
+    library::install_guides(MV_GUIDES_JSON).expect("assets/mv_guides.json must match MvGuide entries");
     Box::leak(Box::new(Songbook::new(library::parse(LIBRARY_JSON).expect("assets/library.json must parse"))))
 });
 static SONGS: LazyLock<&'static [Song]> = LazyLock::new(|| lib().songs());
@@ -29,7 +31,7 @@ fn test_library_is_well_formed() {
     for song in *SONGS {
         assert!(song.id.starts_with(ID_PREFIX), "{}: id prefix", song.id);
         assert!(is_youtube_id(&song.youtube_id), "{}: bad youtube_id", song.id);
-        assert!(song.code.len() == 5 && song.code.bytes().all(|b| b.is_ascii_digit()), "{}: code must be 5 digits", song.id);
+        assert_eq!(keypad_code(&song.code), Some(song.code.as_str()), "{}: code must be 5 digits", song.id);
         assert!(!song.title.trim().is_empty() && !song.artist.trim().is_empty(), "{}: empty title/artist", song.id);
         assert!(song.intro_skip_secs < song.duration_secs, "{}: intro skip past the end", song.id);
         assert_eq!(song.guide, app::library::timed_guide(&song.youtube_id), "{}: a guide only from a timed mv_guides entry", song.id);
@@ -126,10 +128,11 @@ fn test_retired_codes_are_not_reused() {
 
 #[test]
 fn test_mv_guides_point_at_library_songs() {
-    use app::library::{suggested_video, timed_guide, MV_GUIDES};
+    use app::library::{guides, suggested_video, timed_guide};
     let by_video: std::collections::HashMap<&str, &Song> = SONGS.iter().map(|s| (s.youtube_id.as_str(), s)).collect();
-    assert!(!MV_GUIDES.is_empty());
-    for (karaoke_id, guide) in MV_GUIDES.iter() {
+    let guides = guides().expect("installed with the library");
+    assert!(!guides.is_empty());
+    for (karaoke_id, guide) in guides {
         let song = by_video.get(karaoke_id.as_str()).unwrap_or_else(|| panic!("{karaoke_id}: not a library song"));
         assert!(is_youtube_id(&guide.video_id), "{karaoke_id}: bad video id {}", guide.video_id);
         assert_ne!(&guide.video_id, karaoke_id, "{karaoke_id}: the guide must be a different video");
@@ -195,8 +198,9 @@ fn test_genre_chip_now_lists_library_songs() {
 
 #[test]
 fn test_auto_timed_guides_are_gmm_official_audio_at_the_intro_offset() {
-    use app::library::{auto_timed, MV_GUIDES};
-    for (karaoke_id, guide) in MV_GUIDES.iter().filter(|(_, g)| g.auto) {
+    use app::library::{auto_timed, guides};
+    let _ = *SONGS;
+    for (karaoke_id, guide) in guides().expect("installed with the library").iter().filter(|(_, g)| g.auto) {
         let song = SONGS.iter().find(|s| &s.youtube_id == karaoke_id).unwrap();
         assert_eq!(song.channel, "GMM Karaoke", "{karaoke_id}: only GMM has the fixed intro");
         assert_eq!((guide.offset_secs, guide.rate), (Some(-18.2), Some(1.0)), "{karaoke_id}");

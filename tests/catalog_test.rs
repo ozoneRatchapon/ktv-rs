@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 
-use app::catalog::{builtin_catalog, get_initial_catalog, CATEGORIES, upsert_custom, CustomCodesExhausted, CUSTOM_CODES};
+use app::catalog::{
+    builtin_catalog, get_initial_catalog, keypad_code, upsert_custom, CustomCodesExhausted, CATEGORIES, CODE_LEN, CUSTOM_CODES,
+};
 
 #[test]
 fn test_guide_is_a_different_video_than_karaoke() {
@@ -110,4 +112,14 @@ fn test_upsert_custom_errors_when_codes_exhausted_but_readd_still_works() {
     let existing = catalog[5].clone();
     let renamed = app::types::Song { title: "Renamed".to_string(), ..existing.clone() };
     assert_eq!(upsert_custom(&mut catalog, renamed).map(|s| s.code), Ok(existing.code));
+}
+
+#[test]
+fn test_keypad_code_is_the_whole_search_and_five_digits() {
+    assert_eq!(keypad_code("30001"), Some("30001"));
+    assert_eq!(keypad_code(" 90001 "), Some("90001"), "stray spaces from a keypad");
+    for query in ["", "3000", "300011", "3000a", "๓๐๐๐๑", "love 30001", "30 01"] {
+        assert_eq!(keypad_code(query), None, "{query:?}");
+    }
+    assert!(builtin_catalog().iter().all(|s| s.code.len() == CODE_LEN), "every built-in code can be typed");
 }

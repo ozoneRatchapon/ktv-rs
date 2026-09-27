@@ -204,7 +204,7 @@ test('empty queue: Next Song hands over to Auto-DJ with a different song', () =>
   assert.ok(next && next !== finished, `Auto-DJ picked ${next} after ${finished}`);
 }));
 
-test('mic: room check, noise gate, held notes give a Tuning score, the finished song shows a result card and joins Recent scores', () => with_page({ fake_mic: true }, async (page) => {
+test('mic: room check, noise gate, held notes give a Tuning score, the finished song shows a result card, named for the party leaderboard, and joins Recent scores', () => with_page({ fake_mic: true }, async (page) => {
   const sung = await page.eval(now_title);
   await page.eval(`[...document.querySelectorAll('.pitch-meter button')].find((b) => b.textContent.startsWith('Mic')).click()`);
   await page.wait_for(`!!window.__mic_gain`);
@@ -233,13 +233,22 @@ test('mic: room check, noise gate, held notes give a Tuning score, the finished 
   const { value, song } = JSON.parse(card);
   assert.ok(Number(value) >= 90, `sawtooth in tune scores high, got ${value}`);
   assert.ok(song.startsWith(sung), `card names the finished song: ${song}`);
+  // Name the take for the party leaderboard (typing in the field does not type into the song search)
+  await page.eval(`document.getElementById('singer_name').focus()`);
+  for (const c of '  Pim ') await page.key(c);
+  await page.key('Enter');
+  await page.wait_for(`document.querySelector('.score-card-singer strong')?.textContent === 'Pim'`);
+  assert.equal(await page.eval(search_value), '');
   await page.reload();
-  const rows = await page.eval(`(async () => {
+  const board = await page.eval(`(async () => {
     [...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Queue')).click();
     await new Promise((r) => setTimeout(r, 200));
-    return [...document.querySelectorAll('.score-row-song')].map((e) => e.textContent);
+    return JSON.stringify({
+      leaders: [...document.querySelectorAll('.leaderboard .score-row-song strong')].map((e) => e.textContent),
+      recent: [...document.querySelectorAll('.score-history > .score-row .score-row-song')].map((e) => e.textContent),
+    });
   })()`);
-  assert.deepEqual(rows, [sung], 'history survives reload');
+  assert.deepEqual(JSON.parse(board), { leaders: ['Pim'], recent: [`${sung} · Pim`] }, 'history and name survive reload');
 }));
 
 test('search: romanised alias and wrong keyboard layout both find Thai songs', () => with_page({}, async (page) => {
@@ -358,6 +367,43 @@ test('practice: A then B loops the part, a new song clears it; Chords opens a we
   await page.wait_for(`window.KtvSync.debug().loop === null && document.querySelector('.practice-label').textContent.startsWith('Loop a part')`);
 }));
 
+test('chords by ear: typed and tapped changes show as the song plays, transpose for display, saved on this device', () => with_page({}, async (page) => {
+  const buttons = `[...document.querySelectorAll('.practice-row button')]`;
+  const press = (label) => page.eval(`${buttons}.find((b) => b.textContent === ${JSON.stringify(label)}).click()`);
+  const now_chord = `document.querySelector('.chord-now-name')?.textContent`;
+  const notice = `document.querySelector('.chord-editor .timing-notice')?.textContent`;
+  const type = async (text) => {
+    await page.eval(`document.getElementById('chord_name').focus()`);
+    for (const c of text) await page.key(c);
+    await page.key('Enter');
+  };
+  await press('Chords by ear');
+  await page.wait_for(`!!document.getElementById('chord_name')`);
+  await type('Hm');
+  await page.wait_for(`${notice}?.startsWith('A chord starts with a note')`);
+  await page.eval(`document.getElementById('chord_name').value = ''; document.getElementById('chord_name').dispatchEvent(new Event('input', { bubbles: true }))`);
+  await type('am');
+  await page.wait_for(`${now_chord} === 'Am'`);
+  assert.equal(await page.eval(search_value), '', 'typing a chord does not type into the song search');
+  // The next change 10 s on, tapped from the palette of chords used so far
+  await page.eval(`[...document.querySelectorAll('.player-quick-controls button')].find((b) => b.textContent === '-10s').click()`);
+  await sleep(300);
+  await page.eval(`document.querySelector('.chord-palette button').click()`);
+  await page.wait_for(`document.querySelectorAll('.chord-marks li').length === 2`);
+  await page.eval(`[...document.querySelectorAll('.chord-shift button')][1].click()`);
+  await page.wait_for(`${now_chord} === 'A#m' && document.querySelector('.chord-shift-label').textContent === 'Key: +1'`);
+  const saved = JSON.parse(await page.eval(`localStorage.getItem('ktv.chords.v1')`));
+  const [chart] = Object.values(saved);
+  assert.deepEqual(chart.map((m) => m.chord), ['Am', 'Am'], 'stored as entered, not transposed');
+  await page.reload();
+  await page.wait_for(`${now_chord} === 'Am'`);
+  await press('Edit chords');
+  await page.wait_for(`document.querySelectorAll('.chord-mark-remove').length === 2`);
+  await page.eval(`document.querySelector('.chord-mark-remove').click()`);
+  await page.eval(`document.querySelector('.chord-mark-remove').click()`);
+  await page.wait_for(`!document.querySelector('.chord-now') && localStorage.getItem('ktv.chords.v1') === '{}'`);
+}));
+
 test('search: a typo still finds the song, and says it is showing close matches', () => with_page({}, async (page) => {
   await page.wait_for(`parseInt(document.querySelector('.catalog-meta-row .count-text')?.textContent.replace(/\\D/g, ''), 10) > 5000`);
   await page.eval(`document.activeElement?.blur()`);
@@ -411,7 +457,8 @@ test('keyboard: a keyboard-focused button takes Space; after a mouse click Space
   await page.wait_for(`${now_title} === ${JSON.stringify(title)}`);
   await page.wait_for(`document.querySelector('.sr-only[role=status]').textContent.startsWith('Now singing: ' + ${JSON.stringify(title)})`);
   // Mouse user: a real click on ☆, then Space must not click it again (it would un-star the song)
-  const rect = await page.eval(`JSON.stringify(${card('10001')}.querySelector('.fav-btn').getBoundingClientRect())`);
+  // Scrolled into view first: a real click lands at on-screen coordinates
+  const rect = await page.eval(`(() => { const b = ${card('10001')}.querySelector('.fav-btn'); b.scrollIntoView({ block: 'center' }); return JSON.stringify(b.getBoundingClientRect()); })()`);
   const { x, y, width, height } = JSON.parse(rect);
   for (const type of ['mousePressed', 'mouseReleased']) {
     await page.send('Input.dispatchMouseEvent', { type, x: x + width / 2, y: y + height / 2, button: 'left', clickCount: 1 });
@@ -420,6 +467,50 @@ test('keyboard: a keyboard-focused button takes Space; after a mouse click Space
   await page.key(' ');
   await sleep(300);
   assert.ok(await page.eval(`${card('10001')}.querySelector('.fav-btn').classList.contains('on')`), 'still starred');
+}));
+
+test('booth input: a typed code + Enter queues it, an unknown code says so; a game controller pauses and skips', () => with_page({}, async (page) => {
+  await page.eval(`document.activeElement?.blur()`);
+  const start = await page.eval(queue_titles);
+  for (const c of '10001') await page.key(c);
+  await page.wait_for(`${search_value} === '10001'`);
+  await page.key('Enter');
+  await page.wait_for(`${search_value} === ''`);
+  await page.wait_for(`document.querySelector('.auto-dj-toast')?.textContent.includes('Queued 10001')`);
+  assert.deepEqual(await page.eval(queue_titles), [...start, 'รักแล้วยอมได้']);
+  await page.eval(`document.activeElement?.blur()`);
+  for (const c of '89999') await page.key(c);
+  await page.key('Enter');
+  await page.wait_for(`document.querySelector('.auto-dj-toast')?.textContent.includes('No song with code 89999')`);
+  assert.equal(await page.eval(search_value), '89999', 'kept so it can be corrected');
+  await page.key('Escape');
+
+  // A standard-mapping controller (the Gamepad API cannot be driven from CDP, so the page's pad list is stubbed)
+  // Browsers poll pads (and run animation frames) only in the visible tab
+  await page.send('Page.bringToFront');
+  await page.wait_for(`document.visibilityState === 'visible'`);
+  await page.eval(`(() => {
+    const buttons = Array.from({ length: 17 }, () => ({ pressed: false }));
+    window.__pad = { index: 0, connected: true, mapping: 'standard', buttons };
+    window.__polls = 0;
+    navigator.getGamepads = () => { window.__polls += 1; return [window.__pad]; };
+    window.dispatchEvent(new Event('gamepadconnected'));
+  })()`);
+  // A button already down on the first poll counts as held, not pressed: start pressing once polling runs
+  await page.wait_for(`window.__polls > 1`);
+  const press = async (i) => {
+    await page.eval(`window.__pad.buttons[${i}].pressed = true`);
+    await sleep(100);
+    await page.eval(`window.__pad.buttons[${i}].pressed = false`);
+    await sleep(100);
+  };
+  const paused = `window.KtvSync.debug().paused`;
+  const was_paused = await page.eval(paused);
+  await press(0);
+  await page.wait_for(`${paused} === ${!was_paused}`);
+  const before = await page.eval(now_title);
+  await press(9);
+  await page.wait_for(`${now_title} !== ${JSON.stringify(before)}`);
 }));
 
 test('privacy: the note is served, and Clear my data (two taps) resets this device', () => with_page({}, async (page) => {

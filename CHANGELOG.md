@@ -3,7 +3,16 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.23.0] - 2026-09-27
+## [0.24.0] - 2026-09-28
+### Added
+- **Vocal (original singer) for 2,415 more GMM Karaoke songs** (2,774 in all), timed automatically from the label's official audio track as in 0.23.0. Official original-vocal videos are also found for 3,130 more library songs, waiting to be lined up by ear in Guide Timing Tools (was 533).
+- **Booth input**: Enter queues the song when the search box holds a 5-digit code (USB number pads); media keys ⏯ / ⏭; a standard game controller (A pause/play, B clear search, D-pad seek, Start next song).
+- **Chords by ear** (in the practice row): type a chord at each change while the song plays, or tap one already used; shows the chord now and the next, with a display transpose (capo). Saved per song on this device; Copy chart exports it.
+- **Party leaderboard**: name who sang on the result card; Queue → Party leaderboard ranks each singer's best take of the last 12 hours. Names stay on this device (privacy note updated).
+### Changed
+- The song-to-video guide list loads with the library after the first paint instead of inside the app bundle, so the app still starts as fast as before despite the ~7x bigger list.
+
+## [0.23.0] - 2026-09-27 (`f6d03a90`)
 ### Added
 - **Vocal (original singer) for 359 more songs**, timed automatically: for GMM Karaoke songs the app now uses the label's official audio track, which lines up at a fixed offset after GMM's 18-second intro (checked against the hand-timed songs: within 0.3 s for 11 of 12). Found by title and length only; no audio is analysed.
 - With Vocal on, **Vocal ahead / Vocal behind** shift the singer by 0.5 s if a song is slightly off; the fix is saved on this device.

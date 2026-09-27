@@ -83,10 +83,6 @@ class Codes(unittest.TestCase):
         self.assertEqual(retired, {30002: "gone"})
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class MvGuides(unittest.TestCase):
     def test_merge_keeps_timed_entries_and_adds_suggestions(self):
         from match_mv import merge_guides
@@ -144,3 +140,42 @@ class OfficialAudioMerge(unittest.TestCase):
         self.assertEqual(base("เธอ (Tur)", normalize), normalize("เธอ"))
         self.assertTrue(OTHER_VERSION.search("ไม่มีครั้งสุดท้าย (อคูสติค เวอร์ชั่น)"))
         self.assertFalse(OTHER_VERSION.search("Nok Long Rung"))
+
+    def test_failed_lookups_are_not_cached_and_the_cache_survives(self):
+        import json
+        import tempfile
+        import time
+        from concurrent.futures import ThreadPoolExecutor
+        import official_audio
+        from official_audio import LookupFailed, find_all
+
+        def lookup(song, _normalize):
+            if song["id"] == "flaky":
+                raise LookupFailed("HTTP Error 429")
+            return ("TTTTTTTTTTT", 200) if song["id"] == "hit" else None
+
+        songs = [{"id": i} for i in ("hit", "miss", "flaky", "known")]
+        with tempfile.TemporaryDirectory() as tmp, ThreadPoolExecutor(max_workers=2) as pool:
+            path = os.path.join(tmp, "audio.json")
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump({"known": "KKKKKKKKKKK"}, f)
+            found = find_all(songs, str, path, pool, lookup)
+            with open(path, encoding="utf-8") as f:
+                saved = json.load(f)
+        self.assertEqual(found, {"hit": "TTTTTTTTTTT", "miss": None, "known": "KKKKKKKKKKK"},
+                         "a failed song is left out, so an existing auto timing is kept, not dropped")
+        self.assertEqual(saved, found, "misses are cached, failures are retried next run")
+
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            stop, official_audio.MAX_FAILED_IN_A_ROW = official_audio.MAX_FAILED_IN_A_ROW, 2
+            try:
+                many = [{"id": "flaky"}] * 2 + [{"id": f"song{n}"} for n in range(50)]
+                slow = lambda song, n: lookup(song, n) if song["id"] == "flaky" else time.sleep(0.02)  # noqa: E731
+                found = find_all(many, str, None, pool, slow)
+            finally:
+                official_audio.MAX_FAILED_IN_A_ROW = stop
+        self.assertLess(len(found), 50, "a blocked run stops early")
+
+
+if __name__ == "__main__":
+    unittest.main()

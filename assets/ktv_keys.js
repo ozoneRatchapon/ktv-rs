@@ -1,4 +1,5 @@
-// KTV booth keyboard: type-to-search, Space pause, arrows seek, ? help.
+// KTV booth keyboard and game controller: type-to-search, Enter queues a typed code, Space pause, arrows seek,
+// ? help; media keys and a standard-mapping gamepad send the same messages.
 // Classic script in the static <head> (asset! in src/main.rs); Rust calls `KtvKeysCore.install` via src/js_bridge.rs.
 // Unit-tested in Node by `tests/ktv_keys.test.cjs`.
 // Messages to Rust are parsed by `KeyAction::parse` in `src/keys.rs`: keep the two in step.
@@ -6,6 +7,15 @@
     'use strict';
 
     const SEEK_STEP_SECS = 5;
+
+    /** Standard-mapping gamepad buttons (https://w3c.github.io/gamepad/#remapping) -> booth messages. */
+    const PAD_BUTTONS = {
+        0: 'SPACE',                           // A / Cross: pause / play
+        1: 'ESC',                             // B / Circle: clear the search
+        9: 'NEXT',                            // Start / Options: next song
+        14: 'SEEK_REL:' + -SEEK_STEP_SECS,    // D-pad left
+        15: 'SEEK_REL:' + SEEK_STEP_SECS,     // D-pad right
+    };
 
     /** Where keyboard focus is, as far as booth keys care. */
     const FOCUS = { TEXT: 'text', CONTROL: 'control', OTHER: 'other' };
@@ -18,6 +28,10 @@
         if (focus === FOCUS.CONTROL && (e.key === ' ' || e.key === 'Enter')) return null;
         switch (e.key) {
             case 'Escape': return { msg: 'ESC', prevent: false };
+            // Enter on the page (not in a field or on a keyboard-focused control): queue the typed 5-digit code
+            case 'Enter': return { msg: 'ENTER', prevent: true };
+            case 'MediaPlayPause': return { msg: 'SPACE', prevent: true };
+            case 'MediaTrackNext': return { msg: 'NEXT', prevent: true };
             case '?': return { msg: 'HELP', prevent: false };
             case ' ': return { msg: 'SPACE', prevent: true };
             case 'Backspace':
@@ -36,6 +50,43 @@
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable === true) return FOCUS.TEXT;
         const control = tag === 'BUTTON' || tag === 'A' || tag === 'SUMMARY' || (el.getAttribute && el.getAttribute('role') === 'button');
         return control && by_keyboard ? FOCUS.CONTROL : FOCUS.OTHER;
+    }
+
+    /** Messages for buttons that went down since the last poll (`was`/`now`: pressed flags by button index). */
+    function pad_presses(was, now) {
+        const out = [];
+        for (let i = 0; i < now.length; i++) {
+            if (now[i] && !was[i] && PAD_BUTTONS[i]) out.push(PAD_BUTTONS[i]);
+        }
+        return out;
+    }
+
+    /** Poll connected standard-mapping gamepads once per frame, only while one is connected. */
+    function watch_pads(win, emit_msg) {
+        const nav = win.navigator;
+        if (!nav || typeof nav.getGamepads !== 'function') return;
+        const was = new Map(); // gamepad index -> pressed flags last frame
+        let polling = false;
+        const poll = () => {
+            const pads = Array.from(nav.getGamepads()).filter((p) => p && p.connected && p.mapping === 'standard');
+            if (pads.length === 0) {
+                polling = false;
+                was.clear();
+                return;
+            }
+            for (const pad of pads) {
+                const now = pad.buttons.map((b) => b.pressed);
+                // A button held while the pad connects is not a press
+                if (was.has(pad.index)) pad_presses(was.get(pad.index), now).forEach(emit_msg);
+                was.set(pad.index, now);
+            }
+            win.requestAnimationFrame(poll);
+        };
+        win.addEventListener('gamepadconnected', () => {
+            if (polling) return;
+            polling = true;
+            win.requestAnimationFrame(poll);
+        });
     }
 
     /** Wire the listeners once per page; a remount only rebinds the Rust channel. */
@@ -79,11 +130,12 @@
                 win.focus();
             }
         }, 0));
+        watch_pads(win, (msg) => emit(msg));
         win.KtvKeys = { bind: (next) => { emit = next; } };
         return win.KtvKeys;
     }
 
-    const api = { SEEK_STEP_SECS, FOCUS, key_action, focus_kind, install };
+    const api = { SEEK_STEP_SECS, PAD_BUTTONS, FOCUS, key_action, focus_kind, pad_presses, watch_pads, install };
     if (typeof module === 'object' && module.exports) module.exports = api;
     root.KtvKeysCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

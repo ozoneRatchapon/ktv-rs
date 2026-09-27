@@ -1,6 +1,7 @@
 pub mod booth;
 pub mod browser;
 pub mod catalog;
+pub mod chords;
 pub mod components;
 pub mod js_bridge;
 pub mod keys;

@@ -1,4 +1,5 @@
 pub mod catalog_view;
+pub mod chords;
 pub mod custom_add;
 pub mod guide_timing;
 pub mod header;
