@@ -3,6 +3,11 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.19.0] - 2026-09-27
+### Added
+- **RS** (100 songs, keypad 60001+) and **Smallroom** (250 songs, 65001+) official karaoke playlists: 8,542 songs in all. Smallroom's English titles are searchable too.
+- Official original-vocal videos found for 831 of the 1,000 most-sung songs (was 159 of 200), now also from GMM's GeneLab, White Music and We Records channels. As before, each one reaches singers once it is lined up by ear in Guide Timing Tools.
+
 ## [0.18.0] - 2026-09-27 (`0d73df0a`)
 ### Removed
 - The key (♭/♯, KEY TRANSPOSE) buttons: they only changed a label, because a web page cannot change the pitch of the audio inside a YouTube player. (A browser extension such as Transpose can, on youtube.com.)

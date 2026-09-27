@@ -38,6 +38,10 @@ MV_CHANNELS = {
         ("mv_gmmgrammy", "https://www.youtube.com/@GMMGrammy/videos"),
         ("mv_genierock", "https://www.youtube.com/@genierock/videos"),
         ("mv_grammygold", "https://www.youtube.com/channel/UCFWsjsN53Sqvg2pWhSFmWBQ/videos"),
+        # GMM sub-labels, found by searching the songs the three above missed
+        ("mv_genelab", "https://www.youtube.com/channel/UCiJcM95iuhvQoGkmz30eV1w/videos"),
+        ("mv_whitemusic", "https://www.youtube.com/channel/UCNdqGgAK2u-EucN4IAIqP7Q/videos"),
+        ("mv_werecords", "https://www.youtube.com/channel/UCpvy4PMVogmhpE8jVjC9m_Q/videos"),
     ],
 }
 
@@ -51,7 +55,8 @@ THAI_MARKS = re.compile("[็-ํ]")
 
 
 def normalize(text):
-    """Same rule as src/search/normalize.rs: lower-case letters and digits, Thai tone marks dropped."""
+    """Lower-case letters and digits, Thai tone marks dropped (close to src/search/normalize.rs; Python also drops
+    Thai vowel signs, harmless here since both sides of every comparison go through this)."""
     return "".join(c for c in THAI_MARKS.sub("", text).lower() if c.isalnum())
 
 

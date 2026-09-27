@@ -144,3 +144,22 @@ fn test_mv_guides_point_at_library_songs() {
         }
     }
 }
+
+#[test]
+fn test_every_label_keeps_its_code_range() {
+    let ranges = [
+        ("GMM Karaoke", 30001..=49999),
+        ("Whattheduck", 50001..=54999),
+        ("Muzik Move Karaoke", 55001..=59999),
+        ("RS Music", 60001..=64999),
+        ("Smallroom Karaoke", 65001..=69999),
+    ];
+    for (channel, range) in ranges {
+        let songs: Vec<&Song> = SONGS.iter().filter(|s| s.channel == channel).collect();
+        assert!(!songs.is_empty(), "{channel}: no songs");
+        for song in songs {
+            let code: u32 = song.code.parse().unwrap();
+            assert!(range.contains(&code), "{channel}: {} has code {code}", song.title);
+        }
+    }
+}
