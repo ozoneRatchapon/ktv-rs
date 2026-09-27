@@ -38,7 +38,7 @@ fn the_request_page_link_carries_the_room_in_the_fragment() {
     );
     assert_eq!(
         url,
-        "https://ktv-rs.solana-thailand.workers.dev/request.html#to=75AjMdh7Gn1TLigfze541AVJGJ4TyqBEaRZk3pozfBza\
+        "https://ktv-rs.solana-thailand.workers.dev/request#to=75AjMdh7Gn1TLigfze541AVJGJ4TyqBEaRZk3pozfBza\
          &c=devnet&ref=GVJJ7rdGiXr5xaYbRwRbjfaJL7fmwRygFi1H6aGqDveb&room=VIP%20%E0%B8%AB%E0%B9%89%E0%B8%AD%E0%B8%87%207"
     );
     assert_eq!(SolanaCluster::Mainnet.slug(), "mainnet");

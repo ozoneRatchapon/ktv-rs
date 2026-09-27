@@ -6,9 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 ## [Unreleased]
 ### Changed
 - Search ranks results: a keypad code first, then titles that are the query, start with it or contain it, then artists, then romanised aliases. Before, matches came in songbook order.
+- The request QR links `/request` directly: one fewer redirect on the guest's phone.
 - Search finds "artist title" typed together (`ภูวศิษฐ์ รักไม่ไหว`): when the whole query is in no single field, every word must match somewhere in the song.
 
-## [0.27.0] - 2026-09-28
+## [0.27.0] - 2026-09-28 (`0138c8af`)
 ### Added
 - Request a song with a tip: a second, smaller QR beside the tip code opens a phone page (`/request.html`, plain HTML + JS, no wasm). The guest types the 5-digit song code, picks 0.5 / 1 / 2 / 5 USDC and pays in Phantom or Solflare. The booth finds the payment by the room's `reference`, and a request memo (`ktv:req:<code>`) with at least 0.10 USDC plays that song next, marked **★ TIP** in the queue and Up next. The room details ride in the link's `#fragment`, so no server logs them.
 - Garland toast when a tip lands: "Garland for the singer! +1.50 USDC", or the requested song. It sits bottom right, never over the video, and closes after 8 s. Each on-chain payment is acted on once.

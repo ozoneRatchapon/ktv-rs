@@ -660,7 +660,7 @@ test('tip request: the room QR opens the phone page; a paid request plays next a
   await set_tip_wallet(page, tip_wallet);
   await page.wait_for(`!!document.querySelector('.tip-request-qr')`);
   const request_page = await page.eval(`document.querySelector('.tip-request').href`);
-  assert.ok(request_page.startsWith(`${await page.eval('location.origin')}/request.html#to=${tip_wallet}&c=devnet&ref=`), request_page);
+  assert.ok(request_page.startsWith(`${await page.eval('location.origin')}/request#to=${tip_wallet}&c=devnet&ref=`), request_page);
   const room_reference = new URLSearchParams(new URL(request_page).hash.slice(1)).get('ref');
   assert.equal(await page.eval(`document.documentElement.scrollHeight <= innerHeight`), true, 'both QRs fit 1080p');
 
