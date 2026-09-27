@@ -1,8 +1,9 @@
 name: Deploy
 
-# Release tag (vX.Y.Z, pushed with main by the release flow) -> build + e2e -> owner approves -> Cloudflare -> prod e2e.
-# The `production` environment holds CLOUDFLARE_API_TOKEN (secret) and CLOUDFLARE_ACCOUNT_ID (variable), requires the
-# owner's approval, and only accepts `main` and `v*` tags. ./deploy.sh on main stays as the manual fallback.
+# Release tag (vX.Y.Z, pushed with main by the release flow) -> build + e2e -> Cloudflare -> prod e2e, rolled back to
+# the previous version if prod e2e fails. Automatic (owner call 2026-09-27: no approval step). The `production`
+# environment holds CLOUDFLARE_API_TOKEN (secret) and CLOUDFLARE_ACCOUNT_ID (variable) and only accepts `main` and
+# `v*` tags. ./deploy.sh on main stays as the manual fallback.
 on:
   push:
     tags: ["v*"]
@@ -71,12 +72,22 @@ jobs:
         with:
           node-version: 24
       - run: '[ -n "$CLOUDFLARE_API_TOKEN" ] || { echo "::error::CLOUDFLARE_API_TOKEN is not set in the production environment"; exit 1; }'
+      - id: previous
+        run: echo "version=$($WRANGLER deployments status --json | jq -r '.versions[0].version_id')" >> "$GITHUB_OUTPUT"
       - run: $WRANGLER deploy --tag "$GITHUB_REF_NAME" --message "$GITHUB_REF_NAME $(git rev-parse --short HEAD) (CI)"
       # Real prod state lives in Cloudflare, not git
       - run: $WRANGLER deployments list | tail -12
       - name: E2E against prod
+        id: prod_e2e
         env:
           KTV_URL: https://ktv-rs.solana-thailand.workers.dev/
         run: |
           for _ in 1 2; do node --test tests/e2e/app.test.mjs && exit 0; echo "retry after cold start"; sleep 10; done
           exit 1
+      # A release that breaks prod does not stay live; the failed run emails the owner
+      - name: Roll back to the previous version
+        if: failure() && steps.prod_e2e.outcome == 'failure' && steps.previous.outputs.version != ''
+        env:
+          PREVIOUS: ${{ steps.previous.outputs.version }}
+        run: |
+          $WRANGLER rollback "$PREVIOUS" --yes --message "auto rollback, $GITHUB_REF_NAME failed prod e2e"

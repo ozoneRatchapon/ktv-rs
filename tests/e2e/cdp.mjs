@@ -25,11 +25,13 @@ const FAKE_MIC = `navigator.mediaDevices.getUserMedia = async () => {
   return out.stream;
 };`;
 
-/** Launch headless Chrome; returns { new_page, close }. Each page gets its own browser context (fresh storage). */
-export async function launch() {
+/** Launch headless Chrome; returns { new_page, close }. Each page gets its own browser context (fresh storage).
+ *  `real_autoplay`: keep Chrome's default policy (sound needs a user gesture), as a first-time visitor has. */
+export async function launch({ real_autoplay = false } = {}) {
   const profile = mkdtempSync(join(tmpdir(), 'ktv-e2e-'));
   const args = ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run',
-    '--no-default-browser-check', '--mute-audio', '--autoplay-policy=no-user-gesture-required', 'about:blank'];
+    '--no-default-browser-check', '--mute-audio', 'about:blank'];
+  if (!real_autoplay) args.push('--autoplay-policy=no-user-gesture-required');
   if (process.env.CI) args.push('--no-sandbox');
   const proc = spawn(chrome_bin, args, { stdio: ['ignore', 'ignore', 'pipe'] });
   const ws_url = await new Promise((resolve, reject) => {

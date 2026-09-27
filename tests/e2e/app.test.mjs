@@ -155,6 +155,35 @@ test('queue: Queue appends, Insert goes first, Play replaces, Next Song advances
   assert.deepEqual(await page.eval(queue_titles), [...start, queued]);
 }));
 
+test('first visit, autoplay blocked: the clock waits, Play shows, Space starts the song', async () => {
+  const real = await launch({ real_autoplay: true });
+  const page = await real.new_page({});
+  try {
+    await page.goto();
+    const time = `document.querySelector('.current-time')?.textContent`;
+    const start = await page.eval(time);
+    const button = `[...document.querySelectorAll('.player-main-controls-row button')].find((b) => /Playback/.test(b.title))?.textContent`;
+    await page.wait_for(`${button} === 'Play'`, 6000);
+    assert.equal(await page.eval(time), start, 'time did not run while the video was not playing');
+    assert.equal(await page.eval(`window.KtvSync.debug().karaoke_state`), -1, 'YouTube: unstarted');
+    await page.eval(`document.activeElement?.blur()`);
+    await page.key(' '); // a trusted key press is the user gesture autoplay needs
+    await page.wait_for(`${button} === 'Pause'`);
+    // YouTube may refuse to play for a datacenter IP (CI); either way the time moves only while it plays
+    const state = `window.KtvSync.debug().karaoke_state`;
+    await page.wait_for(`${state} === 1 || ${button} === 'Play'`, 10000);
+    if (await page.eval(`${state} === 1`)) {
+      await page.wait_for(`${time} !== ${JSON.stringify(start)}`);
+    } else {
+      assert.equal(await page.eval(time), start, 'YouTube did not start the video: the time still waits');
+    }
+    assert.deepEqual(page.errors, [], 'console errors');
+  } finally {
+    await page.close();
+    await real.close();
+  }
+});
+
 test('empty queue: Next Song hands over to Auto-DJ with a different song', () => with_page({}, async (page) => {
   const finished = await page.eval(now_title);
   await page.eval(`(async () => {
