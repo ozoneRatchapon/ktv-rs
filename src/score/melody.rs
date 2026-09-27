@@ -19,8 +19,9 @@ pub const HIT_CENTS: f32 = 50.0;
 pub const FULL_COVERAGE: f32 = 0.8;
 /// Target frames needed before a melody score is shown (~2 s of the tune at 47 frames/s).
 pub const MIN_TARGET_FRAMES: u32 = 90;
-/// Song time moving less than this between frames means the video is paused: the frame is not judged.
-const PAUSED_SECS: f64 = 0.002;
+/// The clock standing still for this many frames in a row (~0.1 s) means the video is paused: frames are not judged.
+/// Not fewer: mic frames reach the page in bursts, and frames handled in the same millisecond read the same clock.
+pub const PAUSED_FRAMES: u32 = 5;
 
 /// A song's melody, sorted by start, validated (finite times, `end > start`, MIDI 24..=96, at most
 /// `MAX_NOTE_SECS` long).
@@ -49,7 +50,7 @@ impl Melody {
     /// Notes sounding at any moment in `from..=to` (seconds).
     pub fn between(&self, from: f64, to: f64) -> impl Iterator<Item = &TargetNote> {
         // Notes are sorted by start; the longest note bounds how far back an overlapping one can begin
-        let first = self.notes.partition_point(|n| f64::from(n.start) <= from - MAX_NOTE_SECS);
+        let first = self.notes.partition_point(|n| f64::from(n.start) < from - MAX_NOTE_SECS);
         self.notes[first..].iter().take_while(move |n| f64::from(n.start) <= to).filter(move |n| f64::from(n.end) >= from)
     }
 
@@ -74,6 +75,8 @@ pub fn octave_cents(sung: f32, target: u8) -> f32 {
 pub struct MelodyScorer {
     summary: MelodySummary,
     last_t: Option<f64>,
+    /// Frames in a row that read the same clock value.
+    still: u32,
 }
 
 impl MelodyScorer {
@@ -83,8 +86,9 @@ impl MelodyScorer {
 
     /// Judge one frame: the song time `t` and the sung pitch (`None` when silent). Returns true if the summary changed.
     pub fn push(&mut self, melody: &Melody, t: f64, midi: Option<f32>) -> bool {
-        let paused = self.last_t.is_some_and(|last| (t - last).abs() < PAUSED_SECS);
+        self.still = if self.last_t == Some(t) { self.still + 1 } else { 0 };
         self.last_t = Some(t);
+        let paused = self.still >= PAUSED_FRAMES;
         let heard_at = t - SING_LAG_SECS;
         if paused || melody.at(heard_at).is_none() {
             return false;

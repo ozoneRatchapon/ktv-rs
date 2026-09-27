@@ -6,6 +6,15 @@ import { DurableObject } from 'cloudflare:workers';
 import { CLOSE, IDLE_MS, MAX_PENDING_BOOTHS, MAX_PHONES, parse_booth, parse_phone, room_of, take_token } from './protocol.js';
 
 const STATE_KEY = 'state';
+const OPEN = 1;
+
+/** Send if the socket is still open: `getWebSockets()` also lists sockets that are closing, and sending to one throws. */
+function send(ws, text) {
+    if (ws.readyState !== OPEN) return;
+    try {
+        ws.send(text);
+    } catch { /* closed between the check and the send */ }
+}
 
 export class Room extends DurableObject {
     /** Upgrade to a WebSocket. The Worker has checked the path, `role` and Origin. */
@@ -29,7 +38,7 @@ export class Room extends DurableObject {
         server.serializeAttachment({ role, room, id, authed: false, bucket: null });
         if (role === 'phone') {
             const state = (await this.ctx.storage.get(STATE_KEY)) ?? null;
-            server.send(JSON.stringify({ t: 'state', state, online: this.booth() !== null }));
+            send(server, JSON.stringify({ t: 'state', state, online: this.booth() !== null }));
             this.send_phone_count();
         }
         return new Response(null, { status: 101, webSocket: client });
@@ -68,7 +77,7 @@ export class Room extends DurableObject {
             }
             case 'reply': {
                 const phone = this.ctx.getWebSockets('phone').find((p) => p.deserializeAttachment().id === msg.to);
-                phone?.send(JSON.stringify({ t: 'reply', ok: msg.ok, text: msg.text }));
+                if (phone) send(phone, JSON.stringify({ t: 'reply', ok: msg.ok, text: msg.text }));
                 break;
             }
             case 'close_room':
@@ -84,9 +93,9 @@ export class Room extends DurableObject {
         const [allowed, bucket] = take_token(meta.bucket, Date.now());
         ws.serializeAttachment({ ...meta, bucket });
         const booth = this.booth();
-        if (!allowed) return ws.send(JSON.stringify({ t: 'reply', ok: false, text: 'Too many requests: wait a few seconds' }));
-        if (!booth) return ws.send(JSON.stringify({ t: 'reply', ok: false, text: 'The booth is offline' }));
-        booth.send(JSON.stringify({ t: 'cmd', from: meta.id, ...cmd }));
+        if (!allowed) return send(ws, JSON.stringify({ t: 'reply', ok: false, text: 'Too many requests: wait a few seconds' }));
+        if (!booth) return send(ws, JSON.stringify({ t: 'reply', ok: false, text: 'The booth is offline' }));
+        send(booth, JSON.stringify({ t: 'cmd', from: meta.id, ...cmd }));
     }
 
     webSocketClose(ws, code) {
@@ -112,18 +121,19 @@ export class Room extends DurableObject {
         await this.ctx.storage.deleteAll();
     }
 
-    /** The authenticated booth socket, ignoring `closing` (a socket that is closing is still listed). */
+    /** The authenticated, open booth socket, ignoring `closing` (a socket that is closing is still listed). */
     booth(closing) {
-        return this.ctx.getWebSockets('booth').find((b) => b !== closing && b.deserializeAttachment().authed) ?? null;
+        return this.ctx.getWebSockets('booth').find((b) => b !== closing && b.readyState === OPEN && b.deserializeAttachment().authed) ?? null;
     }
 
     send_phone_count(closing) {
-        const n = this.ctx.getWebSockets('phone').filter((p) => p !== closing).length;
-        this.booth()?.send(JSON.stringify({ t: 'phones', n }));
+        const n = this.ctx.getWebSockets('phone').filter((p) => p !== closing && p.readyState === OPEN).length;
+        const booth = this.booth();
+        if (booth) send(booth, JSON.stringify({ t: 'phones', n }));
     }
 
     broadcast(msg) {
         const text = typeof msg === 'string' ? msg : JSON.stringify(msg);
-        for (const phone of this.ctx.getWebSockets('phone')) phone.send(text);
+        for (const phone of this.ctx.getWebSockets('phone')) send(phone, text);
     }
 }

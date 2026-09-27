@@ -277,22 +277,26 @@ test('melody score: with a melody saved on this device, the lane draws the tune 
   const melody_value = `document.querySelector('.melody-score .tuning-value')?.textContent ?? ''`;
   await page.wait_for(`!!localStorage.getItem('ktv.session.v1')`);
   assert.equal(await page.eval(`!!document.querySelector('.melody-score')`), false, 'no melody data, no melody score');
-  // The tune: A3 for the whole song (no melody ships; plan 002 item 7)
+  // The tune: A3 through the whole song, as 10 s notes (a note is at most 30 s; no melody ships, plan 002 item 7)
   await page.eval(`(() => {
     const id = JSON.parse(localStorage.getItem('ktv.session.v1')).current.song.id;
-    localStorage.setItem('ktv.melodies.v1', JSON.stringify({ [id]: [[0, 900, 57]] }));
+    const notes = Array.from({ length: 90 }, (_, i) => [i * 10, i * 10 + 10, 57]);
+    localStorage.setItem('ktv.melodies.v1', JSON.stringify({ [id]: notes }));
   })()`);
   await page.reload();
+  // The melody score skips frames while the video clock stands still, and CI runners often get no YouTube playback:
+  // a running clock for the scorer, so this checks scoring, not YouTube
+  await page.wait_for(`typeof window.KtvSync?.time === 'function'`);
+  await page.eval(`(() => { const t0 = performance.now(); window.KtvSync.time = () => 30 + (performance.now() - t0) / 1000; })()`);
   await page.eval(`[...document.querySelectorAll('.pitch-meter button')].find((b) => b.textContent.startsWith('Mic')).click()`);
   await page.wait_for(`!!window.__mic_gain`);
   await page.wait_for(`document.querySelector('.pitch-note')?.textContent !== 'Room check…'`, 6000);
   await page.wait_for(`!!document.querySelector('.melody-score')`);
   // A4: the right note an octave up
   await page.eval(`window.__mic.frequency.value = 440; window.__mic_gain.gain.value = 0.3`);
-  await page.wait_for(`/^\\d+$/.test(${melody_value})`, 8000);
-  await sleep(1500);
+  // The room check's silent second counts as missed tune, so the score climbs while the right note is held
+  await page.wait_for(`Number(${melody_value}) >= 90`, 12000);
   const right = Number(await page.eval(melody_value));
-  assert.ok(right >= 90, `right note, other octave: ${right}`);
   // A held note is drawn once it ends: take a breath
   await page.eval(`window.__mic_gain.gain.value = 0`);
   await page.wait_for(`!!document.querySelector('.note-lane-plot .lane-note')`, 3000);

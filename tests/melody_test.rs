@@ -1,6 +1,6 @@
 use app::score::{
     octave_cents, stored_melody, Melody, MelodyScorer, StoredMelodies, TargetNote, TakeResult, TuningSummary, FULL_COVERAGE,
-    MIN_TARGET_FRAMES, SING_LAG_SECS,
+    MIN_TARGET_FRAMES, PAUSED_FRAMES, SING_LAG_SECS,
 };
 
 const FRAME: f64 = 0.02;
@@ -81,16 +81,20 @@ fn test_only_the_tunes_notes_count_and_a_score_needs_enough_of_them() {
 }
 
 #[test]
-fn test_paused_video_is_not_judged() {
+fn test_paused_video_is_not_judged_but_a_burst_of_frames_is() {
     let melody = a4_melody();
     let mut scorer = MelodyScorer::new();
     sing(&mut scorer, &melody, 2.0, 1.0, |_| Some(69.0));
-    scorer.push(&melody, 3.0, Some(69.0)); // the last frame before the pause is still judged
+    // Frames delivered in a burst read the same clock: still judged
+    for _ in 0..PAUSED_FRAMES {
+        assert!(scorer.push(&melody, 3.0, Some(69.0)), "a short burst is singing, not a pause");
+    }
     let before = scorer.summary();
     for _ in 0..500 {
         assert!(!scorer.push(&melody, 3.0, None), "clock stands still: nothing judged");
     }
     assert_eq!(scorer.summary(), before);
+    assert!(scorer.push(&melody, 3.02, Some(69.0)), "playing again");
 }
 
 #[test]
@@ -124,6 +128,8 @@ fn test_melody_validation_and_lookup() {
     assert_eq!(melody.at(2.5), None);
     assert_eq!(melody.at(35.0).map(|n| n.midi), Some(67), "a long note is found far from its start");
     assert_eq!(melody.between(0.5, 4.5).count(), 2);
+    let edge = Melody::new([note(0.0, 30.0, 60)]).unwrap();
+    assert_eq!(edge.at(30.0).map(|n| n.midi), Some(60), "a 30 s note is found at its very end");
     assert!(Melody::new([note(1.0, 0.5, 60)]).is_none(), "nothing valid: no melody");
 }
 

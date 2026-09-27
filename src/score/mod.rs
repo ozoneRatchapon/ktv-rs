@@ -11,7 +11,7 @@ pub use history::{record, TakeResult, MAX_RESULTS};
 pub use lane::{LaneWindow, NoteLane, LANE_NOTES, PHRASE_GAP_FRAMES};
 pub use melody::{
     octave_cents, stored_melody, Melody, MelodyScorer, StoredMelodies, EDGE_SECS, FULL_COVERAGE, HIT_CENTS, MIN_TARGET_FRAMES,
-    SING_LAG_SECS,
+    PAUSED_FRAMES, SING_LAG_SECS,
 };
 pub use party::{clean_name, leaderboard, name_take, recent_singers, LeaderRow, MAX_NAME_CHARS, PARTY_WINDOW_MS};
 pub use tuning::TuningScorer;

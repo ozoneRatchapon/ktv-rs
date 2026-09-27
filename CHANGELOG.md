@@ -11,6 +11,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 - The note lane follows the song's clock: it stands still while the video is paused and starts clean after seeking back or Replay.
 - The mic reads the video clock through a lighter call (47 times a second, it no longer builds the whole sync snapshot).
 
+### Fixed
+- Phone remote server: a message to a phone or booth that was just disconnecting raised an error in the room (seen in CI logs); sends now skip closing connections.
+
 ## [0.30.0] - 2026-09-28 (`ed91d65e`)
 ### Added
 - Phone remote (Keypad → Phone remote, off until the host turns it on). Guests scan the QR with a phone camera and get a page with the song on stage, the next five, song search and a 5-digit code box: *Add to the queue* puts the song at the back, marked 📱 Phone, and the phone is told what happened ("Queued 10001: …" or "No song with code …"). Skip, pause and replay buttons appear on phones only if the host ticks *Phones may skip, pause and replay*. The booth shows how many phones are connected; *New link* (two taps) makes a new code and sends phones on the old one away.
