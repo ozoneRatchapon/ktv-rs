@@ -3,6 +3,14 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.17.2] - 2026-09-27
+### Added
+- Link previews: sharing the site in LINE, Facebook, X or Discord shows a KTV-RS card with a Thai title and description. The search description is now in Thai and English.
+### Changed
+- Fullscreen search only works while the player is actually fullscreen (it no longer searches twice in the normal view).
+### Security
+- Every GitHub Action is pinned to an exact commit, so a moved tag cannot change what builds and deploys the site; Dependabot proposes updates weekly.
+
 ## [0.17.1] - 2026-09-27 (`6b2dd495`)
 ### Fixed
 - On opening the site with autoplay blocked, the time under the player could still jump to 00:00; it now stays at the song's start until the video plays.

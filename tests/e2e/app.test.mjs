@@ -33,6 +33,11 @@ test('page shell: lang, title, favicon, named form fields', () => with_page({}, 
   assert.equal(await page.eval(`getComputedStyle(document.querySelector('.boot-splash')).display`), 'none', 'splash hidden once mounted');
   assert.ok(await page.eval(`fetch('/').then((r) => r.text()).then((html) => /<link rel="stylesheet" href="[^"]*main-[^"]*\.css"/.test(html))`), 'stylesheet in the static head');
   assert.equal(await page.eval(`fetch('/robots.txt').then((r) => r.text())`), 'User-agent: *\nAllow: /\n');
+  // Link preview: the card is served as a PNG from this site's path (absolute URL points at prod)
+  const og = await page.eval(`new URL(document.querySelector('meta[property="og:image"]').content).pathname`);
+  assert.equal(og, '/og-image.png');
+  assert.equal(await page.eval(`fetch('/og-image.png').then((r) => r.status + ' ' + r.headers.get('content-type'))`), '200 image/png');
+  assert.equal(await page.eval(`document.querySelector('meta[name="twitter:card"]').content`), 'summary_large_image');
 }));
 
 test('type-to-search works, including after focus moved into a player iframe', () => with_page({}, async (page) => {

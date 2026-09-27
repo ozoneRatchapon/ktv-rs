@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.17.1"
+version = "0.17.2"
 authors = ["ozoneRatchapon <ratchapon.poc@gmail.com>"]
 edition = "2021"
 license = "AGPL-3.0-only"
@@ -31,6 +31,7 @@ web-sys = { version = "0.3", features = [
     "Document",
     "DomException",
     "Element",
+    "EventTarget",
     "MediaDevices",
     "MediaStream",
     "MediaStreamAudioSourceNode",

@@ -27,6 +27,25 @@ pub fn toggle_fullscreen(selector: &str) {
     let _ = selector;
 }
 
+/// Whether the page is in fullscreen, sent on every enter / leave (the button, or Esc). Call once per page.
+/// Never sends on the host.
+pub fn watch_fullscreen() -> futures_channel::mpsc::UnboundedReceiver<bool> {
+    let (tx, rx) = futures_channel::mpsc::unbounded();
+    #[cfg(target_arch = "wasm32")]
+    if let Some(document) = web_sys::window().and_then(|w| w.document()) {
+        use wasm_bindgen::{closure::Closure, JsCast};
+        let doc = document.clone();
+        let closure = Closure::<dyn FnMut()>::new(move || {
+            let _ = tx.unbounded_send(doc.fullscreen_element().is_some());
+        });
+        let _ = document.add_event_listener_with_callback("fullscreenchange", closure.as_ref().unchecked_ref());
+        closure.forget(); // listens for the page's life
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    drop(tx);
+    rx
+}
+
 /// GET a same-origin file as text (`None` on a network error or a non-2xx status). Always `None` on the host.
 pub async fn fetch_text(url: &str) -> Option<String> {
     #[cfg(target_arch = "wasm32")]
