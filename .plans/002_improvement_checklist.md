@@ -66,7 +66,7 @@ The score today is tuning precision (held notes vs the semitone grid); there is 
 - [x] 37. README screenshots + "adding songs" guide. Done: `docs/ADDING_SONGS.md`; `docs/screenshots/` (desktop standby + songbook, mobile romanised search, recent scores; standby so no video frames in the repo); README badges now real CI / prod-check status. Fixed "1 Songs".
 
 ## Gated (not worked until the owner/device says so)
-- [ ] L1. No `LICENSE` file, but README shows an MIT badge linking to one (and `Cargo.toml` has no `license`). `gated:` owner picks the license and copyright holder.
+- [x] L1. License. Done (owner call 2026-09-27: AGPL-3.0 for now, may change later): `LICENSE` (GNU AGPL v3 text), `license = "AGPL-3.0-only"` in `Cargo.toml`, README badge + section (code only; media and the KTV-RS name not licensed), Settings links the source as AGPL-3.0 (AGPL §13 source offer for network users).
 - [ ] 34b. Deploy from CI (item 34). `gated:` needs a Cloudflare API token stored as a GitHub secret (owner) plus an approval environment.
 - [ ] 1. Custom domain. `gated:` owner deferred (costs money).
 - [ ] 3. Real mic test on iPhone Safari / Android Chrome. `gated:` needs devices.

@@ -5,7 +5,7 @@
 [![CI](https://github.com/ozoneRatchapon/ktv-rs/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/ozoneRatchapon/ktv-rs/actions/workflows/ci.yml)
 [![Prod check](https://github.com/ozoneRatchapon/ktv-rs/actions/workflows/prod-check.yml/badge.svg?branch=develop)](https://github.com/ozoneRatchapon/ktv-rs/actions/workflows/prod-check.yml)
 [![Dioxus](https://img.shields.io/badge/Dioxus-0.7.1-blue.svg)](https://dioxuslabs.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 [![Zero-Tracking](https://img.shields.io/badge/Privacy-Zero--Tracking-brightgreen.svg)](#privacy--legal-compliance)
 
 ---
@@ -138,4 +138,11 @@ cargo clippy --fix --allow-dirty --quiet
 
 ## License
 
-MIT License.
+Copyright (C) 2026 ozoneRatchapon.
+
+The code is licensed under the [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`). You may use,
+study, change and share it, including commercially, but if you run a changed version for other people (for example as a
+website), you must offer them its complete source code under the same license.
+
+The license covers this repository's code only. Songs, music videos, artwork and trademarks belong to their artists and
+labels and are streamed from YouTube, not licensed here. The "KTV-RS" name is not licensed for use by other projects.
