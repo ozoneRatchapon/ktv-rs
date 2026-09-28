@@ -9,11 +9,12 @@ use app::components;
 use app::keys::{self, KeyAction};
 use app::library;
 use app::mc::{self, McEvent};
+use app::medley::{self, Medley, MedleyBook};
 use app::recommendation;
 use app::room::{self, PhoneCommand};
 use app::picks::Picks;
 use app::score::{self, TakeResult};
-use app::storage::{self, Session, GUIDES_KEY, PICKS_KEY, SCORES_KEY, SESSION_KEY, SETTINGS_KEY};
+use app::storage::{self, Session, GUIDES_KEY, MEDLEYS_KEY, PICKS_KEY, SCORES_KEY, SESSION_KEY, SETTINGS_KEY};
 use app::sync::SyncCommand;
 use app::timing::{self, GuideOverrides, SavedTiming};
 use app::tip::{self, ConfirmedTip, TipAction};
@@ -24,6 +25,7 @@ use components::{
     catalog_view::CatalogView,
     custom_add::CustomAdd,
     header::Header,
+    medley::MedleyPanel,
     phone_remote::{use_room_link, PhoneRemotePanel},
     player::Player,
     queue_view::QueueView,
@@ -63,6 +65,7 @@ fn demo_session() -> Session {
         queue_id,
         song: cat[index].clone(),
         requester: requester.to_string(),
+        part: None,
     };
     Session {
         current: Some(item(1, 3, "KTV Host")), // โจอี้ ภูวศิษฐ์ - รักไม่ไหวแล้วโว้ย
@@ -122,6 +125,10 @@ fn App() -> Element {
     // Favourites and recently sung songs on this device
     let mut picks = use_signal(|| storage::load::<Picks>(PICKS_KEY).unwrap_or_default());
     use_effect(move || storage::save(PICKS_KEY, &*picks.read()));
+    // Medleys (plan 004): shared through context so the practice row can add a marked part
+    let mut medleys = use_signal(|| storage::load::<MedleyBook>(MEDLEYS_KEY).unwrap_or_default().sanitized());
+    use_effect(move || storage::save(MEDLEYS_KEY, &*medleys.read()));
+    use_context_provider(|| medleys);
     use_effect(move || {
         let b = booth.read();
         let session = Session::capture(b.current.clone(), b.queue.clone(), b.next_queue_id, &catalog.read(), builtin_catalog());
@@ -232,7 +239,7 @@ fn App() -> Element {
     let mut handle_replay_song = move |_: ()| {
         if let Some(curr) = current_song() {
             song_started_at.set(js_sys::Date::now());
-            SyncCommand::Restart(curr.song.start_sec(intro_skipped()) as f64).run();
+            SyncCommand::Restart(curr.start_at(intro_skipped())).run();
         }
     };
 
@@ -246,6 +253,32 @@ fn App() -> Element {
     };
     let song_by_code =
         move |code: &str| catalog::find_song(&catalog.read(), song_library(), |s| s.code == code).cloned();
+
+    // A medley goes in as one entry per part, back to back; every part's song must be found first
+    let handle_queue_medley = move |(medley, placement): (Medley, Placement)| -> Result<String, String> {
+        let slots = medley::slots(&medley).map_err(|e| e.message())?;
+        let mut parts = Vec::with_capacity(slots.len());
+        for (song_id, slot) in slots {
+            let found = catalog::find_song(&catalog.read(), song_library(), |s| s.id == song_id).cloned();
+            let Some(mut song) = found else {
+                return Err("A song in this medley is not in the songbook (yet): wait for the library to load, or remove it".to_string());
+            };
+            timing::apply_overrides([&mut song], &guide_overrides.peek());
+            parts.push((song, slot));
+        }
+        let (title, count) = (medley::display_title(&medley).to_string(), parts.len());
+        if booth.write().add_medley(parts, Requester::Singer, placement) {
+            song_started_at.set(js_sys::Date::now());
+            return Ok(format!("Playing {title} ({count} parts)"));
+        }
+        Ok(format!("Queued {title} ({count} parts)"))
+    };
+    let handle_add_medley_code = move |code: String| -> Result<String, String> {
+        let code = catalog::keypad_code(&code).ok_or("Type a 5-digit song code")?;
+        let song = song_by_code(code).ok_or(format!("No song with code {code}"))?;
+        medleys.write().add_song(&song).map_err(|e| e.message())?;
+        Ok(format!("Added {} - {}", song.title, song.artist))
+    };
 
     let handle_play_song = move |song: Song| request(song, Requester::Singer, Placement::Now);
     let handle_queue_song = move |song: Song| request(song, Requester::Guest, Placement::Back);
@@ -264,6 +297,10 @@ fn App() -> Element {
             return;
         }
         announced.set(Some(item.queue_id));
+        // A medley's later parts follow straight on: the MC speaks before its first part only
+        if item.is_medley_join() {
+            return;
+        }
         let voice = settings.peek().mc_voice;
         let tipped = booth::is_tip_request(&item);
         let event = McEvent::SongUp { title: item.song.title.clone(), artist: item.song.artist.clone(), tipped };
@@ -513,7 +550,9 @@ fn App() -> Element {
                             !guide_overrides.read().contains_key(&c.song.id) && library::auto_timed(&c.song.youtube_id)
                         }),
                         on_take_end: move |result: TakeResult| {
-                            if let Some(score) = result.score() {
+                            // Between medley parts the MC stays quiet (the next part is already playing)
+                            let joined = current_song().is_some_and(|c| c.is_medley_join());
+                            if let (Some(score), false) = (result.score(), joined) {
                                 let event = McEvent::TakeEnded { score, singer: result.singer.clone() };
                                 mc::announce(&event, settings.peek().mc_voice, mc::seed_of(&result.song_id));
                             }
@@ -607,6 +646,7 @@ fn App() -> Element {
                                 on_play_song: handle_play_song,
                                 on_simulate_end: handle_video_ended,
                                 show_dev_tools: settings().show_timing_tools,
+                                MedleyPanel { on_add_code: handle_add_medley_code, on_queue: handle_queue_medley }
                             }
                         },
                         KtvTab::Remote => rsx! {

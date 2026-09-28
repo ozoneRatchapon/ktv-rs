@@ -2,6 +2,7 @@ pub mod catalog_view;
 pub mod chords;
 pub mod custom_add;
 pub mod guide_timing;
+pub mod medley;
 pub mod header;
 pub mod pitch_meter;
 pub mod player;

@@ -1,13 +1,16 @@
 use super::types::{Booth, Placement, Requester};
+use crate::medley::MedleySlot;
 use crate::types::{GuideTrack, QueueItem, Song};
 
 impl Booth {
     /// Add a song; returns `true` when it became the current song (a new take starts).
     pub fn add(&mut self, song: Song, requester: Requester, placement: Placement) -> bool {
-        let item = QueueItem { queue_id: self.next_queue_id, song, requester: requester.label().to_string() };
-        self.next_queue_id += 1;
+        let item = self.new_item(song, requester, None);
         match (placement, self.current.is_some()) {
-            (Placement::Next, true) => self.queue.insert(0, item),
+            (Placement::Next, true) => {
+                let at = self.next_slot();
+                self.queue.insert(at, item);
+            }
             (Placement::Back, true) => self.queue.push(item),
             (Placement::Now, _) | (_, false) => {
                 self.current = Some(item);
@@ -15,6 +18,43 @@ impl Booth {
             }
         }
         false
+    }
+
+    /// Where "next" goes: after the rest of a medley that is being sung, so a request never splits it.
+    fn next_slot(&self) -> usize {
+        self.queue.iter().take_while(|it| it.is_medley_join()).count()
+    }
+
+    fn new_item(&mut self, song: Song, requester: Requester, part: Option<MedleySlot>) -> QueueItem {
+        let item = QueueItem { queue_id: self.next_queue_id, song, requester: requester.label().to_string(), part };
+        self.next_queue_id += 1;
+        item
+    }
+
+    /// Add a medley's parts as back-to-back entries, in order; `true` when its first part went on stage.
+    pub fn add_medley(&mut self, parts: Vec<(Song, MedleySlot)>, requester: Requester, placement: Placement) -> bool {
+        let mut items: Vec<QueueItem> =
+            parts.into_iter().map(|(song, slot)| self.new_item(song, requester, Some(slot))).collect();
+        if items.is_empty() {
+            return false;
+        }
+        match (placement, self.current.is_some()) {
+            (Placement::Next, true) => {
+                let at = self.next_slot();
+                self.queue.splice(at..at, items);
+                false
+            }
+            (Placement::Back, true) => {
+                self.queue.extend(items);
+                false
+            }
+            (Placement::Now, _) | (_, false) => {
+                let first = items.remove(0);
+                self.queue.splice(0..0, items);
+                self.current = Some(first);
+                true
+            }
+        }
     }
 
     /// Move the head of the queue on stage; `false` (and nothing playing) when the queue is empty.

@@ -174,6 +174,16 @@ test('queue: Queue appends, Insert goes first, Play replaces, Next Song advances
   assert.deepEqual(await page.eval(queue_titles), [...start, queued]);
 }));
 
+test('the same song twice in a row gets a fresh player (the finished one is not reused)', () => with_page({}, async (page) => {
+  const played = await page.eval(card_action('10008', 'play-now'));
+  await page.wait_for(`${now_title} === ${JSON.stringify(played)}`);
+  await page.eval(card_action('10008', 'queue-next'));
+  await page.eval(`document.getElementById('ktv-youtube-player').dataset.first = '1'`);
+  await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
+  await page.wait_for(`document.getElementById('ktv-youtube-player') && !document.getElementById('ktv-youtube-player').dataset.first`);
+  assert.equal(await page.eval(now_title), played);
+}));
+
 test('first visit, autoplay blocked: the clock waits, Play shows, Space starts the song', async () => {
   const real = await launch({ real_autoplay: true });
   const page = await real.new_page({});
@@ -572,6 +582,64 @@ test('practice: A then B loops the part, a new song clears it; Chords opens a we
   assert.equal(await page.eval(`document.querySelector('.practice-chords').rel`), 'noopener noreferrer');
   await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
   await page.wait_for(`window.KtvSync.debug().loop === null && document.querySelector('.practice-label').textContent.startsWith('Loop a part')`);
+}));
+
+test('medley: parts added by code are guessed, a nudge or A/B marks them, Play now sings them back to back (the part end moves on), saved medleys survive reload', () => with_page({}, async (page) => {
+  const open_queue = `[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Queue')).click()`;
+  const button = (scope, label) => `[...document.querySelectorAll(${JSON.stringify(scope)})].find((b) => b.textContent === ${JSON.stringify(label)})`;
+  const set_input = (id, value) => page.eval(`(() => { const i = document.getElementById(${JSON.stringify(id)}); i.value = ${JSON.stringify(value)}; i.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+  const add_code = async (code) => {
+    await set_input('medley_code', code);
+    await page.eval(`${button('.medley-add button', 'Add')}.click()`);
+  };
+  const parts = `[...document.querySelectorAll('.medley-part')].map((p) => [p.querySelector('.item-code').textContent, p.querySelector('.medley-part-span').textContent, p.querySelector('.medley-source').textContent])`;
+
+  await page.eval(open_queue);
+  await page.wait_for(`!!document.getElementById('medley_code')`);
+  await add_code('10001');
+  await page.wait_for(`document.querySelectorAll('.medley-part').length === 1`);
+  assert.equal(await page.eval(`${button('.medley-actions button', 'Play now')}.disabled`), true, 'one part is not a medley');
+  await add_code('00000');
+  await page.wait_for(`document.querySelector('.medley-section [role=alert]')?.textContent === 'No song with code 00000'`);
+  await add_code('10005');
+  await page.wait_for(`document.querySelectorAll('.medley-part').length === 2`);
+  let rows = JSON.parse(await page.eval(`JSON.stringify(${parts})`));
+  assert.deepEqual(rows.map((r) => [r[0], r[2]]), [['#10001', 'guessed'], ['#10005', 'guessed']]);
+  // Nudge the first part's end: it becomes the host's own part
+  await page.eval(`[...document.querySelectorAll('.medley-part')][0].querySelector('[title="End 5 s later"]').click()`);
+  await page.wait_for(`document.querySelector('.medley-part .medley-source').textContent === 'marked'`);
+  rows = JSON.parse(await page.eval(`JSON.stringify(${parts})`));
+  const [from, to] = rows[0][1].split(' → ');
+  await set_input('medley_title', 'Test medley');
+  await page.eval(`${button('.medley-actions button', 'Save')}.click()`);
+  await page.wait_for(`document.querySelector('.medley-saved-item .item-title')?.textContent === 'Test medley'`);
+
+  await page.eval(`${button('.medley-actions button', 'Play now')}.click()`);
+  await page.wait_for(`document.querySelector('.medley-banner')?.textContent.startsWith('Medley 1/2 · Test medley')`);
+  const clock = (mmss) => mmss.split(':').reduce((m, s) => m * 60 + Number(s), 0);
+  const part = JSON.parse(await page.eval(`JSON.stringify(window.KtvSync.debug().part)`));
+  assert.equal(Math.floor(part.end), clock(to), `the sync core ends the part at its end (${to})`);
+  assert.ok(await page.eval(`document.getElementById('ktv-youtube-player').src.includes('start=${clock(from)}&')`), `the player starts at the part (${from})`);
+  const first = await page.eval(now_title);
+  await page.wait_for(`[...document.querySelectorAll('.queue-item-card .medley-badge')][0]?.textContent === 'Medley 2/2 · Test medley'`);
+
+  // The part's end (driven through the core, so no YouTube playback is needed): the second part goes on stage
+  await page.eval(`(() => { const k = window.KtvSync; k.on_message(false, { event: 'infoDelivery', info: { currentTime: ${part.end} + 0.5, playerState: 1 } }); k.tick(); })()`);
+  await page.wait_for(`document.querySelector('.medley-banner')?.textContent.startsWith('Medley 2/2')`);
+  assert.notEqual(await page.eval(now_title), first);
+
+  // A / B while a song plays adds a marked part to the builder
+  await page.eval(`${button('.practice-row button', 'A')}.click()`);
+  await page.eval(`${button('.player-quick-controls button', '+10s')}.click()`);
+  await sleep(100);
+  await page.eval(`${button('.practice-row button', 'B')}.click()`);
+  await page.wait_for(`!!${button('.practice-row button', '+ Medley')}`);
+  await page.eval(`${button('.practice-row button', '+ Medley')}.click()`);
+  await page.wait_for(`document.querySelector('.practice-label').textContent === 'Added to the medley (3 parts)'`);
+
+  await page.reload();
+  await page.eval(open_queue);
+  await page.wait_for(`document.querySelector('.medley-saved-item .item-title')?.textContent === 'Test medley' && document.querySelectorAll('.medley-part').length === 3`);
 }));
 
 test('count-in: tapping the beat sets the tempo (saved on this device), Count-in seeks 4 beats before the loop\'s A and runs until the part begins', () => with_page({}, async (page) => {

@@ -2973,3 +2973,112 @@ details.tuning-score {
     font-size: 12px;
     color: var(--text-secondary);
 }
+
+/* Medley (plan 004): builder in the Queue tab, badges on its queue entries, banner over the player bar */
+.medley-badge {
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: var(--accent-cyan);
+    color: #0b0d13;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.intro-banner.medley-banner {
+    background: #0e7490; /* white text 5.4:1 */
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.medley-banner-span {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.9;
+}
+
+.medley-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-glass);
+}
+
+.medley-hint {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.medley-add,
+.medley-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.medley-add .form-input {
+    width: 11em;
+}
+
+.medley-actions .form-input {
+    flex: 1 1 12em;
+    min-width: 0;
+}
+
+.medley-parts,
+.medley-saved {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.medley-part,
+.medley-saved-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+}
+
+.medley-part-info,
+.medley-part-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.medley-part-span {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+.medley-source {
+    padding: 1px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--border-glass);
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+
+.medley-source.guessed {
+    border-color: var(--accent-amber);
+    color: var(--accent-amber);
+}
+
+.medley-saved-item .item-title {
+    flex: 1 1 auto;
+}

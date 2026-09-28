@@ -21,6 +21,9 @@ pub fn UpNext(queue: Vec<QueueItem>) -> Element {
                     if booth::is_tip_request(item) {
                         span { class: "tip-badge", "★ TIP" }
                     }
+                    if let Some(slot) = &item.part {
+                        span { class: "medley-badge", "{slot.index + 1}/{slot.count}" }
+                    }
                     span { class: "up-next-title", lang: "th", "{item.song.title}" }
                     span { class: "up-next-artist", lang: "th", "{item.song.artist}" }
                 }

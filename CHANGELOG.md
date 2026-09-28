@@ -3,7 +3,16 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.36.0] - 2026-09-28
+## [0.37.0] - 2026-09-29
+### Added
+- Medley: sing parts of several songs back to back as one queue entry (Queue tab → Medley). Add a song by its code and the app guesses its part (after the intro, about a verse and a chorus; nothing listens to the song, so it says "guessed"), then nudge the start and end 5 s at a time. Or, while a song plays, mark A and B in the practice row and press **+ Medley**: that part is used every time the song is added again. Save medleys on this device, play one now or queue it.
+- Each part fades in from silence, fades out over its last 2.5 s and moves straight on to the next part. The player shows "Medley 2/4 · title" with the part's times, the queue marks each part, each part gets its own score, and the spoken MC talks only before the first part.
+- A song requested "next" (Insert, ★ TIP) while a medley is being sung waits until the medley ends, so a medley is never split.
+
+### Fixed
+- The same song queued twice in a row did not start again from the top when its turn came: the app kept the first one's player instead of loading a new one. Every queue entry now gets a fresh player.
+
+## [0.36.0] - 2026-09-28 (`18f43541`)
 ### Added
 - Volume control: a slider in the player bar (0-100, saved on this device, 85 to start), ↑ / ↓ on the keyboard (5 a press) and a controller's D-pad up / down. It sets both the karaoke and the original-vocal players, stays the same for every next song, and switching Vocal no longer jumps it to full.
 - Phone remote: 🔉 − / 🔊 + buttons (10 a tap) with the booth's volume shown, when the host lets phones control playback.

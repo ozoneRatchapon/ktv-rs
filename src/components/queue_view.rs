@@ -23,6 +23,8 @@ pub fn QueueView(
     on_simulate_end: EventHandler<()>,
     /// Curator mode (Settings → Guide Timing Tools): shows the "End Song" test control.
     show_dev_tools: bool,
+    /// Shown under the queue list (the medley builder).
+    children: Element,
 ) -> Element {
     rsx! {
         div { class: "queue-container",
@@ -49,7 +51,11 @@ pub fn QueueView(
                                 span { class: "wave-bar" }
                             }
                             div { class: "now-meta",
-                                div { class: "now-code", "#{curr.song.code}" }
+                                div { class: "now-code", "#{curr.song.code}"
+                                    if let Some(slot) = &curr.part {
+                                        span { class: "medley-badge", lang: "th", "{slot.label()}" }
+                                    }
+                                }
                                 h3 { class: "now-song-title", lang: "th", "{curr.song.title}" }
                                 p { class: "now-song-artist", lang: "th", "{curr.song.artist} • {curr.song.channel}" }
                             }
@@ -102,6 +108,9 @@ pub fn QueueView(
                                     if booth::is_tip_request(item) {
                                         span { class: "tip-badge", "★ TIP" }
                                     }
+                                    if let Some(slot) = &item.part {
+                                        span { class: "medley-badge", lang: "th", "{slot.label()}" }
+                                    }
                                 }
                                 div { class: "item-title", lang: "th", "{item.song.title}" }
                                 div { class: "item-artist", lang: "th", "{item.song.artist} • {item.song.channel}" }
@@ -140,6 +149,8 @@ pub fn QueueView(
                     }
                 }
             }
+
+            {children}
 
             // Auto-DJ suggestions
             div { class: "auto-dj-section",

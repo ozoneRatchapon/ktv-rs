@@ -90,18 +90,24 @@ pub fn Player(
         is_guide_vocal.set(false);
         is_guide_failed.set(false);
         is_guide_lost.set(false);
-        current_playback_sec.set(it.song.start_sec(auto_skip));
+        current_playback_sec.set(it.start_at(auto_skip) as u64);
         let (offset_secs, rate) = mapping;
         SyncCommand::LoadSong { offset_secs, rate }.run();
+        if let Some(slot) = &it.part {
+            SyncCommand::SetPart { end: slot.span.end }.run();
+        }
     }));
 
     // Karaoke iframe remounts whenever its video or start second changes; keep the sync clock in step
+    // The embed takes whole seconds: a medley part starts from the second its start falls in
     let start_sec = current_item
         .as_ref()
-        .map(|it| it.song.start_sec(is_skipped()));
-    let video_id = current_item.as_ref().map(|it| it.song.youtube_id.clone());
-    use_effect(use_reactive((&video_id, &start_sec), move |(id, sec)| {
-        if let (Some(_), Some(sec)) = (id, sec) {
+        .map(|it| it.start_at(is_skipped()).floor() as u64);
+    // Keyed by queue entry too: the same song again from the same second (queued twice, or a medley repeating a
+    // part) is a new player, not the one that already finished
+    let mount = current_item.as_ref().map(|it| (it.queue_id, it.song.youtube_id.clone()));
+    use_effect(use_reactive((&mount, &start_sec), move |(mount, sec)| {
+        if let (Some(_), Some(sec)) = (mount, sec) {
             SyncCommand::SetStart(sec).run();
         }
     }));
@@ -131,13 +137,17 @@ pub fn Player(
                 div { class: "player-container",
                     div { class: "video-stage",
                         div { class: "video-frame-wrapper",
-                            iframe {
-                                key: "{active_video_id}_{start_sec}_{playback_speed}",
-                                id: KARAOKE_FRAME_ID,
-                                src: "{iframe_src}",
-                                title: "{song.title}",
-                                allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
-                                allowfullscreen: true,
+                            // A keyed list of one: Dioxus honours keys only in lists, and a new queue entry must get a
+                            // new player even for the same video from the same second (a changed src alone reloads it)
+                            for mount_key in [format!("{}_{active_video_id}_{start_sec}_{playback_speed}", item.queue_id)] {
+                                iframe {
+                                    key: "{mount_key}",
+                                    id: KARAOKE_FRAME_ID,
+                                    src: "{iframe_src}",
+                                    title: "{song.title}",
+                                    allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
+                                    allowfullscreen: true,
+                                }
                             }
                         }
 
@@ -160,8 +170,18 @@ pub fn Player(
 
                     // Bottom Player Bar
                     div { class: "player-bottom-bar",
-                        // Intro skip banner (karaoke mode only)
-                        if !is_guide_vocal() {
+                        if let Some(slot) = &item.part {
+                            div { class: "player-status-row",
+                                div { class: "intro-banner medley-banner", role: "status",
+                                    span { lang: "th", "{slot.label()}" }
+                                    span { class: "medley-banner-span",
+                                        "{format_time(slot.span.start as u64)} → {format_time(slot.span.end as u64)}"
+                                    }
+                                }
+                            }
+                        }
+                        // Intro skip banner (karaoke mode only; a medley part starts where it was marked)
+                        if !is_guide_vocal() && item.part.is_none() {
                             div { class: "player-status-row",
                                 if is_skipped() {
                                     div { class: "intro-banner skipped",

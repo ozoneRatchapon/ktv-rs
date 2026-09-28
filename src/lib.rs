@@ -7,6 +7,7 @@ pub mod js_bridge;
 pub mod keys;
 pub mod library;
 pub mod mc;
+pub mod medley;
 pub mod links;
 pub mod mic;
 pub mod picks;

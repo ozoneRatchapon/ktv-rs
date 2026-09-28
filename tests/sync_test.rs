@@ -30,6 +30,7 @@ fn test_commands_call_core_methods_with_typed_args() {
         (SyncCommand::SeekBy(-5), "seek_by", vec![Num(-5.0)]),
         (SyncCommand::Restart(18.0), "restart", vec![Num(18.0)]),
         (SyncCommand::SetVolume(60), "set_volume", vec![Num(60.0)]),
+        (SyncCommand::SetPart { end: 92.5 }, "set_part", vec![Num(92.5)]),
         (SyncCommand::SwitchVocal { original: true }, "switch_vocal", vec![Bool(true)]),
         (SyncCommand::SetMapping { offset_secs: -18.24, rate: 1.0012 }, "set_mapping", vec![Num(-18.24), Num(1.0012)]),
         (SyncCommand::SetMonitor(true), "set_monitor", vec![Bool(true)]),
