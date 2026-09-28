@@ -6,7 +6,7 @@ use crate::browser;
 use crate::mic::{Mic, MicChannels, MicError, HOP_SIZE};
 use crate::pitch::{rms, Mpm, MpmConfig, NoiseGate, NoteReading};
 use crate::score::{
-    stored_melody, LaneView, LaneWindow, Melody, MelodyScorer, MelodySummary, NoteLane, StoredMelodies, TakeResult,
+    stored_melody, LaneView, LaneWindow, MedleyTake, Melody, MelodyScorer, MelodySummary, NoteLane, StoredMelodies, TakeResult,
     TuningScorer, TuningSummary, FULL_COVERAGE, MIN_PHRASE_NOTES, MIN_SCORED_NOTES, PERFECT_CENTS, RANDOM_CENTS,
 };
 use crate::storage::{self, MELODIES_KEY};
@@ -138,7 +138,15 @@ impl Voice {
 /// which restarts the scores and reports each voice's finished take through `on_take_end` (a voice that judged
 /// no held note reports nothing).
 #[component]
-pub fn PitchMeter(take: f64, song: Song, duet: bool, mc_on: bool, on_take_end: EventHandler<TakeResult>) -> Element {
+pub fn PitchMeter(
+    take: f64,
+    song: Song,
+    /// The take's place in a medley, when the song is sung as a medley part.
+    medley: Option<MedleyTake>,
+    duet: bool,
+    mc_on: bool,
+    on_take_end: EventHandler<TakeResult>,
+) -> Element {
     // Owns the device; dropping the session (toggle off or unmount) releases the mic
     let mut session = use_signal(|| None::<Mic>);
     let mut state = use_signal(|| MicState::Off);
@@ -155,18 +163,19 @@ pub fn PitchMeter(take: f64, song: Song, duet: bool, mc_on: bool, on_take_end: E
         storage::load::<StoredMelodies>(MELODIES_KEY).and_then(|store| stored_melody(&store, &id)).map(Rc::new)
     }));
     // Song of the take being scored: guide edits change `song` without starting a new take
-    let song_meta = (song.id, song.title, song.artist);
+    let song_meta = (song.id, song.title, song.artist, medley);
     let mut take_song = use_signal(|| song_meta.clone());
 
     use_effect(use_reactive!(|take, song_meta| {
         if *current_take.peek() != take {
-            let (id, title, artist) = &*take_song.peek();
+            let (id, title, artist, medley) = &*take_song.peek();
             let ended_at = js_sys::Date::now();
             let duet = *active.peek() == MicChannels::Stereo;
             for (i, view) in views.iter().enumerate().take(active.peek().count()) {
                 let Some(result) = TakeResult::new(id, title, artist, *view.summary.peek(), ended_at) else { continue };
                 let part = duet.then_some(i as u8 + 1);
-                on_take_end.call(result.with_melody_score(view.melody_summary.peek().score()).with_part(part));
+                let result = result.with_melody_score(view.melody_summary.peek().score()).with_part(part);
+                on_take_end.call(result.with_medley(medley.clone()));
             }
             current_take.set(take);
             views.iter().for_each(|v| v.reset());

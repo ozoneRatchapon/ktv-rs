@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::mc::McVoice;
 use crate::medley::MedleySlot;
+use crate::score::MedleyTake;
 use crate::room::RemoteConfig;
 use crate::tip::TipConfig;
 
@@ -65,6 +66,16 @@ impl QueueItem {
     /// A later part of a medley, which follows the one before straight on.
     pub fn is_medley_join(&self) -> bool {
         self.part.as_ref().is_some_and(MedleySlot::is_join)
+    }
+
+    /// For a medley part, where its take sits in the medley (its parts were queued with consecutive ids).
+    pub fn medley_take(&self) -> Option<MedleyTake> {
+        self.part.as_ref().map(|slot| MedleyTake {
+            id: self.queue_id.saturating_sub(u64::from(slot.index)),
+            index: slot.index,
+            count: slot.count,
+            title: slot.title.clone(),
+        })
     }
 }
 

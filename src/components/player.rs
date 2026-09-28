@@ -114,6 +114,7 @@ pub fn Player(
 
     match current_item {
         Some(item) => {
+            let medley_take = item.medley_take();
             let song = item.song;
             let timing_song = song.clone();
             let has_guide = song.guide.is_some();
@@ -335,7 +336,7 @@ pub fn Player(
                                     }
                                 }
 
-                                PitchMeter { take: take_started_at, song: song.clone(), duet, mc_on, on_take_end }
+                                PitchMeter { take: take_started_at, song: song.clone(), medley: medley_take, duet, mc_on, on_take_end }
 
                                 // Play / Pause Toggle Button
                                 button {

@@ -687,6 +687,54 @@ test('medley share: Share gives a link that opens the medley in another builder 
   assert.equal(await page.eval(`!!document.querySelector('.medley-shared')`), false);
 }));
 
+test('medley score: each part gets its own card, and after the last part the card shows the whole medley\'s total', () => with_page({ fake_mic: true }, async (page) => {
+  const button = (scope, label) => `[...document.querySelectorAll(${JSON.stringify(scope)})].find((b) => b.textContent === ${JSON.stringify(label)})`;
+  const set_input = (id, value) => page.eval(`(() => { const i = document.getElementById(${JSON.stringify(id)}); i.value = ${JSON.stringify(value)}; i.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+  const next_song = `${button('.player-main-controls-row button', 'Next Song')}.click()`;
+  const sing = async () => {
+    await page.eval(`window.__mic_gain.gain.value = 0.3`);
+    for (const hz of [220, 246.94, 261.63, 293.66]) {
+      await page.eval(`window.__mic.frequency.value = ${hz}`);
+      await sleep(500);
+    }
+    await page.wait_for(`/^\\d+$/.test(document.querySelector('.tuning-score .tuning-value')?.textContent ?? '')`);
+    await page.eval(`window.__mic_gain.gain.value = 0.03`);
+  };
+
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Queue')).click()`);
+  await page.wait_for(`!!document.getElementById('medley_code')`);
+  for (const code of ['10001', '10005']) {
+    await set_input('medley_code', code);
+    await page.eval(`${button('.medley-add button', 'Add')}.click()`);
+  }
+  await set_input('medley_title', 'Mix');
+  await page.wait_for(`!${button('.medley-actions button', 'Play now')}.disabled`);
+  await page.eval(`${button('.medley-actions button', 'Play now')}.click()`);
+  await page.wait_for(`document.querySelector('.medley-banner')?.textContent.startsWith('Medley 1/2 · Mix')`);
+
+  await page.eval(`[...document.querySelectorAll('.pitch-meter button')].find((b) => b.textContent.startsWith('Mic')).click()`);
+  await page.wait_for(`!!window.__mic_gain`);
+  await page.eval(`window.__mic_gain.gain.value = 0.03`);
+  await page.wait_for(`document.querySelector('.pitch-note')?.textContent === 'Room check…'`);
+  await page.wait_for(`document.querySelector('.pitch-note')?.textContent !== 'Room check…'`, 5000);
+  await sing();
+  await page.eval(next_song);
+  await page.wait_for(`document.querySelector('.medley-banner')?.textContent.startsWith('Medley 2/2')`);
+  await page.wait_for(`[...document.querySelectorAll('.score-card-detail')].some((d) => d.textContent === 'Medley 1/2 · Mix')`);
+  const first = Number(await page.eval(`document.querySelector('.score-card-value').textContent`));
+
+  await sing();
+  await page.eval(next_song);
+  await page.wait_for(`document.querySelector('.score-card-medley')?.textContent === 'Medley · Mix'`);
+  const card = JSON.parse(await page.eval(`JSON.stringify({
+    total: Number(document.querySelector('.score-card-value').textContent),
+    detail: [...document.querySelectorAll('.score-card-detail')].map((d) => d.textContent),
+  })`));
+  const last = Number(card.detail.find((d) => d.startsWith('Mean of')).match(/last part (\d+)/)[1]);
+  assert.ok(card.detail.some((d) => d.startsWith('Mean of 2 of 2 parts')), JSON.stringify(card));
+  assert.equal(card.total, Math.round((first + last) / 2), `total is the mean of ${first} and ${last}`);
+}));
+
 test('count-in: tapping the beat sets the tempo (saved on this device), Count-in seeks 4 beats before the loop\'s A and runs until the part begins', () => with_page({}, async (page) => {
   // A controllable clock and a recording Replay (YouTube playback is not needed, and CI often has none)
   const install_clock = `(() => {
