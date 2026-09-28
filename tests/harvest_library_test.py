@@ -8,7 +8,8 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tools"))
 from harvest_library import (  # noqa: E402
-    assign_codes, parse_artist_first, parse_gmm, parse_smallroom, parse_title_colon, parse_title_first, retire_codes)
+    assign_codes, parse_artist_first, parse_gmm, parse_lit, parse_smallroom, parse_title_colon, parse_title_first,
+    retire_codes)
 
 
 class ParseGmm(unittest.TestCase):
@@ -55,6 +56,21 @@ class ParseOtherLabels(unittest.TestCase):
         self.assertEqual(parse_title_colon("ใจเหลือเหลือ : Dr.fuu [Official Karaoke]"), ("ใจเหลือเหลือ", "Dr.fuu", ""))
         self.assertEqual(parse_title_colon("คนเก่ง : เต๋า สมชาย [Official karaoke]"), ("คนเก่ง", "เต๋า สมชาย", ""))
         self.assertIsNone(parse_title_colon("NA"))
+
+    def test_lit_official_karaoke(self):
+        # PiXXiE (LIT Entertainment): `Artist - Song (English) | OFFICIAL KARAOKE`, the English title as the alias
+        cases = {
+            "PiXXiE - TOXIQUE | OFFICIAL KARAOKE": ("TOXIQUE", "PiXXiE", ""),
+            "MABELZ PiXXiE - heartstopper | OFFICIAL KARAOKE": ("heartstopper", "MABELZ PiXXiE", ""),
+            "INGKHO PiXXiE - สนทนา (Deep Talk) | OFFICIAL KARAOKE": ("สนทนา", "INGKHO PiXXiE", "Deep Talk"),
+            "PiXXiE - มูเตลู (MUTELU) OFFICIAL KARAOKE": ("มูเตลู", "PiXXiE", "MUTELU"),
+            "PiXXiE - เด็ด (DED) Official Karaoke": ("เด็ด", "PiXXiE", "DED"),
+            "PiXXiE - ติดฝน (rain) VISUALIZER PIANO VER. | OFFICIAL KARAOKE": ("ติดฝน (Piano Ver.)", "PiXXiE", "rain"),
+            "PiXXiE - ACHOO! | OFFICIAL KARAOKE": ("ACHOO!", "PiXXiE", ""),
+        }
+        for title, want in cases.items():
+            self.assertEqual(parse_lit(title), want, title)
+        self.assertIsNone(parse_lit("PiXXiE TOXIQUE Official MV"))
 
     def test_smallroom(self):
         self.assertEqual(parse_smallroom("MOOR - แต่งงาน | Will you marry me? [Karaoke]"), ("แต่งงาน", "MOOR", "Will you marry me?"))

@@ -158,6 +158,7 @@ fn test_every_label_keeps_its_code_range() {
         ("Muzik Move Karaoke", 55001..=59999),
         ("RS Music", 60001..=64999),
         ("Smallroom Karaoke", 65001..=69999),
+        ("LIT Entertainment", 70001..=70999),
     ];
     for (channel, range) in ranges {
         let songs: Vec<&Song> = SONGS.iter().filter(|s| s.channel == channel).collect();
