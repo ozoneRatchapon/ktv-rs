@@ -1,8 +1,9 @@
 use dioxus::prelude::*;
 
 use crate::booth::Placement;
+use crate::browser;
 use crate::components::practice::format_mark;
-use crate::medley::{display_title, Edge, Medley, MedleyBook, PartSource, MIN_PARTS};
+use crate::medley::{display_title, share_fragment, shown_title, Edge, Medley, MedleyBook, Opened, PartSource, SharedMedley, MIN_PARTS};
 
 /// Seconds one nudge moves a part's start or end.
 const NUDGE_SECS: f64 = 5.0;
@@ -18,10 +19,17 @@ pub fn MedleyPanel(
     on_add_code: Callback<String, Result<String, String>>,
     /// Play now or queue a medley; the text to show.
     on_queue: Callback<(Medley, Placement), Result<String, String>>,
+    /// A medley from the link this page was opened with, until opened or dismissed.
+    mut shared: Signal<Option<SharedMedley>>,
+    /// Look a shared medley's songs up in this songbook.
+    on_open_shared: Callback<SharedMedley, Opened>,
 ) -> Element {
     let mut book = use_context::<Signal<MedleyBook>>();
     let mut code = use_signal(String::new);
     let mut notice = use_signal(|| None as Notice);
+    // The last share link and the medley it holds: shown while the draft is unchanged, so it can be copied by
+    // hand where the clipboard is blocked (plain http on a LAN address)
+    let mut share_link = use_signal(|| None::<(Medley, String)>);
     let draft = book.read().draft.clone();
     let saved = book.read().saved.clone();
     let ready = draft.parts.len() >= MIN_PARTS;
@@ -34,6 +42,30 @@ pub fn MedleyPanel(
         }
     };
     let mut queue = move |medley: Medley, placement: Placement| notice.set(Some(on_queue.call((medley, placement))));
+    let mut open_shared = move |link: SharedMedley| {
+        let Opened { medley, skipped } = on_open_shared.call(link);
+        if medley.parts.is_empty() {
+            notice.set(Some(Err("None of its songs are in this songbook (yet): wait for the library to load, then open it again".to_string())));
+            return;
+        }
+        let title = display_title(&medley).to_string();
+        book.write().draft = medley;
+        shared.set(None);
+        notice.set(Some(Ok(match skipped {
+            0 => format!("Opened: {title}"),
+            1 => format!("Opened: {title} (1 part skipped: its song is not in this songbook)"),
+            n => format!("Opened: {title} ({n} parts skipped: their songs are not in this songbook)"),
+        })));
+    };
+    let mut share = move |medley: &Medley| {
+        let link = format!("{}/{}", browser::page_origin().unwrap_or_default(), share_fragment(medley));
+        share_link.set(Some((medley.clone(), link.clone())));
+        spawn(async move {
+            let copied = browser::copy_text(&link).await;
+            let how = if copied { "Share link copied" } else { "Copy the share link below" };
+            notice.set(Some(Ok(format!("{how}: whoever opens it gets this medley in their builder"))));
+        });
+    };
 
     rsx! {
         section { class: "medley-section", aria_label: "Medley",
@@ -45,6 +77,18 @@ pub fn MedleyPanel(
             }
             p { class: "medley-hint",
                 "Sing parts of several songs back to back. Add a song by its code: its part is guessed (after the intro, about a verse and a chorus), so nudge it by ear. Or mark A and B while a song plays and press + Medley: a marked part is used whenever that song is added."
+            }
+            if let Some(link) = shared() {
+                div { class: "medley-shared", role: "status",
+                    span { "Shared with you: " }
+                    span { class: "item-title", lang: "th", "{shown_title(&link.title)}" }
+                    span { class: "queue-count-pill", "{link.parts.len()} parts" }
+                    if !draft.parts.is_empty() {
+                        span { class: "medley-hint", "Opening it replaces the medley being built." }
+                    }
+                    button { class: "antic-btn queue", onclick: move |_| open_shared(link.clone()), "Open" }
+                    button { class: "antic-btn", onclick: move |_| shared.set(None), "Dismiss" }
+                }
             }
             div { class: "medley-add",
                 input {
@@ -159,7 +203,33 @@ pub fn MedleyPanel(
                         },
                         "Save"
                     }
-                    button { class: "ctrl-btn action-btn", title: "Start a new medley", onclick: move |_| book.write().clear_draft(), "Clear" }
+                    button {
+                        class: "ctrl-btn action-btn",
+                        disabled: !ready,
+                        title: "Copy a link that opens this medley in someone else's builder",
+                        onclick: {
+                            let medley = draft.clone();
+                            move |_| share(&medley)
+                        },
+                        "Share"
+                    }
+                    button {
+                        class: "ctrl-btn action-btn",
+                        title: "Start a new medley",
+                        onclick: move |_| book.write().clear_draft(),
+                        "Clear"
+                    }
+                }
+                if let Some((_, link)) = share_link().filter(|(shared, _)| *shared == draft) {
+                    input {
+                        id: "medley_share_link",
+                        name: "medley_share_link",
+                        class: "form-input medley-share-link",
+                        r#type: "url",
+                        readonly: true,
+                        aria_label: "Share link for this medley",
+                        value: "{link}",
+                    }
                 }
                 if !ready {
                     p { class: "medley-hint", "Add at least {MIN_PARTS} parts to play or save it." }

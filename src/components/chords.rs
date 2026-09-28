@@ -192,8 +192,11 @@ pub fn ChordLane(
                                 onclick: {
                                     let json = chart.to_json();
                                     move |_| {
-                                        browser::copy_text(&json);
-                                        notice.set(Some("Chart copied".to_string()));
+                                        let json = json.clone();
+                                        spawn(async move {
+                                            let copied = browser::copy_text(&json).await;
+                                            notice.set(Some(if copied { "Chart copied" } else { "Copy blocked by the browser (needs https)" }.to_string()));
+                                        });
                                     }
                                 },
                                 "Copy chart"

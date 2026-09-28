@@ -642,6 +642,51 @@ test('medley: parts added by code are guessed, a nudge or A/B marks them, Play n
   await page.wait_for(`document.querySelector('.medley-saved-item .item-title')?.textContent === 'Test medley' && document.querySelectorAll('.medley-part').length === 3`);
 }));
 
+test('medley share: Share gives a link that opens the medley in another builder (songs missing there are skipped), and the link leaves the address bar', () => with_page({}, async (page) => {
+  const open_queue = `[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Queue')).click()`;
+  const button = (scope, label) => `[...document.querySelectorAll(${JSON.stringify(scope)})].find((b) => b.textContent === ${JSON.stringify(label)})`;
+  const set_input = (id, value) => page.eval(`(() => { const i = document.getElementById(${JSON.stringify(id)}); i.value = ${JSON.stringify(value)}; i.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+  const parts = `JSON.stringify([...document.querySelectorAll('.medley-part')].map((p) => [p.querySelector('.item-code').textContent, p.querySelector('.medley-part-span').textContent, p.querySelector('.medley-source').textContent]))`;
+
+  await page.eval(open_queue);
+  await page.wait_for(`!!document.getElementById('medley_code')`);
+  for (const code of ['10001', '10005']) {
+    await set_input('medley_code', code);
+    await page.eval(`${button('.medley-add button', 'Add')}.click()`);
+  }
+  await page.wait_for(`document.querySelectorAll('.medley-part').length === 2`);
+  await page.eval(`[...document.querySelectorAll('.medley-part')][1].querySelector('[title="Start 5 s later"]').click()`);
+  await set_input('medley_title', 'ยาวๆ & มันส์');
+  await page.wait_for(`!${button('.medley-actions button', 'Share')}.disabled`);
+  const built = await page.eval(parts);
+  await page.eval(`${button('.medley-actions button', 'Share')}.click()`);
+  await page.wait_for(`!!document.getElementById('medley_share_link')`);
+  const link = await page.eval(`document.getElementById('medley_share_link').value`);
+  assert.match(link, /^https?:\/\/[^/]+\/#medley=/);
+  // Editing the draft hides the now stale link
+  await set_input('medley_title', 'ยาวๆ & มันส์!');
+  await page.wait_for(`!document.getElementById('medley_share_link')`);
+
+  // Someone else's builder: an empty draft here, and one song of theirs this songbook does not have
+  await page.eval(`${button('.medley-actions button', 'Clear')}.click()`);
+  await page.send('Page.navigate', { url: 'about:blank' });
+  await page.goto(link.replace('&parts=', '&parts=99999:10-40,'));
+  await page.wait_for(`!!document.querySelector('.medley-shared')`);
+  assert.equal(await page.eval(`location.hash`), '', 'the link leaves the address bar');
+  assert.equal(await page.eval(`document.querySelector('.medley-shared .item-title').textContent`), 'ยาวๆ & มันส์');
+  await page.eval(`${button('.medley-shared button', 'Open')}.click()`);
+  await page.wait_for(`!document.querySelector('.medley-shared') && document.querySelectorAll('.medley-part').length === 2`);
+  assert.equal(await page.eval(parts), built, 'songs, times and marked / guessed as shared');
+  assert.equal(await page.eval(`document.getElementById('medley_title').value`), 'ยาวๆ & มันส์');
+  assert.match(await page.eval(`document.querySelector('.medley-section [role=status]').textContent`), /1 part skipped: its song/);
+
+  // A reload does not offer it again
+  await page.reload();
+  await page.eval(open_queue);
+  await page.wait_for(`!!document.getElementById('medley_code')`);
+  assert.equal(await page.eval(`!!document.querySelector('.medley-shared')`), false);
+}));
+
 test('count-in: tapping the beat sets the tempo (saved on this device), Count-in seeks 4 beats before the loop\'s A and runs until the part begins', () => with_page({}, async (page) => {
   // A controllable clock and a recording Replay (YouTube playback is not needed, and CI often has none)
   const install_clock = `(() => {

@@ -9,7 +9,7 @@ use app::components;
 use app::keys::{self, KeyAction};
 use app::library;
 use app::mc::{self, McEvent};
-use app::medley::{self, Medley, MedleyBook};
+use app::medley::{self, Medley, MedleyBook, SharedMedley};
 use app::recommendation;
 use app::room::{self, PhoneCommand};
 use app::picks::Picks;
@@ -84,7 +84,17 @@ fn App() -> Element {
     let mut settings = use_signal(|| storage::load::<AppSettings>(SETTINGS_KEY).unwrap_or_default());
     // Open on every visit until closed once
     let mut show_help = use_signal(move || !settings.peek().seen_shortcuts);
-    let mut active_tab = use_signal(|| KtvTab::Catalog);
+    // A medley shared by link (`#medley=…`): read once, then dropped from the address bar so a reload does not
+    // offer it again; the page opens on the Queue tab, where the medley builder offers it
+    let shared_medley = use_signal(|| {
+        let shared = app::browser::page_fragment().and_then(|f| medley::parse_fragment(&f));
+        if shared.is_some() {
+            app::browser::clear_fragment();
+        }
+        shared
+    });
+    let mut active_tab =
+        use_signal(move || if shared_medley.peek().is_some() { KtvTab::Queue } else { KtvTab::Catalog });
 
     // Guide timings set in timing mode on this device; they win over the catalog's
     let mut guide_overrides = use_signal(|| storage::load::<GuideOverrides>(GUIDES_KEY).unwrap_or_default());
@@ -142,6 +152,12 @@ fn App() -> Element {
     let mut song_started_at = use_signal(js_sys::Date::now);
     // One-line toast: Auto-DJ picks, songs queued by keypad code
     let mut booth_notice = use_signal(|| None::<String>);
+    use_hook(move || {
+        if let Some(shared) = &*shared_medley.peek() {
+            let title = medley::shown_title(&shared.title);
+            booth_notice.set(Some(format!("🔗 Shared medley: {title}. Open it under MEDLEY below the queue")));
+        }
+    });
     let mut search_query = use_signal(String::new);
 
     // Full library: the curated catalog is usable at once; the rest joins when the fetch lands
@@ -273,6 +289,7 @@ fn App() -> Element {
         }
         Ok(format!("Queued {title} ({count} parts)"))
     };
+    let handle_open_shared_medley = move |shared: SharedMedley| shared.open(song_by_code);
     let handle_add_medley_code = move |code: String| -> Result<String, String> {
         let code = catalog::keypad_code(&code).ok_or("Type a 5-digit song code")?;
         let song = song_by_code(code).ok_or(format!("No song with code {code}"))?;
@@ -646,7 +663,12 @@ fn App() -> Element {
                                 on_play_song: handle_play_song,
                                 on_simulate_end: handle_video_ended,
                                 show_dev_tools: settings().show_timing_tools,
-                                MedleyPanel { on_add_code: handle_add_medley_code, on_queue: handle_queue_medley }
+                                MedleyPanel {
+                                    on_add_code: handle_add_medley_code,
+                                    on_queue: handle_queue_medley,
+                                    shared: shared_medley,
+                                    on_open_shared: handle_open_shared_medley,
+                                }
                             }
                         },
                         KtvTab::Remote => rsx! {

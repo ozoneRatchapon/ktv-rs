@@ -1,13 +1,18 @@
 //! Small browser actions called from event handlers (web-sys directly, no `eval`). No-ops on the host.
 
-/// Copy text to the clipboard (best effort: needs a secure context and a user gesture).
-pub fn copy_text(text: &str) {
+/// Copy text to the clipboard; `false` when the browser refused (it needs a secure context and a user gesture,
+/// so plain http on a LAN address fails). Always `false` on the host.
+pub async fn copy_text(text: &str) -> bool {
     #[cfg(target_arch = "wasm32")]
-    if let Some(window) = web_sys::window() {
-        let _ = window.navigator().clipboard().write_text(text);
+    {
+        let Some(window) = web_sys::window() else { return false };
+        wasm_bindgen_futures::JsFuture::from(window.navigator().clipboard().write_text(text)).await.is_ok()
     }
     #[cfg(not(target_arch = "wasm32"))]
-    let _ = text;
+    {
+        let _ = text;
+        false
+    }
 }
 
 /// Enter fullscreen on the first element matching `selector`, or leave fullscreen. Call from a click handler.
@@ -115,6 +120,31 @@ pub fn page_origin() -> Option<String> {
     #[cfg(not(target_arch = "wasm32"))]
     {
         None
+    }
+}
+
+/// This page's URL fragment without its `#` (`None` when empty, and on the host).
+pub fn page_fragment() -> Option<String> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let hash = web_sys::window()?.location().hash().ok()?;
+        let fragment = hash.trim_start_matches('#');
+        (!fragment.is_empty()).then(|| fragment.to_string())
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        None
+    }
+}
+
+/// Drop the URL fragment from the address bar (no reload, no history entry), so a reload does not act on it again.
+pub fn clear_fragment() {
+    #[cfg(target_arch = "wasm32")]
+    if let Some(window) = web_sys::window() {
+        let location = window.location();
+        if let (Ok(path), Ok(search), Ok(history)) = (location.pathname(), location.search(), window.history()) {
+            let _ = history.replace_state_with_url(&wasm_bindgen::JsValue::NULL, "", Some(&format!("{path}{search}")));
+        }
     }
 }
 
