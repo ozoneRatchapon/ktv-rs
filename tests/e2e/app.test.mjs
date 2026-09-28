@@ -127,7 +127,9 @@ for (const width of [1280, 900, 600, 375]) {
     await page.wait_for(`!!document.querySelector('.pitch-meter .tuning-score')`);
     const outside = await page.eval(`(() => {
       const card = document.querySelector('.player-container').getBoundingClientRect();
-      return [...document.querySelectorAll('.pitch-meter > *')]
+      // Boxes, not wrappers: a solo voice row is display: contents (no box of its own)
+      return [...document.querySelectorAll('.pitch-meter > *, .pitch-meter .voice-row > *')]
+        .filter((e) => getComputedStyle(e).display !== 'contents')
         .filter((e) => { const r = e.getBoundingClientRect(); return r.left < card.left || r.right > card.right; })
         .map((e) => e.className);
     })()`);
@@ -271,6 +273,39 @@ test('mic: room check, noise gate, held notes give a Tuning score, a phrase scor
     });
   })()`);
   assert.deepEqual(JSON.parse(board), { leaders: ['Pim'], recent: [`${sung} · Pim`] }, 'history and name survive reload');
+}));
+
+test('duet: two mics on one stereo receiver each get a pitch, lane and Tuning score, and each take gets its own result card and name', () => with_page({ fake_mic: 'stereo' }, async (page) => {
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Settings')).click()`);
+  await page.wait_for(`!!document.getElementById('duet_toggle')`);
+  await page.click('#duet_toggle');
+  await page.wait_for(`document.getElementById('duet_toggle').textContent === 'ON'`);
+  await page.eval(`[...document.querySelectorAll('.pitch-meter button')].find((b) => b.textContent.startsWith('Mic')).click()`);
+  await page.wait_for(`!!window.__mic2_gain`);
+  await page.wait_for(`document.querySelectorAll('.voice-row.duet').length === 2`);
+  await page.wait_for(`[...document.querySelectorAll('.pitch-note')].every((n) => n.textContent !== 'Room check…')`, 6000);
+  // Left sings A3 then B3, right sings C4 then D4, both in tune
+  await page.eval(`window.__mic_gain.gain.value = 0.3; window.__mic2_gain.gain.value = 0.3`);
+  await page.wait_for(`JSON.stringify([...document.querySelectorAll('.pitch-note')].map((n) => n.textContent)) === '["A3","C4"]'`);
+  for (const [left, right] of [[246.94, 293.66], [220, 261.63], [246.94, 293.66], [220, 261.63]]) {
+    await sleep(500);
+    await page.eval(`window.__mic.frequency.value = ${left}; window.__mic2.frequency.value = ${right}`);
+  }
+  await page.wait_for(`[...document.querySelectorAll('.voice-row.duet .tuning-score .tuning-value')].every((v) => /^\\d+$/.test(v.textContent))`, 6000);
+  assert.equal(await page.eval(`document.querySelectorAll('.voice-row.duet .tuning-score').length`), 2);
+  await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
+  await page.wait_for(`document.querySelectorAll('.score-card').length === 2`);
+  const parts = await page.eval(`JSON.stringify([...document.querySelectorAll('.score-card-part')].map((e) => e.textContent))`);
+  assert.deepEqual(JSON.parse(parts), ['Duet · singer 1 (left mic)', 'Duet · singer 2 (right mic)']);
+  // Each card names its own singer
+  for (const [id, name] of [['singer_name', 'Pim'], ['singer_name_2', 'Ton']]) {
+    await page.eval(`document.getElementById('${id}').focus()`);
+    for (const c of name) await page.key(c);
+    await page.key('Enter');
+  }
+  await page.wait_for(`JSON.stringify([...document.querySelectorAll('.score-card-singer strong')].map((e) => e.textContent)) === '["Pim","Ton"]'`);
+  await page.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Queue')).click()`);
+  await page.wait_for(`document.querySelectorAll('.leaderboard .score-row-song strong').length === 2`);
 }));
 
 test('melody score: with a melody saved on this device, the lane draws the tune in the singer\'s octave, the right note in another octave scores high, a wrong note pulls it down, and the result card shows it', () => with_page({ fake_mic: true }, async (page) => {

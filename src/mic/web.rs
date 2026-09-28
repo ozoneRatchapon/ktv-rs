@@ -7,7 +7,7 @@ use web_sys::{
     MediaStreamConstraints, MediaStreamTrack, MessageEvent, Url,
 };
 
-use super::types::{MicError, FRAME_SIZE, HOP_SIZE};
+use super::types::{MicChannels, MicError, FRAME_SIZE, HOP_SIZE};
 
 const WORKLET_JS: &str = include_str!("../../assets/mic_worklet.js");
 /// Must match `registerProcessor` in `assets/mic_worklet.js`.
@@ -24,18 +24,18 @@ pub struct Mic {
 }
 
 impl Mic {
-    /// Ask for the mic and start delivering `FRAME_SIZE`-sample mono frames every `HOP_SIZE` samples.
-    /// `make_handler` receives the device sample rate and returns the per-frame callback.
-    pub async fn start<F, H>(make_handler: F) -> Result<Self, MicError>
+    /// Ask for the mic and start delivering `FRAME_SIZE`-sample frames every `HOP_SIZE` samples, per channel.
+    /// `make_handler` receives the device sample rate and returns the callback, called with (channel, frame).
+    pub async fn start<F, H>(channels: MicChannels, make_handler: F) -> Result<Self, MicError>
     where
         F: FnOnce(f32) -> H,
-        H: FnMut(&[f32]) + 'static,
+        H: FnMut(usize, &[f32]) + 'static,
     {
         let window = web_sys::window().ok_or(MicError::Unsupported)?;
         let devices = window.navigator().media_devices().map_err(|_| MicError::Unsupported)?;
 
         let constraints = MediaStreamConstraints::new();
-        constraints.set_audio(&audio_constraints());
+        constraints.set_audio(&audio_constraints(channels));
         let request = devices.get_user_media_with_constraints(&constraints).map_err(to_mic_error)?;
         let stream = StreamGuard(JsFuture::from(request).await.map_err(to_mic_error)?.unchecked_into());
 
@@ -45,18 +45,25 @@ impl Mic {
         let options = AudioWorkletNodeOptions::new();
         options.set_number_of_inputs(1);
         options.set_number_of_outputs(0); // analysis only: never routed to the speakers
-        options.set_channel_count(1);
-        options.set_processor_options(Some(&processor_options()));
+        options.set_channel_count(channels.count() as u32);
+        // Stereo: keep left and right apart (no up/down mixing)
+        options.set_channel_count_mode(web_sys::ChannelCountMode::Explicit);
+        options.set_channel_interpretation(web_sys::ChannelInterpretation::Discrete);
+        options.set_processor_options(Some(&processor_options(channels)));
         let node = AudioWorkletNode::new_with_options(&ctx.0, PROCESSOR_NAME, &options).map_err(to_mic_error)?;
         let port = node.port().map_err(to_mic_error)?;
 
         let mut on_frame = make_handler(ctx.0.sample_rate());
-        let mut buf = vec![0.0f32; FRAME_SIZE as usize];
+        let mut buf = vec![0.0f32; FRAME_SIZE as usize * channels.count()];
+        let count = channels.count();
         let closure = Closure::<dyn FnMut(MessageEvent)>::new(move |event: MessageEvent| {
-            if let Ok(frame) = event.data().dyn_into::<Float32Array>() {
-                buf.resize(frame.length() as usize, 0.0);
-                frame.copy_to(&mut buf);
-                on_frame(&buf);
+            if let Ok(frames) = event.data().dyn_into::<Float32Array>() {
+                buf.resize(frames.length() as usize, 0.0);
+                frames.copy_to(&mut buf);
+                // Channels back to back (see assets/mic_worklet.js)
+                for (channel, frame) in buf.chunks_exact(buf.len() / count).enumerate() {
+                    on_frame(channel, frame);
+                }
             }
         });
         port.set_onmessage(Some(closure.as_ref().unchecked_ref()));
@@ -71,20 +78,26 @@ impl Mic {
     }
 }
 
-/// Echo cancellation stays on: it removes the karaoke backing track (played by this tab)
-/// from the mic signal, which would otherwise dominate the pitch. Noise suppression and AGC
-/// are off because they smear sustained notes and pump the level.
-fn audio_constraints() -> JsValue {
+/// Mono: echo cancellation stays on: it removes the karaoke backing track (played by this tab)
+/// from the mic signal, which would otherwise dominate the pitch. Stereo (duet receiver): off, because browsers
+/// mix echo-cancelled input down to one channel. Noise suppression and AGC are always off: they smear sustained
+/// notes and pump the level.
+fn audio_constraints(channels: MicChannels) -> JsValue {
     let audio = Object::new();
-    for (key, on) in [("echoCancellation", true), ("noiseSuppression", false), ("autoGainControl", false)] {
+    let echo = channels == MicChannels::Mono;
+    for (key, on) in [("echoCancellation", echo), ("noiseSuppression", false), ("autoGainControl", false)] {
         let _ = Reflect::set(&audio, &key.into(), &on.into());
     }
-    let _ = Reflect::set(&audio, &"channelCount".into(), &1.into());
+    // `ideal`, not exact: a mono device still opens in duet mode (the second singer then stays silent)
+    let count = Object::new();
+    let _ = Reflect::set(&count, &"ideal".into(), &(channels.count() as u32).into());
+    let _ = Reflect::set(&audio, &"channelCount".into(), &count);
     audio.into()
 }
 
-fn processor_options() -> Object {
+fn processor_options(channels: MicChannels) -> Object {
     let opts = Object::new();
+    let _ = Reflect::set(&opts, &"channels".into(), &(channels.count() as u32).into());
     let _ = Reflect::set(&opts, &"frame_size".into(), &FRAME_SIZE.into());
     let _ = Reflect::set(&opts, &"hop_size".into(), &HOP_SIZE.into());
     opts

@@ -29,6 +29,26 @@ const FAKE_MIC = `navigator.mediaDevices.getUserMedia = async () => {
   return out.stream;
 };`;
 
+// Duet receiver: one stereo device, a sawtooth per channel (left = singer 1, right = singer 2), both silent at first.
+// `window.__mic` / `__mic_gain` drive the left voice, `__mic2` / `__mic2_gain` the right.
+const FAKE_STEREO_MIC = `navigator.mediaDevices.getUserMedia = async () => {
+  const ctx = new AudioContext();
+  const out = ctx.createMediaStreamDestination();
+  out.channelCount = 2;
+  const merger = new ChannelMergerNode(ctx, { numberOfInputs: 2 });
+  const voice = (hz, input) => {
+    const osc = new OscillatorNode(ctx, { type: 'sawtooth', frequency: hz });
+    const gain = new GainNode(ctx, { gain: 0, channelCount: 1, channelCountMode: 'explicit' });
+    osc.connect(gain).connect(merger, 0, input);
+    osc.start();
+    return [osc, gain];
+  };
+  [window.__mic, window.__mic_gain] = voice(220, 0);
+  [window.__mic2, window.__mic2_gain] = voice(261.63, 1);
+  merger.connect(out);
+  return out.stream;
+};`;
+
 /** Launch headless Chrome; returns { new_page, close }. Each page gets its own browser context (fresh storage).
  *  `real_autoplay`: keep Chrome's default policy (sound needs a user gesture), as a first-time visitor has. */
 export async function launch({ real_autoplay = false } = {}) {
@@ -49,7 +69,8 @@ export async function launch({ real_autoplay = false } = {}) {
   });
   const browser = await connect(ws_url);
 
-  /** `fake_mic`: getUserMedia returns an oscillator: `window.__mic.frequency.value = hz`, `window.__mic_gain.gain.value = level`. */
+  /** `fake_mic`: getUserMedia returns an oscillator: `window.__mic.frequency.value = hz`, `window.__mic_gain.gain.value = level`.
+   *  `fake_mic: 'stereo'`: a duet receiver, a second voice on the right channel (`__mic2`, `__mic2_gain`). */
   async function new_page({ width = 1280, height = 900, fake_mic = false } = {}) {
     const { browserContextId } = await browser.send('Target.createBrowserContext');
     const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank', browserContextId });
@@ -68,7 +89,7 @@ export async function launch({ real_autoplay = false } = {}) {
       source: `window.__csp = []; document.addEventListener('securitypolicyviolation', (e) => window.__csp.push(e.violatedDirective + ' ' + e.blockedURI));`,
     });
     if (fake_mic) {
-      await page.send('Page.addScriptToEvaluateOnNewDocument', { source: FAKE_MIC });
+      await page.send('Page.addScriptToEvaluateOnNewDocument', { source: fake_mic === 'stereo' ? FAKE_STEREO_MIC : FAKE_MIC });
     }
     await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
     // Cleanup never fails a test: on CI runners Chrome has stalled disposing a context (with YouTube frames) for

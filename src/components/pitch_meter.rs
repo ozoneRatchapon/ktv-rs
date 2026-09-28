@@ -2,12 +2,11 @@ use std::rc::Rc;
 
 use dioxus::prelude::*;
 
-use crate::mic::{Mic, MicError, HOP_SIZE};
+use crate::mic::{Mic, MicChannels, MicError, HOP_SIZE};
 use crate::pitch::{rms, Mpm, MpmConfig, NoiseGate, NoteReading};
 use crate::score::{
-    stored_melody, LaneView, LaneWindow, MelodyScorer, MelodySummary, NoteLane, StoredMelodies, TakeResult,
-    TuningScorer, TuningSummary, FULL_COVERAGE, MIN_PHRASE_NOTES, MIN_SCORED_NOTES, PERFECT_CENTS,
-    RANDOM_CENTS,
+    stored_melody, LaneView, LaneWindow, Melody, MelodyScorer, MelodySummary, NoteLane, StoredMelodies, TakeResult,
+    TuningScorer, TuningSummary, FULL_COVERAGE, MIN_PHRASE_NOTES, MIN_SCORED_NOTES, PERFECT_CENTS, RANDOM_CENTS,
 };
 use crate::storage::{self, MELODIES_KEY};
 use crate::sync;
@@ -19,6 +18,8 @@ const LANE_SECONDS: f64 = 8.0;
 const LANE_AHEAD_SECONDS: f64 = 2.0;
 /// With a melody the targets scroll, so the lane is redrawn every few frames (~10 per second), not only on changes.
 const SCROLL_EVERY_FRAMES: u32 = 5;
+/// Voices one mic session can carry (a duet on a stereo receiver).
+const MAX_VOICES: usize = 2;
 
 #[derive(Debug, Clone, PartialEq)]
 enum MicState {
@@ -28,113 +29,190 @@ enum MicState {
     Failed(MicError),
 }
 
-/// Live pitch of the singer's mic (note name + cents) and a tuning score for the current take.
-/// `take` changes on every song start or replay, which restarts the score and reports the finished
-/// take through `on_take_end` (only if the mic judged at least one held note).
+/// What one singer's row shows. Signals, so the mic callback updates only what changed (they compare by identity).
+#[derive(Clone, Copy, PartialEq)]
+struct VoiceView {
+    reading: Signal<Option<NoteReading>>,
+    /// First second after the mic opens: measuring the room for this voice's noise gate.
+    room_check: Signal<bool>,
+    summary: Signal<TuningSummary>,
+    melody_summary: Signal<MelodySummary>,
+    lane: Signal<LaneView>,
+    phrase: Signal<Option<u8>>,
+}
+
+impl VoiceView {
+    fn use_new() -> Self {
+        Self {
+            reading: use_signal(|| None),
+            room_check: use_signal(|| false),
+            summary: use_signal(TuningSummary::default),
+            melody_summary: use_signal(MelodySummary::default),
+            lane: use_signal(LaneView::default),
+            phrase: use_signal(|| None),
+        }
+    }
+
+    /// New take (or mic restart): scores and lane start empty.
+    fn reset(mut self) {
+        self.summary.set(TuningSummary::default());
+        self.melody_summary.set(MelodySummary::default());
+        self.lane.set(LaneView::default());
+        self.phrase.set(None);
+    }
+}
+
+/// One singer's analysis, owned by the mic callback (no signals: it runs ~47 times a second per voice).
+struct Voice {
+    detector: Mpm,
+    gate: NoiseGate,
+    scorer: TuningScorer,
+    notes: NoteLane,
+    tune: MelodyScorer,
+    frame_secs: f64,
+    frames_since_draw: u32,
+}
+
+impl Voice {
+    fn new(sample_rate: f32) -> Self {
+        let frame_secs = f64::from(HOP_SIZE) / f64::from(sample_rate);
+        Self {
+            detector: Mpm::new(MpmConfig::singing(sample_rate)),
+            gate: NoiseGate::new(),
+            scorer: TuningScorer::new(),
+            notes: NoteLane::new(frame_secs),
+            tune: MelodyScorer::new(),
+            frame_secs,
+            frames_since_draw: 0,
+        }
+    }
+
+    /// New take: the noise gate keeps what it learned about the room.
+    fn new_take(&mut self) {
+        self.scorer = TuningScorer::new();
+        self.notes = NoteLane::new(self.frame_secs);
+        self.tune = MelodyScorer::new();
+    }
+
+    /// Analyse one frame heard at song time `t`. Re-renders only when the shown note changes, a held note is judged,
+    /// a phrase ends, or (with a melody) the targets have scrolled a little.
+    fn frame(&mut self, frame: &[f32], t: f64, melody: Option<&Melody>, mut view: VoiceView) {
+        let singing = self.gate.pass(rms(frame));
+        if *view.room_check.peek() != self.gate.is_checking() {
+            view.room_check.set(self.gate.is_checking());
+        }
+        let estimate = if singing { self.detector.detect(frame) } else { None };
+        let midi = estimate.map(|est| est.midi());
+        if let Some(m) = melody {
+            if self.tune.push(m, t, midi) && *view.melody_summary.peek() != self.tune.summary() {
+                view.melody_summary.set(self.tune.summary());
+            }
+        }
+        let judged = self.scorer.push(midi);
+        if judged.is_some() {
+            view.summary.set(self.scorer.summary());
+        }
+        self.frames_since_draw += 1;
+        let scroll = melody.is_some() && self.frames_since_draw >= SCROLL_EVERY_FRAMES;
+        if self.notes.push(t, estimate.is_some(), judged) || scroll {
+            self.frames_since_draw = 0;
+            let window = match melody {
+                Some(_) => LaneWindow { past: LANE_SECONDS - LANE_AHEAD_SECONDS, ahead: LANE_AHEAD_SECONDS },
+                None => LaneWindow { past: LANE_SECONDS, ahead: 0.0 },
+            };
+            view.lane.set(self.notes.view(window, melody));
+            view.phrase.set(self.notes.phrase_score());
+        }
+        let next = estimate.map(|est| est.reading());
+        if *view.reading.peek() != next {
+            view.reading.set(next);
+        }
+    }
+}
+
+/// Live pitch of the singer's mic (note name + cents), note lane and scores for the current take; with `duet`,
+/// one row per singer on a stereo receiver (left = 1, right = 2). `take` changes on every song start or replay,
+/// which restarts the scores and reports each voice's finished take through `on_take_end` (a voice that judged
+/// no held note reports nothing).
 #[component]
-pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) -> Element {
+pub fn PitchMeter(take: f64, song: Song, duet: bool, on_take_end: EventHandler<TakeResult>) -> Element {
     // Owns the device; dropping the session (toggle off or unmount) releases the mic
     let mut session = use_signal(|| None::<Mic>);
     let mut state = use_signal(|| MicState::Off);
-    let mut reading = use_signal(|| None::<NoteReading>);
-    // First second after the mic opens: measuring the room for the noise gate
-    let mut room_check = use_signal(|| false);
-    let mut summary = use_signal(TuningSummary::default);
-    let mut lane = use_signal(LaneView::default);
-    let mut phrase = use_signal(|| None::<u8>);
+    // Channels of the running session (duet is read when the mic starts)
+    let mut active = use_signal(MicChannels::default);
+    let views: [VoiceView; MAX_VOICES] = [VoiceView::use_new(), VoiceView::use_new()];
     let mut current_take = use_signal(|| take);
-    // Song of the take being scored: guide edits change `song` without starting a new take
     // The song's melody, if this device has one (none ship; see plan 002 item 7): enables the melody score
     let song_id = song.id.clone();
     let melody = use_memo(use_reactive((&song_id,), |(id,)| {
         storage::load::<StoredMelodies>(MELODIES_KEY).and_then(|store| stored_melody(&store, &id)).map(Rc::new)
     }));
-    let mut melody_summary = use_signal(MelodySummary::default);
+    // Song of the take being scored: guide edits change `song` without starting a new take
     let song_meta = (song.id, song.title, song.artist);
     let mut take_song = use_signal(|| song_meta.clone());
 
     use_effect(use_reactive!(|take, song_meta| {
         if *current_take.peek() != take {
             let (id, title, artist) = &*take_song.peek();
-            if let Some(result) = TakeResult::new(id, title, artist, *summary.peek(), js_sys::Date::now()) {
-                on_take_end.call(result.with_melody_score(melody_summary.peek().score()));
+            let ended_at = js_sys::Date::now();
+            let duet = *active.peek() == MicChannels::Stereo;
+            for (i, view) in views.iter().enumerate().take(active.peek().count()) {
+                let Some(result) = TakeResult::new(id, title, artist, *view.summary.peek(), ended_at) else { continue };
+                let part = duet.then_some(i as u8 + 1);
+                on_take_end.call(result.with_melody_score(view.melody_summary.peek().score()).with_part(part));
             }
             current_take.set(take);
-            summary.set(TuningSummary::default());
-            melody_summary.set(MelodySummary::default());
-            lane.set(LaneView::default());
-            phrase.set(None);
+            views.iter().for_each(|v| v.reset());
         }
         take_song.set(song_meta);
+    }));
+
+    // Switching duet on or off needs the device opened again: stop, and the next tap starts the new mode
+    use_effect(use_reactive!(|duet| {
+        let wanted = if duet { MicChannels::Stereo } else { MicChannels::Mono };
+        if session.peek().is_some() && *active.peek() != wanted {
+            session.set(None);
+            state.set(MicState::Off);
+        }
     }));
 
     let toggle = move |_| {
         if session.write().take().is_some() {
             state.set(MicState::Off);
-            reading.set(None);
+            for mut view in views {
+                view.reading.set(None);
+            }
             return;
         }
+        let channels = if duet { MicChannels::Stereo } else { MicChannels::Mono };
+        active.set(channels);
         state.set(MicState::Starting);
-        summary.set(TuningSummary::default());
-        melody_summary.set(MelodySummary::default());
-        lane.set(LaneView::default());
-        phrase.set(None);
-        room_check.set(true);
+        for mut view in views {
+            view.reset();
+            view.room_check.set(true);
+        }
         spawn(async move {
-            let started = Mic::start(move |sample_rate| {
-                let mut detector = Mpm::new(MpmConfig::singing(sample_rate));
-                let mut scorer = TuningScorer::new();
+            let started = Mic::start(channels, move |sample_rate| {
+                let mut voices: Vec<Voice> = (0..channels.count()).map(|_| Voice::new(sample_rate)).collect();
                 let frame_secs = f64::from(HOP_SIZE) / f64::from(sample_rate);
-                let mut notes = NoteLane::new(frame_secs);
-                let mut tune = MelodyScorer::new();
                 // Without a video clock (never in the app, but a stalled bridge must not stop the lane), frames count time
                 let mut frame_clock = 0.0f64;
-                let mut frames_since_draw = 0u32;
-                let mut gate = NoiseGate::new();
+                let mut t = 0.0f64;
                 let mut scored_take = *current_take.peek();
-                move |frame: &[f32]| {
-                    let singing = gate.pass(rms(frame));
-                    if *room_check.peek() != gate.is_checking() {
-                        room_check.set(gate.is_checking());
-                    }
-                    let estimate = if singing { detector.detect(frame) } else { None };
-                    if *current_take.peek() != scored_take {
-                        scored_take = *current_take.peek();
-                        scorer = TuningScorer::new();
-                        notes = NoteLane::new(frame_secs);
-                        tune = MelodyScorer::new();
-                    }
-                    frame_clock += frame_secs;
-                    let t = sync::karaoke_time().unwrap_or(frame_clock);
-                    let midi = estimate.map(|est| est.midi());
-                    let melody = melody.peek();
-                    let melody = melody.as_deref();
-                    if let Some(m) = melody {
-                        if tune.push(m, t, midi) && *melody_summary.peek() != tune.summary() {
-                            melody_summary.set(tune.summary());
+                move |channel: usize, frame: &[f32]| {
+                    // Channel 0 arrives first in each message: read the clock and check for a new take once per frame
+                    if channel == 0 {
+                        if *current_take.peek() != scored_take {
+                            scored_take = *current_take.peek();
+                            voices.iter_mut().for_each(Voice::new_take);
                         }
+                        frame_clock += frame_secs;
+                        t = sync::karaoke_time().unwrap_or(frame_clock);
                     }
-                    // ~47 frames/s: re-render only when the shown note changes, a held note is judged, a phrase ends,
-                    // or (with a melody) the targets have scrolled a little
-                    let judged = scorer.push(midi);
-                    if judged.is_some() {
-                        summary.set(scorer.summary());
-                    }
-                    frames_since_draw += 1;
-                    let scroll = melody.is_some() && frames_since_draw >= SCROLL_EVERY_FRAMES;
-                    if notes.push(t, estimate.is_some(), judged) || scroll {
-                        frames_since_draw = 0;
-                        let window = match melody {
-                            Some(_) => LaneWindow { past: LANE_SECONDS - LANE_AHEAD_SECONDS, ahead: LANE_AHEAD_SECONDS },
-                            None => LaneWindow { past: LANE_SECONDS, ahead: 0.0 },
-                        };
-                        lane.set(notes.view(window, melody));
-                        phrase.set(notes.phrase_score());
-                    }
-                    let next = estimate.map(|est| est.reading());
-                    if *reading.peek() != next {
-                        reading.set(next);
-                    }
+                    let (Some(voice), Some(&view)) = (voices.get_mut(channel), views.get(channel)) else { return };
+                    let melody = melody.peek();
+                    voice.frame(frame, t, melody.as_deref(), view);
                 }
             })
             .await;
@@ -154,6 +232,7 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
         MicState::Listening => ("Mic: On".to_string(), "ctrl-btn action-btn guide-active", "Stop listening".to_string()),
         MicState::Failed(err) => ("Mic: Error".to_string(), "ctrl-btn action-btn", format!("{err} (click to retry)")),
     };
+    let duet_on = active() == MicChannels::Stereo;
 
     rsx! {
         div { class: "pitch-meter",
@@ -165,28 +244,44 @@ pub fn PitchMeter(take: f64, song: Song, on_take_end: EventHandler<TakeResult>) 
                 span { "{label}" }
             }
             if state() == MicState::Listening {
-                span {
-                    class: "pitch-readout",
-                    title: "Detected pitch of your voice (not a score)",
-                    aria_live: "polite",
-                    match (room_check(), reading()) {
-                        (true, _) => rsx! {
-                            span { class: "pitch-note idle", title: "Stay quiet for a second: measuring the room so its noise is ignored", "Room check…" }
-                        },
-                        (false, Some(note)) => rsx! {
-                            span { class: "pitch-note", "{note.name()}" }
-                            span { class: "pitch-cents", "{note.cents:+}¢" }
-                        },
-                        (false, None) => rsx! { span { class: "pitch-note idle", "—" } },
+                for (i, view) in views.iter().enumerate().take(active().count()) {
+                    div { key: "{i}", class: if duet_on { "voice-row duet" } else { "voice-row" },
+                        if duet_on {
+                            span { class: "voice-tag", title: if i == 0 { "Singer 1: left channel" } else { "Singer 2: right channel" }, "{i + 1}" }
+                        }
+                        VoiceRow { view: *view, has_melody: melody().is_some() }
                     }
                 }
-                NoteLaneView { view: lane(), phrase: phrase() }
-                if melody().is_some() {
-                    MelodyBadge { summary: melody_summary() }
-                }
-                TuningBadge { summary: summary() }
             }
         }
+    }
+}
+
+/// Readout, lane and scores for one voice.
+#[component]
+fn VoiceRow(view: VoiceView, has_melody: bool) -> Element {
+    let reading = (view.reading)();
+    rsx! {
+        span {
+            class: "pitch-readout",
+            title: "Detected pitch of your voice (not a score)",
+            aria_live: "polite",
+            match ((view.room_check)(), reading) {
+                (true, _) => rsx! {
+                    span { class: "pitch-note idle", title: "Stay quiet for a second: measuring the room so its noise is ignored", "Room check…" }
+                },
+                (false, Some(note)) => rsx! {
+                    span { class: "pitch-note", "{note.name()}" }
+                    span { class: "pitch-cents", "{note.cents:+}¢" }
+                },
+                (false, None) => rsx! { span { class: "pitch-note idle", "—" } },
+            }
+        }
+        NoteLaneView { view: (view.lane)(), phrase: (view.phrase)() }
+        if has_melody {
+            MelodyBadge { summary: (view.melody_summary)() }
+        }
+        TuningBadge { summary: (view.summary)() }
     }
 }
 

@@ -3,6 +3,26 @@ pub const FRAME_SIZE: u32 = 2048;
 /// New frame every this many samples (50% overlap, ~47 frames/s at 48 kHz).
 pub const HOP_SIZE: u32 = 1024;
 
+/// How many voices one input device carries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum MicChannels {
+    /// One singer. Echo cancellation on: it removes this tab's backing track from the mic.
+    #[default]
+    Mono,
+    /// Duet on a stereo receiver (two wireless mics: left = singer 1, right = singer 2). Echo cancellation off,
+    /// because browsers mix it down to mono; speakers leaking into the mics can move the scores.
+    Stereo,
+}
+
+impl MicChannels {
+    pub fn count(self) -> usize {
+        match self {
+            Self::Mono => 1,
+            Self::Stereo => 2,
+        }
+    }
+}
+
 /// Why the microphone could not be opened.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MicError {

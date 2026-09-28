@@ -25,6 +25,9 @@ pub fn Player(
     on_save_guide: EventHandler<GuideTrack>,
     on_revert_guide: EventHandler<()>,
     on_take_end: EventHandler<TakeResult>,
+    /// Two singers on one stereo mic receiver (Settings → Duet).
+    #[props(default)]
+    duet: bool,
     /// The current song's guide was timed automatically (official audio), not by ear: say so next to the nudges.
     #[props(default)]
     auto_timed: bool,
@@ -294,7 +297,7 @@ pub fn Player(
                                     }
                                 }
 
-                                PitchMeter { take: take_started_at, song: song.clone(), on_take_end }
+                                PitchMeter { take: take_started_at, song: song.clone(), duet, on_take_end }
 
                                 // Play / Pause Toggle Button
                                 button {

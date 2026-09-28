@@ -21,6 +21,10 @@ pub fn ScoreCard(
 ) -> Element {
     let notes = result.notes;
     let cents = result.mean_abs_cents;
+    let name_id = match result.part {
+        Some(part) if part > 1 => format!("singer_name_{part}"),
+        _ => "singer_name".to_string(),
+    };
     let verdict = match result.score() {
         Some(90..) => "Spot on!",
         Some(70..=89) => "Nicely in tune",
@@ -40,6 +44,9 @@ pub fn ScoreCard(
             div { class: "score-card-body",
                 div { class: "score-card-verdict", "{verdict}" }
                 div { class: "score-card-song", lang: "th", "{result.title} · {result.artist}" }
+                if let Some(part) = result.part {
+                    div { class: "score-card-detail score-card-part", if part == 1 { "Duet · singer 1 (left mic)" } else { "Duet · singer 2 (right mic)" } }
+                }
                 div { class: "score-card-detail", "Tuning · {notes} held notes · on average {cents:.0}¢ off" }
                 if let Some(melody) = result.melody_score {
                     div { class: "score-card-detail score-card-melody", "Melody {melody} · right notes, any octave" }
@@ -60,8 +67,9 @@ pub fn ScoreCard(
                         None => rsx! {
                             div { class: "score-card-singer",
                                 input {
-                                    id: "singer_name",
-                                    name: "singer_name",
+                                    // One field per card: a duet shows two
+                                    id: "{name_id}",
+                                    name: "{name_id}",
                                     class: "chord-input",
                                     aria_label: "Who sang? (for the party leaderboard, kept on this device)",
                                     placeholder: "Who sang?",

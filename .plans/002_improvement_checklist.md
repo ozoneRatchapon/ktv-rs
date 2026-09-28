@@ -32,7 +32,7 @@ The score today is tuning precision (held notes vs the semitone grid); there is 
   Reply with A, B and/or C.
 - [x] 5. Key transpose. Closed (owner call 2026-09-27, "continue from your suggestion" = remove): the label-only key buttons (player, keypad, queue) and `key_shift` are gone; YouTube embed audio is out of reach of the page (extensions like Transpose run inside youtube.com instead). Old sessions with `key_shift` still load (test). Revisit only if a melody source (7) makes "sing in your key" scoring meaningful.
 - [ ] 8. Mic latency calibration. Now meaningful (the melody score compares in time) but still needs 7's data to matter to anyone. Until then a fixed `SING_LAG_SECS = 0.15` plus a ±0.1 s edge window stands in. `gated:` measuring real devices (phones with Bluetooth speakers add 150-250 ms): part of the owner listening test (item 3). Once a device number exists, a tap test (tap on the beat of a count-in click) can set it per device.
-- [ ] 10. Duet mode. `gated:` needs two mic devices to test; blocked by 7 for per-part scoring.
+- [x] 10. Duet mode. Done 2026-09-28 (v0.33.0) for a stereo two-mic receiver, tested with an emulated stereo mic; per-part melody scoring works wherever item 7 provides a melody. Left: two separate USB devices and a real receiver check (roadmap Phase 3).
 
 - [x] 6b. Queue tab "End Song" button ("Simulate video ending") is a debug control shipped to users: hide it behind the Guide Timing Tools setting or remove. Done: shown only with Guide Timing Tools on (it records a natural finish, which would skew Auto-DJ).
 

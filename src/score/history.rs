@@ -26,6 +26,9 @@ pub struct TakeResult {
     /// Melody score of the take, when the song had melody data on this device.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub melody_score: Option<u8>,
+    /// Duet on a stereo receiver: which singer (1 = left mic, 2 = right); `None` for a solo take.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub part: Option<u8>,
 }
 
 impl TakeResult {
@@ -41,7 +44,12 @@ impl TakeResult {
             singer: None,
             sung_at_ms,
             melody_score: None,
+            part: None,
         })
+    }
+
+    pub fn with_part(self, part: Option<u8>) -> Self {
+        Self { part, ..self }
     }
 
     pub fn with_melody_score(self, melody_score: Option<u8>) -> Self {

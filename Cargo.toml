@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.32.0"
+version = "0.33.0"
 authors = ["ozoneRatchapon <ratchapon.poc@gmail.com>"]
 edition = "2021"
 license = "AGPL-3.0-only"
@@ -36,6 +36,8 @@ web-sys = { version = "0.3", features = [
     "BaseAudioContext",
     "Blob",
     "BlobPropertyBag",
+    "ChannelInterpretation",
+    "ChannelCountMode",
     "CloseEvent",
     "Crypto",
     "Clipboard",
