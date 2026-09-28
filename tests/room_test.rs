@@ -2,7 +2,7 @@ use app::booth::{Booth, Placement, Requester};
 use app::catalog::builtin_catalog;
 use app::room::{
     booth_state, is_valid_key, key_from_bytes, phone_url, refusal, room_of, socket_url, BoothMessage, PhoneCommand,
-    RemoteConfig, RoomId, RoomKey, ServerMessage, STATE_NEXT,
+    RemoteConfig, RoomId, RoomKey, ServerMessage, STATE_MEDLEYS, STATE_NEXT,
 };
 
 /// The same vector is checked against `room_of` in worker/protocol.js (tests/room_protocol.test.mjs).
@@ -45,6 +45,10 @@ fn test_phone_commands_parse_as_the_worker_forwards_them() {
     assert_eq!(parse(r#"{"t":"cmd","from":1,"cmd":"skip"}"#), Some(ServerMessage::Cmd { from: 1, cmd: PhoneCommand::Skip }));
     assert_eq!(parse(r#"{"t":"cmd","from":1,"cmd":"volume_up"}"#), Some(ServerMessage::Cmd { from: 1, cmd: PhoneCommand::VolumeUp }));
     assert_eq!(parse(r#"{"t":"cmd","from":1,"cmd":"volume_down"}"#), Some(ServerMessage::Cmd { from: 1, cmd: PhoneCommand::VolumeDown }));
+    assert_eq!(
+        parse(r#"{"t":"cmd","from":2,"cmd":"queue_medley","title":"ยาวๆ"}"#),
+        Some(ServerMessage::Cmd { from: 2, cmd: PhoneCommand::QueueMedley { title: "ยาวๆ".into() } })
+    );
     assert_eq!(parse(r#"{"t":"phones","n":3}"#), Some(ServerMessage::Phones { n: 3 }));
     assert_eq!(parse(r#"{"t":"cmd","from":1,"cmd":"eject"}"#), None);
     assert_eq!(parse(r#"{"t":"hello"}"#), None);
@@ -89,6 +93,7 @@ fn test_phones_queue_only_unless_the_host_allows_playback() {
     let queue_only = RemoteConfig { enabled: true, allow_playback: false };
     let playback = RemoteConfig { enabled: true, allow_playback: true };
     assert_eq!(refusal(&PhoneCommand::Queue { code: "10004".into() }, &queue_only), None);
+    assert_eq!(refusal(&PhoneCommand::QueueMedley { title: "Mix".into() }, &queue_only), None, "a medley is queued, not playback");
     for cmd in [PhoneCommand::Skip, PhoneCommand::Pause, PhoneCommand::Replay, PhoneCommand::VolumeUp, PhoneCommand::VolumeDown] {
         assert!(refusal(&cmd, &queue_only).is_some(), "{cmd:?}");
         assert_eq!(refusal(&cmd, &playback), None, "{cmd:?}");
@@ -114,4 +119,35 @@ fn test_volume_steps_stay_within_0_to_100() {
     settings.volume = 400; // a hand-edited save
     assert_eq!(settings.volume(), 100);
     assert_eq!(settings.volume_by(-5), 95);
+}
+
+#[test]
+fn test_state_lists_saved_medleys_by_title_and_stays_under_the_worker_cap() {
+    use app::medley::{MedleyBook, MAX_TITLE_CHARS};
+    let empty = serde_json::to_value(booth_state("Room 1", None, &[], false, 85)).unwrap();
+    assert!(empty.get("medleys").is_none(), "no saved medleys: nothing extra on the wire");
+
+    let mut book = MedleyBook::default();
+    for song in builtin_catalog().iter().take(2) {
+        book.add_song(song).unwrap();
+    }
+    book.save_draft().unwrap();
+    let state = booth_state("Room 1", None, &[], false, 85).with_medleys(&book.saved);
+    assert_eq!(serde_json::to_value(&state).unwrap()["medleys"], serde_json::json!([{ "title": "Medley 1", "parts": 2 }]));
+
+    // A full book of longest Thai titles, beside a full queue: still far under 8 KB
+    let mut booth = Booth::default();
+    for song in builtin_catalog().iter().take(STATE_NEXT + 3) {
+        booth.add(song.clone(), Requester::Phone, Placement::Back);
+    }
+    let mut saved = Vec::new();
+    for i in 0..STATE_MEDLEYS + 5 {
+        let mut medley = book.saved[0].clone();
+        medley.title = format!("{i:02}{}", "ก".repeat(MAX_TITLE_CHARS - 2));
+        saved.push(medley);
+    }
+    let state = booth_state("Room 1", booth.current.as_ref(), &booth.queue, true, 60).with_medleys(&saved);
+    assert_eq!(state.medleys.len(), STATE_MEDLEYS);
+    let text = serde_json::to_string(&BoothMessage::State { state }).unwrap();
+    assert!(text.chars().count() < 4096, "{} characters", text.chars().count());
 }

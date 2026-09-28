@@ -416,7 +416,7 @@ test('melody score: with a melody saved on this device, the lane draws the tune 
   assert.match(await page.eval(`document.querySelector('.score-card-melody').textContent`), /^Melody \d+ · right notes, any octave$/);
 }));
 
-test('phone remote: the Keypad QR opens /remote, a phone sees the stage, queues by code, playback buttons only when the host allows, a new link sends old phones away', () => with_page({}, async (booth) => {
+test('phone remote: the Keypad QR opens /remote, a phone sees the stage, queues by code or a saved medley, playback buttons only when the host allows, a new link sends old phones away', () => with_page({}, async (booth) => {
   const status = `document.querySelector('.phone-remote [role=status]')?.textContent ?? ''`;
   await booth.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Keypad')).click()`);
   await booth.wait_for(`!!document.querySelector('.phone-remote .toggle-btn')`);
@@ -443,6 +443,27 @@ test('phone remote: the Keypad QR opens /remote, a phone sees the stage, queues 
     // A code the booth does not have is refused with a reason
     await phone.eval(`(() => { const c = document.getElementById('code'); c.value = '00000'; c.dispatchEvent(new Event('input')); document.getElementById('queue').click(); })()`);
     await phone.wait_for(`document.getElementById('reply').textContent === 'No song with code 00000'`);
+    // A medley saved at the booth is listed on the phone, and one tap queues all its parts
+    const tab = (name) => booth.eval(`[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('${name}')).click()`);
+    const set_input = (id, value) => booth.eval(`(() => { const i = document.getElementById(${JSON.stringify(id)}); i.value = ${JSON.stringify(value)}; i.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+    const add = `[...document.querySelectorAll('.medley-add button')].find((b) => b.textContent === 'Add').click()`;
+    assert.equal(await phone.eval(`document.getElementById('medleys_section').hidden`), true, 'no saved medleys, no list');
+    await tab('Queue');
+    await booth.wait_for(`!!document.getElementById('medley_code')`);
+    for (const code of ['10001', '10005']) {
+      await set_input('medley_code', code);
+      await booth.eval(add);
+    }
+    await set_input('medley_title', 'Mix');
+    await booth.wait_for(`document.querySelectorAll('.medley-part').length === 2`);
+    await booth.eval(`[...document.querySelectorAll('.medley-actions button')].find((b) => b.textContent === 'Save').click()`);
+    await phone.wait_for(`document.querySelector('#medleys li')?.textContent === 'Mix · 2 partsQueue'`);
+    await phone.click('#medleys button');
+    await phone.wait_for(`document.getElementById('reply').textContent === 'Queued Mix (2 parts)'`);
+    await booth.wait_for(`[...document.querySelectorAll('.queue-item-card .medley-badge')].map((b) => b.textContent).join('|') === 'Medley 1/2 · Mix|Medley 2/2 · Mix'`);
+    await booth.wait_for(`document.querySelector('.auto-dj-toast')?.textContent.includes('📱 Queued Mix')`);
+    await tab('Keypad');
+    await booth.wait_for(`!!document.getElementById('remote_allow_playback')`);
     // The host allows playback: Skip on the phone moves the booth on
     await booth.click('#remote_allow_playback');
     await phone.wait_for(`getComputedStyle(document.getElementById('controls')).display === 'grid'`);

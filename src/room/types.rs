@@ -27,6 +27,8 @@ pub struct RemoteConfig {
 #[serde(tag = "cmd", rename_all = "snake_case")]
 pub enum PhoneCommand {
     Queue { code: String },
+    /// One of the booth's saved medleys, by title (the phone lists them from [`BoothState::medleys`]).
+    QueueMedley { title: String },
     Skip,
     Pause,
     Replay,
@@ -37,7 +39,7 @@ pub enum PhoneCommand {
 impl PhoneCommand {
     /// Skip / pause / replay / volume: allowed only when the host turned on [`RemoteConfig::allow_playback`].
     pub fn is_playback(&self) -> bool {
-        !matches!(self, Self::Queue { .. })
+        !matches!(self, Self::Queue { .. } | Self::QueueMedley { .. })
     }
 }
 
@@ -76,6 +78,15 @@ pub struct BoothState {
     pub playback: bool,
     /// Booth volume 0-100, shown beside the phone's volume buttons.
     pub volume: u32,
+    /// The booth's saved medleys (the first [`super::STATE_MEDLEYS`]), which a phone can queue by title.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub medleys: Vec<StateMedley>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct StateMedley {
+    pub title: String,
+    pub parts: usize,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]

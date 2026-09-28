@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import {
-    BUCKET_SIZE, MAX_BOOTH_MESSAGE, MAX_PHONE_MESSAGE, MAX_REPLY_TEXT, REFILL_MS, ROOM_ID, parse_booth, parse_phone,
+    BUCKET_SIZE, MAX_BOOTH_MESSAGE, MAX_MEDLEY_TITLE, MAX_PHONE_MESSAGE, MAX_REPLY_TEXT, REFILL_MS, ROOM_ID, parse_booth, parse_phone,
     room_of, take_token,
 } from '../worker/protocol.js';
 
@@ -78,4 +78,22 @@ test('phone page reads the server messages it shows', () => {
     assert.deepEqual(remote.read_message('{"t":"reply","ok":false,"text":"No song"}'), { reply: { ok: false, text: 'No song' } });
     assert.equal(remote.read_message('{"t":"cmd"}'), null);
     assert.equal(remote.read_message('oops'), null);
+});
+
+test('phones may queue a saved medley by a title the booth could have kept, nothing longer or blank', () => {
+    const title = 'ยาวๆ มันส์ ๆ 90s';
+    assert.deepEqual(parse_phone(JSON.stringify({ t: 'queue_medley', title })), { cmd: 'queue_medley', title });
+    const longest = 'ก'.repeat(MAX_MEDLEY_TITLE);
+    assert.equal(parse_phone(JSON.stringify({ t: 'queue_medley', title: longest }))?.title, longest, 'fits the phone message cap');
+    for (const bad of ['', ' ', ' padded', 'x'.repeat(MAX_MEDLEY_TITLE + 1), 7, null, ['a']]) {
+        assert.equal(parse_phone(JSON.stringify({ t: 'queue_medley', title: bad })), null, JSON.stringify(bad));
+    }
+    assert.deepEqual(parse_phone(JSON.stringify({ t: 'queue_medley', title, from: 9, code: '10004' })), { cmd: 'queue_medley', title }, 'no smuggled fields');
+});
+
+test('phone page lists only well-formed medleys from the state', () => {
+    assert.deepEqual(remote.state_medleys(null), []);
+    assert.deepEqual(remote.state_medleys({ medleys: 'x' }), []);
+    const good = { title: 'Mix', parts: 3 };
+    assert.deepEqual(remote.state_medleys({ medleys: [good, { title: '', parts: 2 }, { title: 'x' }, null, { title: 5, parts: 2 }] }), [good]);
 });

@@ -2,11 +2,14 @@
 
 use sha2::{Digest, Sha256};
 
-use super::types::{BoothState, RoomId, RoomKey, StateSong};
+use super::types::{BoothState, RoomId, RoomKey, StateMedley, StateSong};
+use crate::medley::{display_title, Medley};
 use crate::types::QueueItem;
 
 /// Songs after the current one sent to phones (the rest is only counted).
 pub const STATE_NEXT: usize = 5;
+/// Saved medleys listed on phones: enough for a night, and the state stays well under the Worker's 8 KB cap.
+pub const STATE_MEDLEYS: usize = 12;
 
 /// A key from 32 random bytes.
 pub fn key_from_bytes(bytes: &[u8; 32]) -> RoomKey {
@@ -51,6 +54,19 @@ pub fn booth_state(room: &str, current: Option<&QueueItem>, queue: &[QueueItem],
         waiting: queue.len(),
         playback,
         volume,
+        medleys: Vec::new(),
+    }
+}
+
+impl BoothState {
+    /// The state with the booth's saved medleys listed for phones (titles and part counts only).
+    pub fn with_medleys(self, saved: &[Medley]) -> Self {
+        let medleys = saved
+            .iter()
+            .take(STATE_MEDLEYS)
+            .map(|m| StateMedley { title: display_title(m).to_string(), parts: m.parts.len() })
+            .collect();
+        Self { medleys, ..self }
     }
 }
 

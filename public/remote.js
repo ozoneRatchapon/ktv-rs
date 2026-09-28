@@ -49,6 +49,12 @@ function read_message(text) {
     }
 }
 
+/** The booth's saved medleys in a state message (titles and part counts), keeping only well-formed entries. */
+function state_medleys(state) {
+    const list = Array.isArray(state?.medleys) ? state.medleys : [];
+    return list.filter((m) => typeof m?.title === 'string' && m.title !== '' && Number.isInteger(m.parts));
+}
+
 function main() {
     const room = parse_room(location.hash);
     const $ = (id) => document.getElementById(id);
@@ -79,6 +85,17 @@ function main() {
         }
         return item;
     };
+    const medley_line = (medley) => {
+        const item = document.createElement('li');
+        const title = Object.assign(document.createElement('span'), { className: 'title', textContent: medley.title });
+        title.append(Object.assign(document.createElement('span'), { className: 'artist', textContent: ` · ${medley.parts} parts` }));
+        const button = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Queue' });
+        button.setAttribute('aria-label', `Queue the medley ${medley.title}`);
+        button.addEventListener('click', () => send({ t: 'queue_medley', title: medley.title }));
+        item.lang = 'th';
+        item.append(title, button);
+        return item;
+    };
     const render_state = (state) => {
         $('room').textContent = state?.room ?? '';
         const now = state?.now;
@@ -90,6 +107,9 @@ function main() {
         $('more').textContent = more > 0 ? `+${more} more waiting` : next.length ? '' : 'The queue is empty';
         playback = state?.playback === true;
         $('volume').textContent = Number.isInteger(state?.volume) ? `Vol ${state.volume}` : '';
+        const medleys = state_medleys(state);
+        $('medleys').replaceChildren(...medleys.map(medley_line));
+        $('medleys_section').hidden = medleys.length === 0;
     };
     const render = () => {
         const open = ws?.readyState === WebSocket.OPEN;
@@ -98,6 +118,7 @@ function main() {
         $('controls').hidden = !(online && playback);
         const ready = online && SONG_CODE.test(code.value);
         queue.disabled = !ready;
+        for (const button of $('medleys').querySelectorAll('button')) button.disabled = !online;
     };
     const show_reply = ({ ok, text }) => {
         reply.textContent = text;
@@ -173,7 +194,7 @@ function main() {
 }
 
 if (typeof module !== 'undefined') {
-    module.exports = { CLOSED_FOR_GOOD, next_backoff, parse_room, read_message, socket_url };
+    module.exports = { CLOSED_FOR_GOOD, next_backoff, parse_room, read_message, socket_url, state_medleys };
 } else {
     main();
 }

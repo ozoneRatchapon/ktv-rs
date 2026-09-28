@@ -22,7 +22,7 @@
 <body>
 <main>
     <h1>Privacy</h1>
-    <p class="muted">KTV-RS · last updated 2026-09-28 (phone remote)</p>
+    <p class="muted">KTV-RS · last updated 2026-09-29 (medleys on the phone remote, medley share links)</p>
 
     <h2>In short</h2>
     <ul>
@@ -61,8 +61,8 @@
             we have not added any logging or analytics of our own.</li>
         <li><strong>Phone remote (Cloudflare)</strong>: only if the host turns it on under <em>Keypad → Phone remote</em>. The booth
             and guests' phones then connect to this site's server (a Cloudflare Worker), which passes along the room name, the
-            song on stage and the next five (code, title, artist, and whether it was a tip or phone request), and the song codes
-            phones ask for. It keeps the last of that list for up to a day after the booth was last connected so a phone that
+            song on stage and the next five (code, title, artist, and whether it was a tip or phone request), the titles and part
+            counts of the booth's saved medleys (up to 12), and the song codes and medley titles phones ask for. It keeps the last of that list for up to a day after the booth was last connected so a phone that
             joins sees it; no names, no scores, no history, no IP logs of our own. <em>New link</em> deletes it at once.</li>
         <li><strong>GitHub</strong>: only if you use <em>Share on GitHub</em> in Guide Timing Tools, which opens a pre-filled issue
             in your browser. Nothing is sent until you submit it there.</li>
