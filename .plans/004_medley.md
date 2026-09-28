@@ -64,7 +64,7 @@ fades in, then decks swap. The guide MV is off during an M2 crossfade: a third i
   next part so its first downbeat lands one bar after the last one; count-in clicks can bridge the join.
   Optional tempo match by rate when the BPMs are within ~6 %.
 - [x] M4. Key hint: when chord charts exist, show "same key / near key / far key" between neighbouring parts and
-  suggest an order (circle of fifths). A hint only; nothing is transposed. Done 2026-09-29 (v0.41.0, Worker `WORKER_ID`).
+  suggest an order (circle of fifths). A hint only; nothing is transposed. Done 2026-09-29 (v0.41.0, Worker `cc56e4fe`).
   `chords::key` (pure): `ChordChart::key_between(start, end)` weights the chord tones sounding inside the part by
   how long each sounds (root and bass double) and takes the best Krumhansl–Kessler major / minor fit; fewer than 3
   chords sounding in the part → no key. `Key::step` = same / near (relative or one fifth) / far; `smoothest_order` is
