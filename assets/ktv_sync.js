@@ -282,8 +282,12 @@
                 st.video_time = info.currentTime;
                 st.video_at = env.now();
             }
-            if (data && data.info === YT_STATE.ENDED) st.send('ended');
+            // YouTube sends state changes only to a page that asks, once per loaded player
+            if (data && data.event === 'initialDelivery') command(FRAME.KARAOKE, 'addEventListener', ['onStateChange']);
             if (typeof state !== 'number') return;
+            // The end can come in infoDelivery, onStateChange or both: one ending is one next song. Only a player
+            // that has played since this song loaded can end it (a late message from the last song's must not)
+            if (state === YT_STATE.ENDED && st.karaoke_started && st.karaoke_state !== YT_STATE.ENDED) st.send('ended');
             if (state === YT_STATE.PLAYING && st.karaoke_state !== YT_STATE.PLAYING) {
                 // Started (or resumed after buffering): extrapolate from now, not from when it stalled
                 st.video_at = env.now();

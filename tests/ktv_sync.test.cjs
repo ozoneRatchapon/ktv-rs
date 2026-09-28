@@ -211,8 +211,54 @@ test('guide messages never drive karaoke time or end-of-song', () => {
     assert.equal(sync.debug().karaoke_time, 12);
     assert.deepEqual(env.sent, []);
 
+    // The karaoke player ends the song (after playing, as a real player always reports first)
+    sync.on_message(false, { event: 'onStateChange', info: YT_STATE.PLAYING });
+    env.clear();
     sync.on_message(false, { event: 'onStateChange', info: YT_STATE.ENDED });
     assert.deepEqual(env.sent, ['ended']);
+});
+
+test('end of song: reported once, whether YouTube says it in infoDelivery, onStateChange or both', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.load_song(0, 1);
+    sync.on_message(false, { event: 'infoDelivery', info: { playerState: YT_STATE.PLAYING, currentTime: 200 } });
+    // Without an onStateChange subscription YouTube only puts the end in infoDelivery (seen on real embeds)
+    sync.on_message(false, { event: 'infoDelivery', info: { playerState: YT_STATE.ENDED, currentTime: 217 } });
+    assert.deepEqual(env.sent.filter((m) => m === 'ended'), ['ended'], 'infoDelivery alone ends the song');
+    sync.on_message(false, { event: 'onStateChange', info: YT_STATE.ENDED });
+    sync.on_message(false, { event: 'infoDelivery', info: { currentTime: 217 } });
+    assert.deepEqual(env.sent.filter((m) => m === 'ended'), ['ended'], 'one ending, one next song');
+    // Replay after the end: the next ending counts again
+    sync.on_message(false, { event: 'onStateChange', info: YT_STATE.PLAYING });
+    sync.on_message(false, { event: 'onStateChange', info: YT_STATE.ENDED });
+    assert.deepEqual(env.sent.filter((m) => m === 'ended'), ['ended', 'ended']);
+});
+
+test('the next song is not ended by the last one: a late end message from the old player is ignored', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.load_song(0, 1);
+    sync.on_message(false, { event: 'infoDelivery', info: { playerState: YT_STATE.PLAYING, currentTime: 216 } });
+    sync.on_message(false, { event: 'infoDelivery', info: { playerState: YT_STATE.ENDED } });
+    // Rust moves on and loads the next song, then the old player's onStateChange for the same end arrives
+    sync.load_song(0, 1);
+    sync.on_message(false, { event: 'onStateChange', info: YT_STATE.ENDED });
+    assert.deepEqual(env.sent.filter((m) => m === 'ended'), ['ended'], 'one ending must not skip two songs');
+    sync.on_message(false, { event: 'onStateChange', info: YT_STATE.PLAYING });
+    sync.on_message(false, { event: 'onStateChange', info: YT_STATE.ENDED });
+    assert.deepEqual(env.sent.filter((m) => m === 'ended'), ['ended', 'ended'], 'the new song ends normally');
+});
+
+test('each karaoke player that loads is asked for its state changes (YouTube sends them only when asked)', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.on_message(false, { event: 'initialDelivery', info: { playerState: YT_STATE.UNSTARTED } });
+    assert.deepEqual(env.commands(FRAME.KARAOKE, 'addEventListener').map((p) => p.msg.args), [['onStateChange']]);
+    sync.on_message(false, { event: 'infoDelivery', info: { currentTime: 3 } });
+    assert.equal(env.commands(FRAME.KARAOKE, 'addEventListener').length, 1, 'once per load, not per message');
+    sync.on_message(true, { event: 'initialDelivery', info: {} });
+    assert.equal(env.commands(FRAME.GUIDE, 'addEventListener').length, 0, 'the guide never ends a song');
 });
 
 test('guide error falls back to karaoke audio and reports the code', () => {

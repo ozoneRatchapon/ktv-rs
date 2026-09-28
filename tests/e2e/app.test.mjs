@@ -203,6 +203,36 @@ test('first visit, autoplay blocked: the clock waits, Play shows, Space starts t
   }
 });
 
+test('auto next: when the karaoke video plays to its end, the next song in the queue goes on stage (exactly one)', (t) => with_page({}, async (page) => {
+  // The karaoke player reports its length once, when it loads: listen from the start
+  await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `addEventListener('message', (e) => {
+    try { const d = JSON.parse(e.data); if (e.source === document.getElementById('ktv-youtube-player')?.contentWindow && d.info?.duration) window.__duration = d.info.duration; } catch {}
+  });` });
+  await page.reload();
+  // Needs real YouTube playback: CI runners often get none, and then this is skipped, not failed
+  const playing = `window.KtvSync?.debug().karaoke_state === 1 && window.__duration > 0`;
+  try {
+    await page.wait_for(playing, 20000);
+  } catch {
+    t.skip('no YouTube playback on this machine');
+    return;
+  }
+  const first = await page.eval(now_title);
+  const next = await page.eval(`(async () => {
+    [...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Queue')).click();
+    await new Promise((r) => setTimeout(r, 200));
+    return document.querySelector('.item-title')?.textContent;
+  })()`);
+  assert.ok(next, 'a song is waiting in the queue');
+  const duration = await page.eval(`window.__duration`);
+  // Near the end of the video, straight on the player (as its own scrubber would)
+  await page.eval(`document.getElementById('ktv-youtube-player').contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [${duration} - 12, true] }), '*')`);
+  await page.wait_for(`${now_title} !== ${JSON.stringify(first)}`, 30000);
+  assert.equal(await page.eval(now_title), next, 'the next queued song, not one after it');
+  await sleep(3000);
+  assert.equal(await page.eval(now_title), next, 'stays on it: one ending is one next song');
+}));
+
 test('empty queue: Next Song hands over to Auto-DJ with a different song', () => with_page({}, async (page) => {
   const finished = await page.eval(now_title);
   await page.eval(`(async () => {
