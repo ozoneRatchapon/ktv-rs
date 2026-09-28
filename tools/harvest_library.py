@@ -96,6 +96,30 @@ def parse_smallroom(title):
     return song, artist, alias
 
 
+LIT_TRAILER = re.compile(r"\s*\|?\s*official karaoke\s*$", re.I)
+PIANO_VERSION = re.compile(r"\s*(visualizer\s+)?piano\s+ver\.?\s*$", re.I)
+ENGLISH_PAREN = re.compile(r"\s*\(([A-Za-z0-9' .,&!?-]+)\)\s*$")
+
+
+def parse_lit(title):
+    """LIT Entertainment / PiXXiE: `[member] PiXXiE - ชื่อเพลง (English) | OFFICIAL KARAOKE`. The English title
+    in brackets becomes the alias; a piano version keeps "(Piano Ver.)" in the title so it is not taken for
+    the original."""
+    text = LIT_TRAILER.sub("", title).strip()
+    if " - " not in text or text == title.strip():
+        return None
+    artist, song = split_dash(text)
+    piano = bool(PIANO_VERSION.search(song))
+    song = PIANO_VERSION.sub("", song)
+    alias = ""
+    match = ENGLISH_PAREN.search(song)
+    if match and song[: match.start()].strip():
+        alias, song = match.group(1).strip(), song[: match.start()].strip()
+    if piano:
+        song += " (Piano Ver.)"
+    return song, artist, alias
+
+
 def split_dash(text):
     left, right = text.split(" - ", 1)
     return left.strip(), right.strip()
@@ -114,6 +138,9 @@ CHANNELS = [
      "codes": (60001, 64999), "intro_skip_secs": 0, "parse": parse_title_colon},
     {"name": "Smallroom Karaoke", "url": "https://www.youtube.com/playlist?list=PLPwrZWY_sW-g0CW1kQd9WatoRizcOGRS-",
      "codes": (65001, 69999), "intro_skip_secs": 0, "parse": parse_smallroom, "genre": "Indie"},
+    # PiXXiE official karaoke playlist the owner picked (2026-09-28): the group's and LIT Entertainment's uploads
+    {"name": "LIT Entertainment", "url": "https://www.youtube.com/playlist?list=PLd-f4_Wj4rjzRRrCkogQKcj7sUAOzSLo9",
+     "codes": (70001, 70999), "intro_skip_secs": 0, "parse": parse_lit, "genre": "Pop"},
 ]
 
 

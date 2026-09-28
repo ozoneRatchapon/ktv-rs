@@ -9828,7 +9828,13 @@
     ["38i0aOhRBcg",37952,277,"เด็กเกินไป","Three Man Down",""],
     ["MklgJ8h_Bt4",37953,282,"แปลว่ายังมีหัวใจ","พลพล","Plae Wa Yung Mee Hua Jai"],
     ["by2rxFF4sDA",37954,246,"หวานไม่เป็น","แมกซ์ รณภพ","Wan Mai Pen"],
-    ["Y5Prfkp3odg",37955,246,"โทรหากันหน่อย","เป๊ก ผลิตโชค","To Ha Kan Noi"]
+    ["Y5Prfkp3odg",37955,246,"โทรหากันหน่อย","เป๊ก ผลิตโชค","To Ha Kan Noi"],
+    ["WTryTJPkCY4",37956,302,"เธอเสียใจหรือเปล่า","LULA","Ther Sia Jai Rue Plao"],
+    ["zdenCmP_YBk",37957,222,"ผิดคนหรือเปล่า","ไอซ์ ศรัณยู feat. วิน POTATO","Pid Kon Rue Plao"],
+    ["uv7zeiNXBnc",37958,282,"สั่งนางข้างโพน","ศร สินชัย, ดอกอ้อ ทุ่งทอง","Sung Nang Khang Pon"],
+    ["dnPqXKKnZkQ",37959,284,"ไหมไทยหัวใจเดิม","ไหมไทย ใจตะวัน","Mai Thai Hua Jai Derm"],
+    ["p1NXNmX-9FA",37960,266,"รักได้แต่รัก","มอส ปฏิภาณ","Rak Dai Tae Rak"],
+    ["ohF9c7xmA8M",37961,251,"แพ้กลางคืน","Calories Blah Blah","Pae Klang Kuen"]
   ]},
   {"name":"Whattheduck","intro_skip_secs":0,"songs":[
     ["LyYkZTX5vh8",50001,229,"Faded","2Ectasy",""],
@@ -10430,5 +10436,22 @@
     ["42aNKPp_Wd8",65248,204,"คู่กัน","YARINDA",""],
     ["tqw8rVFqDBU",65249,231,"เบลอ (BLUR)","Maria Lynn Ehren (มารีญา)",""],
     ["TLWTBZ4LQgI",65250,217,"ออกซิเจน Oxygen","Superbaker",""]
+  ]},
+  {"name":"LIT Entertainment","intro_skip_secs":0,"genre":"Pop","songs":[
+    ["MbW50NR2Jas",70001,219,"TOXIQUE","PiXXiE",""],
+    ["cPTxk4IleBU",70002,202,"Pick A Card","PiXXiE",""],
+    ["J4HAwDBxPX4",70003,202,"heartstopper","MABELZ PiXXiE",""],
+    ["MzMa4n3RhIY",70004,196,"ACHOO!","PIMMA PiXXiE",""],
+    ["Ox90aFiByV8",70005,239,"สนทนา","INGKHO PiXXiE","Deep Talk"],
+    ["NA9y_E_khIA",70006,236,"Aftercry","PiXXiE",""],
+    ["IprrCcQzR_A",70007,185,"FEAT","PiXXiE",""],
+    ["8I2OYRjEU2w",70008,201,"ติดฝน (Piano Ver.)","PiXXiE","rain"],
+    ["mghHs1nZoGY",70009,225,"ชอบไปหมด","PiXXiE","Way Too Cute"],
+    ["_FthkziNugs",70010,222,"ลองเลิกกันดีไหม","PiXXiE","Next Chapter"],
+    ["H72Yb-9TMKM",70011,219,"DEJAYOU","PiXXiE",""],
+    ["Hw7xOmdIoQ0",70012,164,"งอนละ","PiXXiE","Boo"],
+    ["gkwltxsWE2k",70013,183,"NOT BAD","PiXXiE",""],
+    ["7_T7VWOpIxU",70014,202,"มูเตลู","PiXXiE","MUTELU"],
+    ["jDAs3KSNY8c",70015,193,"เด็ด","PiXXiE","DED"]
   ]}
 ]}
