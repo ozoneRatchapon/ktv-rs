@@ -77,7 +77,7 @@ fades in, then decks swap. The guide MV is off during an M2 crossfade: a third i
     copying by hand. `browser::copy_text` is now async and says whether the browser allowed the copy (it rejected
     silently before, as an unhandled promise, and three buttons claimed "Copied"). Tests: `medley_share_test` (6),
     e2e "medley share". Custom songs (Add URL) are skipped for the opener: their codes exist on one device only.
-  - [x] M5b. Result card: the medley's total after its last part. Done 2026-09-29 (v0.39.0). `TakeResult.medley:
+  - [x] M5b. Result card: the medley's total after its last part. Done 2026-09-29 (v0.39.0, Worker `04c89ab5`). `TakeResult.medley:
     Option<MedleyTake { id, index, count, title }>` (id = queue id of part 1: a medley's parts get consecutive ids),
     set by `PitchMeter` from `QueueItem::medley_take()` with the take's song. `score::medley_total` (pure): only on
     the last part's take; mean of the scored parts of that medley and voice (duet singers each get their own), a
