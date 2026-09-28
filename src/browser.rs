@@ -93,6 +93,19 @@ pub fn stop_speaking() {
     }
 }
 
+/// Whether the MC is speaking right now. The mic ignores those moments: speech played by the OS may not pass
+/// through this tab's echo cancellation, and the MC's voice must not be scored as singing. `false` on the host.
+pub fn is_speaking() -> bool {
+    #[cfg(target_arch = "wasm32")]
+    {
+        web_sys::window().and_then(|w| w.speech_synthesis().ok()).is_some_and(|synth| synth.speaking())
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        false
+    }
+}
+
 /// This page's origin (`https://host`), for links a phone opens. `None` on the host.
 pub fn page_origin() -> Option<String> {
     #[cfg(target_arch = "wasm32")]
