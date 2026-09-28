@@ -3,7 +3,7 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.40.0] - 2026-09-29
+## [0.40.0] - 2026-09-29 (`d1fca604`)
 ### Added
 - Phone remote: the booth's saved medleys are listed on guests' phones (up to 12, title and number of parts), and one tap on **Queue** adds the whole medley to the end of the booth's queue, marked 📱 Phone. Like queuing a song, this works without the host allowing playback control.
 

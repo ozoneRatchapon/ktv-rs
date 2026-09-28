@@ -85,7 +85,7 @@ fades in, then decks swap. The guide MV is off during an M2 crossfade: a third i
     part x"; earlier parts' cards say "Medley i/m · title". The MC says the total after the last part (still quiet
     between parts). Plain mean, not note-weighted: easy to explain to a room. Tests: `medley_score_test` (5), e2e
     "medley score" (fake mic, two parts).
-  - [x] M5c. Phone remote: queue one of the booth's saved medleys. Done 2026-09-29 (v0.40.0). `BoothState.medleys`
+  - [x] M5c. Phone remote: queue one of the booth's saved medleys. Done 2026-09-29 (v0.40.0, Worker `d1fca604`). `BoothState.medleys`
     (`with_medleys`: first `STATE_MEDLEYS` = 12 saved, title + part count, omitted when empty; a full list of 60-char
     Thai titles keeps the state under 4 K characters, cap 8 K). Phone → `{t:"queue_medley", title}`; the Worker
     (`parse_phone`) takes a trimmed, non-blank title of at most `MAX_MEDLEY_TITLE` = 60 characters and drops other
