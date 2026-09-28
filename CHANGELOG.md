@@ -3,7 +3,7 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.36.0] - 2026-09-28
+## [0.36.0] - 2026-09-28 (`18f43541`)
 ### Added
 - Volume control: a slider in the player bar (0-100, saved on this device, 85 to start), ↑ / ↓ on the keyboard (5 a press) and a controller's D-pad up / down. It sets both the karaoke and the original-vocal players, stays the same for every next song, and switching Vocal no longer jumps it to full.
 - Phone remote: 🔉 − / 🔊 + buttons (10 a tap) with the booth's volume shown, when the host lets phones control playback.
