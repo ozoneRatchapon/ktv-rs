@@ -23,7 +23,7 @@ test('room id is SHA-256 of the key, as the booth computes it', async () => {
 
 test('phones may send a 5-digit queue request or a playback command, nothing else', () => {
     assert.deepEqual(parse_phone('{"t":"queue","code":"10004"}'), { cmd: 'queue', code: '10004' });
-    for (const t of ['skip', 'pause', 'replay']) assert.deepEqual(parse_phone(JSON.stringify({ t })), { cmd: t });
+    for (const t of ['skip', 'pause', 'replay', 'volume_up', 'volume_down']) assert.deepEqual(parse_phone(JSON.stringify({ t })), { cmd: t });
     const extra = parse_phone('{"t":"skip","from":1,"cmd":"queue"}');
     assert.deepEqual(extra, { cmd: 'skip' }, 'a phone cannot forge the sender or smuggle fields');
     for (const bad of ['{"t":"queue","code":"1234"}', '{"t":"queue","code":10004}', '{"t":"queue","code":"10004x"}',

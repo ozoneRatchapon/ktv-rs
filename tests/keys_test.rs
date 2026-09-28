@@ -8,6 +8,8 @@ fn test_parse_every_message() {
     assert_eq!(KeyAction::parse("BACKSPACE"), Some(KeyAction::Backspace));
     assert_eq!(KeyAction::parse("SEEK_REL:-5"), Some(KeyAction::SeekBy(-5)));
     assert_eq!(KeyAction::parse("SEEK_REL:5"), Some(KeyAction::SeekBy(5)));
+    assert_eq!(KeyAction::parse("VOLUME_REL:5"), Some(KeyAction::VolumeBy(5)));
+    assert_eq!(KeyAction::parse("VOLUME_REL:-5"), Some(KeyAction::VolumeBy(-5)));
     assert_eq!(KeyAction::parse("CHAR:a"), Some(KeyAction::Type('a')));
     assert_eq!(KeyAction::parse("CHAR:ก"), Some(KeyAction::Type('ก')), "Thai keyboard input");
     assert_eq!(KeyAction::parse("CHAR::"), Some(KeyAction::Type(':')));
@@ -17,7 +19,7 @@ fn test_parse_every_message() {
 
 #[test]
 fn test_parse_rejects_garbage() {
-    for msg in ["", "CHAR:", "CHAR:ab", "SEEK_REL:x", "SEEK_REL:", "NOPE:1", "esc", "ended"] {
+    for msg in ["", "CHAR:", "CHAR:ab", "SEEK_REL:x", "SEEK_REL:", "VOLUME_REL:up", "NOPE:1", "esc", "ended"] {
         assert_eq!(KeyAction::parse(msg), None, "{msg:?}");
     }
 }
@@ -25,7 +27,7 @@ fn test_parse_rejects_garbage() {
 #[test]
 fn test_js_sends_only_messages_rust_parses() {
     // Contract with assets/ktv_keys.js: every message literal it emits has a parser arm here
-    for literal in ["'ESC'", "'HELP'", "'SPACE'", "'BACKSPACE'", "'SEEK_REL:'", "'CHAR:'", "'ENTER'", "'NEXT'"] {
+    for literal in ["'ESC'", "'HELP'", "'SPACE'", "'BACKSPACE'", "'SEEK_REL:'", "'CHAR:'", "'ENTER'", "'NEXT'", "'VOLUME_REL:'"] {
         assert!(KEYS_JS.contains(literal), "ktv_keys.js no longer sends {literal}");
     }
     assert!(KEYS_JS.contains("root.KtvKeysCore = api"), "install() entry point used by keys::install");

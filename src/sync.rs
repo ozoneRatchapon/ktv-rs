@@ -31,6 +31,8 @@ pub enum SyncCommand {
     /// Practice: play karaoke seconds `start..end` over and over (a new song clears it).
     SetLoop { start: f64, end: f64 },
     ClearLoop,
+    /// Booth volume 0-100 for both players.
+    SetVolume(u32),
 }
 
 /// The installed core (`window.KtvSync`) and its loader (`window.KtvSyncCore`).
@@ -55,6 +57,7 @@ impl SyncCommand {
             Self::SetMonitor(both) => ("set_monitor", vec![JsArg::Bool(both)]),
             Self::SetLoop { start, end } => ("set_loop", vec![num(start), num(end)]),
             Self::ClearLoop => ("set_loop", vec![num(-1.0), num(-1.0)]),
+            Self::SetVolume(volume) => ("set_volume", vec![num(f64::from(volume))]),
         }
     }
 

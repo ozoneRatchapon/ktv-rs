@@ -17,3 +17,4 @@ pub mod tempo;
 pub mod tip_qr;
 pub mod tip_toast;
 pub mod up_next;
+pub mod volume;

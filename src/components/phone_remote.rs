@@ -183,7 +183,7 @@ pub fn PhoneRemotePanel(
                                     checked: config.allow_playback,
                                     onchange: move |e| on_config.call(RemoteConfig { allow_playback: e.checked(), ..config }),
                                 }
-                                "Phones may skip, pause and replay (off: queue songs only)"
+                                "Phones may skip, pause, replay and change the volume (off: queue songs only)"
                             }
                             button {
                                 class: "ctrl-btn action-btn",

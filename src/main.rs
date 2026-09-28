@@ -47,6 +47,8 @@ const _: Asset = asset!("/assets/ktv_keys.js", AssetOptions::js().with_static_he
 // The full songbook and its songs' original-vocal guides, fetched after the first paint (content-hashed, so cached for good)
 const LIBRARY_JSON: Asset = asset!("/assets/library.json");
 const MV_GUIDES_JSON: Asset = asset!("/assets/mv_guides.json");
+/// Volume change per tap on a phone remote (a phone is tapped less often than a key is pressed).
+const PHONE_VOLUME_STEP: i32 = 10;
 /// The MC waits this long before announcing a song, so the last take's score is said first.
 const MC_SONG_UP_DELAY_MS: i32 = 400;
 
@@ -307,11 +309,15 @@ fn App() -> Element {
         }
     };
 
+    // Booth volume: the sync core applies it to both players and to every player that loads later
+    let volume = use_memo(move || settings().volume());
+    use_effect(move || SyncCommand::SetVolume(volume()).run());
+
     // Phone remote: guests queue songs from `/remote`; skip / pause / replay only if the host allows it
     let remote_config = use_memo(move || settings().remote);
     let room_state = use_memo(move || {
         let playback = remote_config().allow_playback;
-        room::booth_state(&settings().room_name, current_song().as_ref(), &queue(), playback)
+        room::booth_state(&settings().room_name, current_song().as_ref(), &queue(), playback, volume())
     });
     let on_phone_command = use_callback(move |cmd: PhoneCommand| -> Result<String, String> {
         if let Some(reason) = room::refusal(&cmd, &remote_config.peek()) {
@@ -337,6 +343,8 @@ fn App() -> Element {
                 handle_replay_song(());
                 Ok("Replaying from the start".to_string())
             }
+            PhoneCommand::VolumeUp => Ok(format!("Volume {}", settings.write().volume_by(PHONE_VOLUME_STEP))),
+            PhoneCommand::VolumeDown => Ok(format!("Volume {}", settings.write().volume_by(-PHONE_VOLUME_STEP))),
         }
     });
     let room_link = use_room_link(remote_config, room_state, on_phone_command);
@@ -374,6 +382,9 @@ fn App() -> Element {
                         }
                     }
                     KeyAction::NextSong => transition_to_next(false),
+                    KeyAction::VolumeBy(delta) => {
+                        settings.write().volume_by(delta);
+                    }
                 }
             }
         });
@@ -494,6 +505,8 @@ fn App() -> Element {
                         saved_timing,
                         on_save_guide: handle_save_guide,
                         on_revert_guide: handle_revert_guide,
+                        volume: settings().volume(),
+                        on_volume: move |v: u32| settings.write().volume = v,
                         duet: settings().duet,
                         mc_on: settings().mc_voice != app::mc::McVoice::Off,
                         auto_timed: current_song().is_some_and(|c| {

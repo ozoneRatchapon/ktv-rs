@@ -15,6 +15,8 @@ test('booth keys map to messages', () => {
     assert.deepEqual(press('Delete'), { msg: 'BACKSPACE', prevent: true });
     assert.deepEqual(press('ArrowLeft'), { msg: 'SEEK_REL:-5', prevent: true });
     assert.deepEqual(press('ArrowRight'), { msg: 'SEEK_REL:5', prevent: true });
+    assert.deepEqual(press('ArrowUp'), { msg: 'VOLUME_REL:5', prevent: true });
+    assert.deepEqual(press('ArrowDown'), { msg: 'VOLUME_REL:-5', prevent: true });
     assert.deepEqual(press('a'), { msg: 'CHAR:a', prevent: false });
     assert.deepEqual(press('ก'), { msg: 'CHAR:ก', prevent: false });
     assert.deepEqual(press('Enter'), { msg: 'ENTER', prevent: true }, 'keypad code + Enter');
@@ -28,8 +30,9 @@ test('keys are left alone while typing, with modifiers, or when not printable', 
     assert.equal(press('c', { metaKey: true }), null, 'copy');
     assert.equal(press('r', { ctrlKey: true }), null, 'reload');
     assert.equal(press('a', { altKey: true }), null);
-    for (const key of ['Shift', 'Tab', 'F5', 'ArrowUp', 'MediaStop']) assert.equal(press(key), null, key);
+    for (const key of ['Shift', 'Tab', 'F5', 'PageDown', 'MediaStop']) assert.equal(press(key), null, key);
     assert.equal(press('Enter', {}, FOCUS.TEXT), null, 'Enter in a form submits the form');
+    assert.equal(press('ArrowUp', {}, FOCUS.TEXT), null, 'arrows in a field move the caret, not the volume');
 });
 
 test('focus_kind: text fields, keyboard-focused controls, everything else', () => {
@@ -120,7 +123,8 @@ test('pad_presses: only buttons that just went down, only mapped ones', () => {
     assert.deepEqual(keys.pad_presses(up, down(0)), ['SPACE']);
     assert.deepEqual(keys.pad_presses(down(0), down(0)), [], 'held is not pressed again');
     assert.deepEqual(keys.pad_presses(up, down(1, 9, 14, 15)), ['ESC', 'NEXT', 'SEEK_REL:-5', 'SEEK_REL:5']);
-    assert.deepEqual(keys.pad_presses(up, down(2, 3, 12)), [], 'unmapped buttons');
+    assert.deepEqual(keys.pad_presses(up, down(12, 13)), ['VOLUME_REL:5', 'VOLUME_REL:-5'], 'D-pad up / down: volume');
+    assert.deepEqual(keys.pad_presses(up, down(2, 3)), [], 'unmapped buttons');
 });
 
 // Fake window with a gamepad whose buttons the test sets, and a frame queue the test runs

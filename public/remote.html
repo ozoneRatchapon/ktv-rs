@@ -35,6 +35,7 @@
         button.primary { font: inherit; font-weight: 800; padding: 16px; border-radius: 12px; border: 0; background: #00f5d4; color: #0b0d13; }
         button.primary:disabled { background: #2a3142; color: #8a97ab; }
         #controls:not([hidden]) { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        #controls .volume { display: flex; align-items: center; justify-content: center; font-weight: 800; color: #00f5d4; font-variant-numeric: tabular-nums; }
         #controls button { font: inherit; font-weight: 700; padding: 14px 0; border-radius: 10px; border: 1px solid #2a3142; background: #141926; color: #e2e8f0; }
         #reply { margin: 0; min-height: 1.5em; font-weight: 700; }
         #reply[data-ok="true"] { color: #00f5d4; }
@@ -58,6 +59,9 @@
             <button type="button" data-cmd="pause">⏯ Pause</button>
             <button type="button" data-cmd="skip">⏭ Skip</button>
             <button type="button" data-cmd="replay">↺ Replay</button>
+            <button type="button" data-cmd="volume_down" aria-label="Volume down">🔉 −</button>
+            <span id="volume" class="volume" aria-live="polite"></span>
+            <button type="button" data-cmd="volume_up" aria-label="Volume up">🔊 +</button>
         </div>
         <form id="form">
             <label for="song_search">Find a song
