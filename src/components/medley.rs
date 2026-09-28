@@ -2,8 +2,12 @@ use dioxus::prelude::*;
 
 use crate::booth::Placement;
 use crate::browser;
+use crate::chords::KeyStep;
+use crate::components::chords::load_charts;
 use crate::components::practice::format_mark;
-use crate::medley::{display_title, share_fragment, shown_title, Edge, Medley, MedleyBook, Opened, PartSource, SharedMedley, MIN_PARTS};
+use crate::medley::{
+    display_title, key_order, part_keys, share_fragment, shown_title, Edge, Medley, MedleyBook, Opened, PartSource, SharedMedley, MIN_PARTS,
+};
 
 /// Seconds one nudge moves a part's start or end.
 const NUDGE_SECS: f64 = 5.0;
@@ -33,6 +37,10 @@ pub fn MedleyPanel(
     let draft = book.read().draft.clone();
     let saved = book.read().saved.clone();
     let ready = draft.parts.len() >= MIN_PARTS;
+    // Chord charts entered on this device (read when the tab opens): each part's key and a smoother order
+    let charts = use_hook(load_charts);
+    let keys = part_keys(&draft, &charts);
+    let smoother = key_order(&keys);
 
     let mut add = move || {
         let typed = code();
@@ -125,6 +133,26 @@ pub fn MedleyPanel(
                             span { class: "medley-part-span",
                                 "{format_mark(part.span.start)} → {format_mark(part.span.end)}"
                             }
+                            if let Some(key) = keys[i] {
+                                match i.checked_sub(1).and_then(|p| keys[p]) {
+                                    Some(before) => {
+                                        let step = before.step(key);
+                                        let class = match step {
+                                            KeyStep::Same => "medley-key same",
+                                            KeyStep::Near => "medley-key near",
+                                            KeyStep::Far => "medley-key far",
+                                        };
+                                        rsx! {
+                                            span { class, title: "From the part before, in {before}, to {key}: {step.label()} (from the chord chart on this device)",
+                                                "{before} → {key} · {step.label()}"
+                                            }
+                                        }
+                                    }
+                                    None => rsx! {
+                                        span { class: "medley-key", title: "Key from the chord chart on this device", "key {key}" }
+                                    },
+                                }
+                            }
                             match part.source {
                                 PartSource::Guessed => rsx! {
                                     span { class: "medley-source guessed", title: "Guessed from the song's length: nudge it to the part you want", "guessed" }
@@ -156,6 +184,18 @@ pub fn MedleyPanel(
                             }
                             button { class: "item-delete-btn", title: "Remove from the medley", onclick: move |_| book.write().remove_part(i), "✕" }
                         }
+                    }
+                }
+            }
+
+            if let Some(order) = smoother {
+                p { class: "medley-hint medley-key-order",
+                    "The keys join more smoothly in another order (circle of fifths; nothing is transposed). "
+                    button {
+                        class: "antic-btn",
+                        title: "Reorder the parts so neighbouring keys are closer",
+                        onclick: move |_| book.write().reorder(&order),
+                        "Order by key"
                     }
                 }
             }

@@ -3,6 +3,10 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.41.0] - 2026-09-29 (`WORKER_ID`)
+### Added
+- Medley key hint: for songs with a chord chart entered on this device (Chords by ear), the medley builder shows each part's key, worked out from the chords inside the part, and whether each join moves to the same, a near or a far key (circle of fifths). When another order would join the keys more smoothly, **Order by key** reorders the parts, keeping the opener first where it can. It is a hint only: nothing is transposed.
+
 ## [0.40.0] - 2026-09-29 (`d1fca604`)
 ### Added
 - Phone remote: the booth's saved medleys are listed on guests' phones (up to 12, title and number of parts), and one tap on **Queue** adds the whole medley to the end of the booth's queue, marked 📱 Phone. Like queuing a song, this works without the host allowing playback control.
