@@ -3082,3 +3082,20 @@ details.tuning-score {
 .medley-saved-item .item-title {
     flex: 1 1 auto;
 }
+
+/* Medley shared by link (plan 004 M5) */
+.medley-shared {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--accent-cyan);
+  border-radius: 0.6rem;
+}
+.medley-share-link {
+  width: 100%;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+}

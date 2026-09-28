@@ -40,7 +40,7 @@ pub fn guess_span(song: &Song) -> Span {
     }
 }
 
-fn part(song: &Song, span: Span, source: PartSource) -> MedleyPart {
+pub(super) fn part(song: &Song, span: Span, source: PartSource) -> MedleyPart {
     MedleyPart {
         song_id: song.id.clone(),
         code: song.code.clone(),
@@ -66,13 +66,18 @@ pub fn nudge_span(span: Span, edge: Edge, delta: f64, duration_secs: u32) -> Spa
 
 /// The medley's title, or a stand-in while it has none.
 pub fn display_title(medley: &Medley) -> &str {
-    match medley.title.trim() {
+    shown_title(&medley.title)
+}
+
+/// A medley title as shown: trimmed, or a stand-in when blank.
+pub fn shown_title(title: &str) -> &str {
+    match title.trim() {
         "" => "Medley",
         title => title,
     }
 }
 
-fn clean_title(title: &str) -> String {
+pub(super) fn clean_title(title: &str) -> String {
     title.trim().chars().take(MAX_TITLE_CHARS).collect()
 }
 

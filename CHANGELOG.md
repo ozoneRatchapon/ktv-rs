@@ -3,7 +3,14 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.37.1] - 2026-09-29
+## [0.38.0] - 2026-09-29
+### Added
+- Share a medley by link: **Share** in the medley builder copies a link (and shows it, for copying by hand). Whoever opens it lands on the Queue tab with the medley offered: **Open** puts it in their builder with the same songs, times and title, ready to play, save or nudge. Songs their songbook does not have are skipped, and the app says how many. The medley travels in the part of the address after `#`, which browsers never send to a server, and it leaves the address bar once read, so a reload does not offer it again.
+
+### Fixed
+- Copy buttons (Copy chart, the curator's Copy JSON) said "Copied" even when the browser refused the copy (it needs https). They now say when the copy was blocked.
+
+## [0.37.1] - 2026-09-29 (`b4867817`)
 ### Fixed
 - Pressing "Vocal ahead" / "Vocal behind" by mistake had no simple way back: the original timing could only be restored from the curator's Guide Timing Tools. A **Reset timing** button now sits next to them whenever a nudge is saved on this device; it goes back to the song's own timing at once and forgets the saved one.
 

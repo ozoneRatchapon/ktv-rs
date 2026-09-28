@@ -86,8 +86,13 @@ pub fn GuideTiming(
 
     let copy_json = move |_| {
         let Some(guide) = draft() else { return };
-        crate::browser::copy_text(&timing::catalog_snippet(&guide));
-        notice.set(Some("Copied: paste it into this song's entry in assets/catalog.json".to_string()));
+        let snippet = timing::catalog_snippet(&guide);
+        spawn(async move {
+            notice.set(Some(match crate::browser::copy_text(&snippet).await {
+                true => "Copied: paste it into this song's entry in assets/catalog.json".to_string(),
+                false => "Copy blocked by the browser (needs https)".to_string(),
+            }));
+        });
     };
 
     let unsaved = draft() != song.guide;
