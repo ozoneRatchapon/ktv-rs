@@ -3,7 +3,7 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.38.0] - 2026-09-29
+## [0.38.0] - 2026-09-29 (`548e92f9`)
 ### Added
 - Share a medley by link: **Share** in the medley builder copies a link (and shows it, for copying by hand). Whoever opens it lands on the Queue tab with the medley offered: **Open** puts it in their builder with the same songs, times and title, ready to play, save or nudge. Songs their songbook does not have are skipped, and the app says how many. The medley travels in the part of the address after `#`, which browsers never send to a server, and it leaves the address bar once read, so a reload does not offer it again.
 

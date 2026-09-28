@@ -67,7 +67,7 @@ fades in, then decks swap. The guide MV is off during an M2 crossfade: a third i
   suggest an order (circle of fifths). A hint only; nothing is transposed.
 - [ ] M5. Room features: score per part + medley total on the result card; build / queue a medley from the phone
   remote; share a medley by link; a few ready-made medleys the host curates.
-  - [x] M5a. Share by link. Done 2026-09-29 (v0.38.0). `src/medley/share.rs` (pure): `share_fragment` writes
+  - [x] M5a. Share by link. Done 2026-09-29 (v0.38.0, Worker `548e92f9`). `src/medley/share.rs` (pure): `share_fragment` writes
     `#medley=<title>&parts=<code>:<start>-<end>[g],…` (percent-encoded, times to 0.1 s, `g` = guessed, so the
     builder keeps saying "guessed"); `parse_fragment` drops unreadable parts and holds the builder's limits;
     `SharedMedley::open` looks codes up in the opener's songbook and skips (and counts) songs it lacks or times that
