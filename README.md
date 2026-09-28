@@ -21,7 +21,7 @@ Live: https://ktv-rs.solana-thailand.workers.dev · Changes: [CHANGELOG.md](CHAN
 ## Key Features
 
 ### 1. Direct Official Karaoke Streams
-* Full official karaoke libraries of **GMM Grammy** (GMM Karaoke), **What The Duck**, **Muzik Move**, **RS**, **Smallroom** and **PiXXiE** (LIT Entertainment): ~8,500 songs, loaded after the first paint, plus a curated set with genres. Original-vocal guides (the **Vocal** switch) are timed for the curated songs and ~2,800 library songs.
+* Full official karaoke libraries of **GMM Grammy** (GMM Karaoke), **What The Duck**, **Muzik Move**, **RS**, **Smallroom**, **PiXXiE** (LIT Entertainment), **Scrubb** and **one31** drama songs: ~8,500 songs, loaded after the first paint, plus a curated set with genres. Original-vocal guides (the **Vocal** switch) are timed for the curated songs and ~2,800 library songs.
 * Includes full verified collections for top artists like **COCKTAIL** (*คุกเข่า*, *เธอ*, *คู่ชีวิต*, *ดึงดัน*, *เธอทำให้ฉันเสียใจ*), **BOWKYLION** (*ที่คั่นหนังสือ*, *วาดไว้*), **Silly Fools** (*วัดใจ*), **Big Ass** (*เล่นของสูง*), etc.
 
 ### 2. Unobstructed YouTube Players

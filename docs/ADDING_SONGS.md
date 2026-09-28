@@ -14,7 +14,7 @@ Two files:
 The rest of this page is about the curated catalog. Requests come in through the **Song request** issue form; guide timings through the **Guide timing** form (the app's **Share on GitHub** button fills it in).
 
 ## Rules
-- **Official uploads only**: the label's own karaoke channel (today: GMM Karaoke, Whattheduck, Muzik Move Karaoke, RS Music, Smallroom Karaoke, and LIT Entertainment's PiXXiE playlist). No fan re-uploads.
+- **Official uploads only**: the label's own karaoke channel (today: GMM Karaoke, Whattheduck, Muzik Move Karaoke, RS Music, Smallroom Karaoke, LIT Entertainment's PiXXiE playlist, and pinned single videos from one31, Scrubb's channel and TERO MUSIC). No fan re-uploads.
 - **Nothing downloaded**: durations, intros and guide timings are read or judged from the embedded players (YouTube's terms forbid downloading or separating audio).
 
 ## Entry
