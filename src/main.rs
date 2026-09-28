@@ -271,7 +271,7 @@ fn App() -> Element {
         move |code: &str| catalog::find_song(&catalog.read(), song_library(), |s| s.code == code).cloned();
 
     // A medley goes in as one entry per part, back to back; every part's song must be found first
-    let handle_queue_medley = move |(medley, placement): (Medley, Placement)| -> Result<String, String> {
+    let mut queue_medley = move |medley: Medley, requester: Requester, placement: Placement| -> Result<String, String> {
         let slots = medley::slots(&medley).map_err(|e| e.message())?;
         let mut parts = Vec::with_capacity(slots.len());
         for (song_id, slot) in slots {
@@ -283,12 +283,14 @@ fn App() -> Element {
             parts.push((song, slot));
         }
         let (title, count) = (medley::display_title(&medley).to_string(), parts.len());
-        if booth.write().add_medley(parts, Requester::Singer, placement) {
+        if booth.write().add_medley(parts, requester, placement) {
             song_started_at.set(js_sys::Date::now());
             return Ok(format!("Playing {title} ({count} parts)"));
         }
         Ok(format!("Queued {title} ({count} parts)"))
     };
+    let handle_queue_medley =
+        move |(medley, placement): (Medley, Placement)| queue_medley(medley, Requester::Singer, placement);
     let handle_open_shared_medley = move |shared: SharedMedley| shared.open(song_by_code);
     let handle_add_medley_code = move |code: String| -> Result<String, String> {
         let code = catalog::keypad_code(&code).ok_or("Type a 5-digit song code")?;
@@ -372,6 +374,7 @@ fn App() -> Element {
     let room_state = use_memo(move || {
         let playback = remote_config().allow_playback;
         room::booth_state(&settings().room_name, current_song().as_ref(), &queue(), playback, volume())
+            .with_medleys(&medleys.read().saved)
     });
     let on_phone_command = use_callback(move |cmd: PhoneCommand| -> Result<String, String> {
         if let Some(reason) = room::refusal(&cmd, &remote_config.peek()) {
@@ -382,6 +385,12 @@ fn App() -> Element {
                 let song = catalog::keypad_code(&code).and_then(song_by_code).ok_or(format!("No song with code {code}"))?;
                 let text = format!("Queued {code}: {} - {}", song.title, song.artist);
                 request(song, Requester::Phone, Placement::Back);
+                booth_notice.set(Some(format!("📱 {text}")));
+                Ok(text)
+            }
+            PhoneCommand::QueueMedley { title } => {
+                let saved = medleys.peek().saved.iter().find(|m| medley::display_title(m) == title).cloned();
+                let text = queue_medley(saved.ok_or(format!("No saved medley called {title}"))?, Requester::Phone, Placement::Back)?;
                 booth_notice.set(Some(format!("📱 {text}")));
                 Ok(text)
             }

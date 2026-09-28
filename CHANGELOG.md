@@ -3,6 +3,10 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.40.0] - 2026-09-29
+### Added
+- Phone remote: the booth's saved medleys are listed on guests' phones (up to 12, title and number of parts), and one tap on **Queue** adds the whole medley to the end of the booth's queue, marked 📱 Phone. Like queuing a song, this works without the host allowing playback control.
+
 ## [0.39.0] - 2026-09-29 (`04c89ab5`)
 ### Added
 - Medley total: with the mic on, the result card after a medley's last part shows the whole medley's score (the average of its parts that got a score, "Mean of 3 of 4 parts") and the spoken MC says it. Each earlier part's card says which part it was ("Medley 2/4 · title"). In a duet each singer gets their own total, and a part sung again (Replay) counts once, with its latest take.

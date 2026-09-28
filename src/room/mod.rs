@@ -8,12 +8,12 @@ mod types;
 #[cfg(not(target_arch = "wasm32"))]
 mod unsupported;
 
-pub use link::{booth_state, is_valid_key, key_from_bytes, phone_url, room_of, socket_url, STATE_NEXT};
+pub use link::{booth_state, is_valid_key, key_from_bytes, phone_url, room_of, socket_url, STATE_MEDLEYS, STATE_NEXT};
 #[cfg(target_arch = "wasm32")]
 pub use socket::Socket;
 pub use types::{
     BoothMessage, BoothState, LinkStatus, PhoneCommand, RemoteConfig, RoomId, RoomKey, ServerMessage, SocketEvent,
-    StateSong, CLOSE_REPLACED,
+    StateMedley, StateSong, CLOSE_REPLACED,
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use unsupported::Socket;

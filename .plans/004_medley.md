@@ -85,8 +85,15 @@ fades in, then decks swap. The guide MV is off during an M2 crossfade: a third i
     part x"; earlier parts' cards say "Medley i/m · title". The MC says the total after the last part (still quiet
     between parts). Plain mean, not note-weighted: easy to explain to a room. Tests: `medley_score_test` (5), e2e
     "medley score" (fake mic, two parts).
-  - [ ] M5c. Phone remote: queue one of the booth's saved medleys (protocol: `PhoneCommand::QueueMedley`; the
-    phone needs the list, so the booth publishes titles only).
+  - [x] M5c. Phone remote: queue one of the booth's saved medleys. Done 2026-09-29 (v0.40.0). `BoothState.medleys`
+    (`with_medleys`: first `STATE_MEDLEYS` = 12 saved, title + part count, omitted when empty; a full list of 60-char
+    Thai titles keeps the state under 4 K characters, cap 8 K). Phone → `{t:"queue_medley", title}`; the Worker
+    (`parse_phone`) takes a trimmed, non-blank title of at most `MAX_MEDLEY_TITLE` = 60 characters and drops other
+    fields; the booth (`PhoneCommand::QueueMedley`) finds it by title among saved medleys (save replaces by title,
+    so titles are unique) and queues it at the back as 📱 Phone. Queue-only (allowed without playback permission),
+    one rate-limit token per medley. Phone page: a "Medleys" list with Queue buttons, hidden when empty. Building a
+    medley on the phone stays out (the builder needs a big screen). Tests: `room_test` (+1, +2 asserts),
+    `room_protocol.test.mjs` (+2), e2e "phone remote" extended. Privacy page updated.
   - [ ] M5d. Ready-made medleys the host curates (needs the owner's picks: owner-gated content).
 
 ## Decisions (owner, 2026-09-29)

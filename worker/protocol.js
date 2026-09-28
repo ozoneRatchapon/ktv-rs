@@ -5,6 +5,8 @@
 /** 22 base64url chars (132 bits): the first part of SHA-256 of the booth's secret key (see `room_of`). */
 export const ROOM_ID = /^[A-Za-z0-9_-]{22}$/;
 const SONG_CODE = /^[0-9]{5}$/;
+/** Longest medley title the booth keeps (`MAX_TITLE_CHARS` in src/medley/plan.rs), in characters. */
+export const MAX_MEDLEY_TITLE = 60;
 const ROOM_KEY = /^[A-Za-z0-9_-]{43}$/;
 
 export const MAX_PHONES = 32;
@@ -32,13 +34,18 @@ const parse = (text, max) => {
     }
 };
 
-/** A phone's command, or null: `queue` a 5-digit code, or `skip` / `pause` / `replay` / `volume_up` / `volume_down`
- *  (the booth decides if allowed). */
+const medley_title = (title) =>
+    typeof title === 'string' && title.trim() === title && title !== '' && [...title].length <= MAX_MEDLEY_TITLE;
+
+/** A phone's command, or null: `queue` a 5-digit code, `queue_medley` one of the booth's saved medleys by title, or
+ *  `skip` / `pause` / `replay` / `volume_up` / `volume_down` (the booth decides if allowed). */
 export function parse_phone(text) {
     const msg = parse(text, MAX_PHONE_MESSAGE);
     switch (msg?.t) {
         case 'queue':
             return typeof msg.code === 'string' && SONG_CODE.test(msg.code) ? { cmd: 'queue', code: msg.code } : null;
+        case 'queue_medley':
+            return medley_title(msg.title) ? { cmd: 'queue_medley', title: msg.title } : null;
         case 'skip':
         case 'pause':
         case 'replay':
