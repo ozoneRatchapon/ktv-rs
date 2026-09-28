@@ -24,6 +24,8 @@ pub enum KeyAction {
     Submit,
     /// Media "next track" key or gamepad Start.
     NextSong,
+    /// ↑ / ↓ or D-pad up / down: change the volume by this many points (0-100 scale).
+    VolumeBy(i32),
 }
 
 impl KeyAction {
@@ -47,6 +49,7 @@ impl KeyAction {
                 }
             }
             "SEEK_REL" => value.parse().ok().map(Self::SeekBy),
+            "VOLUME_REL" => value.parse().ok().map(Self::VolumeBy),
             _ => None,
         }
     }

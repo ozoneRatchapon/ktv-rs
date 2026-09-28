@@ -16,7 +16,8 @@ pub struct RemoteConfig {
     /// Connect to the room and show the phone QR (off by default: no network until the host turns it on).
     #[serde(default)]
     pub enabled: bool,
-    /// Phones may also skip, pause and replay. Off: phones can only queue songs (safe in a bar full of guests).
+    /// Phones may also skip, pause, replay and change the volume. Off: phones can only queue songs (safe in a bar
+    /// full of guests).
     #[serde(default)]
     pub allow_playback: bool,
 }
@@ -29,10 +30,12 @@ pub enum PhoneCommand {
     Skip,
     Pause,
     Replay,
+    VolumeUp,
+    VolumeDown,
 }
 
 impl PhoneCommand {
-    /// Skip / pause / replay: allowed only when the host turned on [`RemoteConfig::allow_playback`].
+    /// Skip / pause / replay / volume: allowed only when the host turned on [`RemoteConfig::allow_playback`].
     pub fn is_playback(&self) -> bool {
         !matches!(self, Self::Queue { .. })
     }
@@ -71,6 +74,8 @@ pub struct BoothState {
     /// Songs waiting in total (`next` holds only the first few).
     pub waiting: usize,
     pub playback: bool,
+    /// Booth volume 0-100, shown beside the phone's volume buttons.
+    pub volume: u32,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]

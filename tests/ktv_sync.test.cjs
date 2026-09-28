@@ -261,6 +261,29 @@ test('each karaoke player that loads is asked for its state changes (YouTube sen
     assert.equal(env.commands(FRAME.GUIDE, 'addEventListener').length, 0, 'the guide never ends a song');
 });
 
+test('volume: set on both players, kept for every new player and across vocal switches, clamped to 0-100', () => {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    const volumes = (frame) => env.commands(frame, 'setVolume').map((p) => p.msg.args[0]);
+    sync.set_volume(60);
+    assert.deepEqual([volumes(FRAME.KARAOKE), volumes(FRAME.GUIDE)], [[60], [60]]);
+    assert.equal(sync.debug().volume, 60);
+    // A new video starts at YouTube's own volume: the booth's is applied as it loads
+    env.clear();
+    sync.on_message(false, { event: 'initialDelivery', info: {} });
+    sync.on_message(true, { event: 'initialDelivery', info: {} });
+    assert.deepEqual([volumes(FRAME.KARAOKE), volumes(FRAME.GUIDE)], [[60], [60]]);
+    // Switching vocals keeps it (it used to jump to 100)
+    env.clear();
+    sync.switch_vocal(true);
+    sync.switch_vocal(false);
+    assert.ok([...volumes(FRAME.KARAOKE), ...volumes(FRAME.GUIDE)].every((v) => v === 60));
+    for (const [asked, set] of [[150, 100], [-5, 0], [42.6, 43], ['x', 43]]) {
+        sync.set_volume(asked);
+        assert.equal(sync.debug().volume, set, String(asked));
+    }
+});
+
 test('guide error falls back to karaoke audio and reports the code', () => {
     const env = fake_env();
     const sync = core.create_sync(env);

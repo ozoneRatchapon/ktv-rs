@@ -43,6 +43,8 @@ fn test_phone_commands_parse_as_the_worker_forwards_them() {
         Some(ServerMessage::Cmd { from: 7, cmd: PhoneCommand::Queue { code: "10004".into() } })
     );
     assert_eq!(parse(r#"{"t":"cmd","from":1,"cmd":"skip"}"#), Some(ServerMessage::Cmd { from: 1, cmd: PhoneCommand::Skip }));
+    assert_eq!(parse(r#"{"t":"cmd","from":1,"cmd":"volume_up"}"#), Some(ServerMessage::Cmd { from: 1, cmd: PhoneCommand::VolumeUp }));
+    assert_eq!(parse(r#"{"t":"cmd","from":1,"cmd":"volume_down"}"#), Some(ServerMessage::Cmd { from: 1, cmd: PhoneCommand::VolumeDown }));
     assert_eq!(parse(r#"{"t":"phones","n":3}"#), Some(ServerMessage::Phones { n: 3 }));
     assert_eq!(parse(r#"{"t":"cmd","from":1,"cmd":"eject"}"#), None);
     assert_eq!(parse(r#"{"t":"hello"}"#), None);
@@ -57,7 +59,7 @@ fn test_booth_messages_have_the_worker_shape() {
         serde_json::json!({ "t": "reply", "to": 7, "ok": false, "text": "No" })
     );
     assert_eq!(json(&BoothMessage::CloseRoom), serde_json::json!({ "t": "close_room" }));
-    let state = json(&BoothMessage::State { state: booth_state("Room 1", None, &[], false) });
+    let state = json(&BoothMessage::State { state: booth_state("Room 1", None, &[], false, 85) });
     assert_eq!(state["t"], "state");
     assert_eq!(state["state"]["now"], serde_json::Value::Null);
 }
@@ -68,7 +70,7 @@ fn test_state_sends_the_next_few_and_counts_the_rest() {
     for song in builtin_catalog().iter().take(STATE_NEXT + 3) {
         booth.add(song.clone(), Requester::Phone, Placement::Back);
     }
-    let state = booth_state("Room 1", booth.current.as_ref(), &booth.queue, true);
+    let state = booth_state("Room 1", booth.current.as_ref(), &booth.queue, true, 60);
     let now = state.now.expect("a song on stage");
     assert_eq!(now.code, builtin_catalog()[0].code);
     assert_eq!(now.requester, "📱 Phone");
@@ -76,8 +78,9 @@ fn test_state_sends_the_next_few_and_counts_the_rest() {
     assert_eq!(state.next[0].title, builtin_catalog()[1].title);
     assert_eq!(state.waiting, STATE_NEXT + 2);
     assert!(state.playback);
+    assert_eq!(state.volume, 60);
     // State bytes stay far under the Worker's 8 KB booth message cap
-    let bytes = serde_json::to_string(&BoothMessage::State { state: booth_state("Room 1", booth.current.as_ref(), &booth.queue, true) }).unwrap().len();
+    let bytes = serde_json::to_string(&BoothMessage::State { state: booth_state("Room 1", booth.current.as_ref(), &booth.queue, true, 60) }).unwrap().len();
     assert!(bytes < 2048, "{bytes} bytes");
 }
 
@@ -86,7 +89,7 @@ fn test_phones_queue_only_unless_the_host_allows_playback() {
     let queue_only = RemoteConfig { enabled: true, allow_playback: false };
     let playback = RemoteConfig { enabled: true, allow_playback: true };
     assert_eq!(refusal(&PhoneCommand::Queue { code: "10004".into() }, &queue_only), None);
-    for cmd in [PhoneCommand::Skip, PhoneCommand::Pause, PhoneCommand::Replay] {
+    for cmd in [PhoneCommand::Skip, PhoneCommand::Pause, PhoneCommand::Replay, PhoneCommand::VolumeUp, PhoneCommand::VolumeDown] {
         assert!(refusal(&cmd, &queue_only).is_some(), "{cmd:?}");
         assert_eq!(refusal(&cmd, &playback), None, "{cmd:?}");
     }
@@ -99,4 +102,16 @@ fn test_remote_config_defaults_off_for_old_settings() {
     assert!(!before_remote.contains("remote"), "{before_remote}");
     let old: app::types::AppSettings = serde_json::from_str(&before_remote).unwrap();
     assert_eq!(old.remote, RemoteConfig::default());
+}
+
+#[test]
+fn test_volume_steps_stay_within_0_to_100() {
+    let mut settings = app::types::AppSettings::default();
+    assert_eq!(settings.volume(), 85, "default");
+    assert_eq!(settings.volume_by(10), 95);
+    assert_eq!(settings.volume_by(10), 100, "never above 100");
+    assert_eq!(settings.volume_by(-250), 0, "never below 0");
+    settings.volume = 400; // a hand-edited save
+    assert_eq!(settings.volume(), 100);
+    assert_eq!(settings.volume_by(-5), 95);
 }

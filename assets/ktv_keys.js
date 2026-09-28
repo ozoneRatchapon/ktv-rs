@@ -1,4 +1,4 @@
-// KTV booth keyboard and game controller: type-to-search, Enter queues a typed code, Space pause, arrows seek,
+// KTV booth keyboard and game controller: type-to-search, Enter queues a typed code, Space pause, ← → seek, ↑ ↓ volume,
 // ? help; media keys and a standard-mapping gamepad send the same messages.
 // Classic script in the static <head> (asset! in src/main.rs); Rust calls `KtvKeysCore.install` via src/js_bridge.rs.
 // Unit-tested in Node by `tests/ktv_keys.test.cjs`.
@@ -7,6 +7,7 @@
     'use strict';
 
     const SEEK_STEP_SECS = 5;
+    const VOLUME_STEP = 5;
 
     /** Standard-mapping gamepad buttons (https://w3c.github.io/gamepad/#remapping) -> booth messages. */
     const PAD_BUTTONS = {
@@ -15,6 +16,8 @@
         9: 'NEXT',                            // Start / Options: next song
         14: 'SEEK_REL:' + -SEEK_STEP_SECS,    // D-pad left
         15: 'SEEK_REL:' + SEEK_STEP_SECS,     // D-pad right
+        12: 'VOLUME_REL:' + VOLUME_STEP,      // D-pad up
+        13: 'VOLUME_REL:' + -VOLUME_STEP,     // D-pad down
     };
 
     /** Where keyboard focus is, as far as booth keys care. */
@@ -38,6 +41,8 @@
             case 'Delete': return { msg: 'BACKSPACE', prevent: true };
             case 'ArrowLeft': return { msg: 'SEEK_REL:' + -SEEK_STEP_SECS, prevent: true };
             case 'ArrowRight': return { msg: 'SEEK_REL:' + SEEK_STEP_SECS, prevent: true };
+            case 'ArrowUp': return { msg: 'VOLUME_REL:' + VOLUME_STEP, prevent: true };
+            case 'ArrowDown': return { msg: 'VOLUME_REL:' + -VOLUME_STEP, prevent: true };
             default: return e.key.length === 1 ? { msg: 'CHAR:' + e.key, prevent: false } : null;
         }
     }

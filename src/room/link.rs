@@ -37,7 +37,7 @@ pub fn socket_url(origin: &str, room: &RoomId) -> Option<String> {
 }
 
 /// What phones see of the booth right now.
-pub fn booth_state(room: &str, current: Option<&QueueItem>, queue: &[QueueItem], playback: bool) -> BoothState {
+pub fn booth_state(room: &str, current: Option<&QueueItem>, queue: &[QueueItem], playback: bool, volume: u32) -> BoothState {
     let song = |item: &QueueItem| StateSong {
         code: item.song.code.clone(),
         title: item.song.title.clone(),
@@ -50,6 +50,7 @@ pub fn booth_state(room: &str, current: Option<&QueueItem>, queue: &[QueueItem],
         next: queue.iter().take(STATE_NEXT).map(song).collect(),
         waiting: queue.len(),
         playback,
+        volume,
     }
 }
 

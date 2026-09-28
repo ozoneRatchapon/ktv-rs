@@ -89,6 +89,7 @@ function main() {
         const more = (state?.waiting ?? 0) - next.length;
         $('more').textContent = more > 0 ? `+${more} more waiting` : next.length ? '' : 'The queue is empty';
         playback = state?.playback === true;
+        $('volume').textContent = Number.isInteger(state?.volume) ? `Vol ${state.volume}` : '';
     };
     const render = () => {
         const open = ws?.readyState === WebSocket.OPEN;

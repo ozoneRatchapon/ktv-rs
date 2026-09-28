@@ -32,7 +32,8 @@ const parse = (text, max) => {
     }
 };
 
-/** A phone's command, or null: `queue` a 5-digit code, or `skip` / `pause` / `replay` (the booth decides if allowed). */
+/** A phone's command, or null: `queue` a 5-digit code, or `skip` / `pause` / `replay` / `volume_up` / `volume_down`
+ *  (the booth decides if allowed). */
 export function parse_phone(text) {
     const msg = parse(text, MAX_PHONE_MESSAGE);
     switch (msg?.t) {
@@ -41,6 +42,8 @@ export function parse_phone(text) {
         case 'skip':
         case 'pause':
         case 'replay':
+        case 'volume_up':
+        case 'volume_down':
             return { cmd: msg.t };
         default:
             return null;

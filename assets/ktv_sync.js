@@ -108,6 +108,8 @@
             own_command_at: -Infinity,
             // Practice loop: [start, end] in karaoke seconds, or null
             loop: null,
+            // Booth volume 0-100, applied to both players (a muted one stays muted)
+            volume: 100,
             leads: {},
         };
         for (const kind of Object.keys(LEAD)) {
@@ -261,6 +263,8 @@
             const info = data && data.info;
             // Guide player messages must not drive karaoke time or end-of-song
             if (from_guide) {
+                // A new guide player starts at YouTube's own volume
+                if (data && data.event === 'initialDelivery') command(FRAME.GUIDE, 'setVolume', [st.volume]);
                 // Any guide error (removed, private, embedding disabled) means no vocal: fall back to karaoke audio
                 if (data && data.event === 'onError') {
                     if (st.original) switch_vocal(false);
@@ -282,8 +286,11 @@
                 st.video_time = info.currentTime;
                 st.video_at = env.now();
             }
-            // YouTube sends state changes only to a page that asks, once per loaded player
-            if (data && data.event === 'initialDelivery') command(FRAME.KARAOKE, 'addEventListener', ['onStateChange']);
+            // A new player: YouTube sends state changes only to a page that asks, and starts at its own volume
+            if (data && data.event === 'initialDelivery') {
+                command(FRAME.KARAOKE, 'addEventListener', ['onStateChange']);
+                command(FRAME.KARAOKE, 'setVolume', [st.volume]);
+            }
             if (typeof state !== 'number') return;
             // The end can come in infoDelivery, onStateChange or both: one ending is one next song. Only a player
             // that has played since this song loaded can end it (a late message from the last song's must not)
@@ -428,7 +435,7 @@
                 // Mute karaoke backing audio (video and lyrics stay visible), unmute and sync the guide
                 if (!st.monitor) command(FRAME.KARAOKE, 'mute');
                 command(FRAME.GUIDE, 'unMute');
-                command(FRAME.GUIDE, 'setVolume', [100]);
+                command(FRAME.GUIDE, 'setVolume', [st.volume]);
                 if (st.paused) {
                     seek_guide(guide_target(karaoke_time()), 'PAIR', false);
                 } else {
@@ -438,8 +445,17 @@
                 command(FRAME.GUIDE, 'mute');
                 command(FRAME.GUIDE, 'pauseVideo');
                 command(FRAME.KARAOKE, 'unMute');
-                command(FRAME.KARAOKE, 'setVolume', [100]);
+                command(FRAME.KARAOKE, 'setVolume', [st.volume]);
             }
+        }
+
+        // Booth volume for both players; anything not a number keeps the current one
+        function set_volume(volume) {
+            const v = Number(volume);
+            if (!Number.isFinite(v)) return;
+            st.volume = Math.round(Math.min(100, Math.max(0, v)));
+            command(FRAME.KARAOKE, 'setVolume', [st.volume]);
+            command(FRAME.GUIDE, 'setVolume', [st.volume]);
         }
 
         function bind(send) {
@@ -457,6 +473,7 @@
                 karaoke_state: st.karaoke_state,
                 guide_rate_now: st.guide_rate_now,
                 loop: st.loop,
+                volume: st.volume,
                 original: st.original,
                 monitor: st.monitor,
                 paused: st.paused,
@@ -468,6 +485,7 @@
 
         return {
             bind, load_song, set_mapping, set_monitor, set_start, seek_all, seek_by, set_loop, restart, set_paused, toggle_playback, switch_vocal,
+            set_volume,
             tick, progress, on_message, debug,
             // Called per mic frame (~47/s): the karaoke clock alone, without building the debug snapshot
             time: karaoke_time,

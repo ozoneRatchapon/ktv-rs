@@ -3,6 +3,7 @@ use futures_util::StreamExt;
 use crate::sync::{self, SyncCommand, SyncEvent, GUIDE_FRAME_ID, KARAOKE_FRAME_ID};
 use crate::components::guide_timing::GuideTiming;
 use crate::components::pitch_meter::PitchMeter;
+use crate::components::volume::VolumeControl;
 use crate::components::practice::Practice;
 use crate::score::TakeResult;
 use crate::timing::SavedTiming;
@@ -25,6 +26,9 @@ pub fn Player(
     on_save_guide: EventHandler<GuideTrack>,
     on_revert_guide: EventHandler<()>,
     on_take_end: EventHandler<TakeResult>,
+    /// Booth volume 0-100 and what changes it (the slider in the controls row).
+    volume: u32,
+    on_volume: EventHandler<u32>,
     /// Two singers on one stereo mic receiver (Settings → Duet).
     #[props(default)]
     duet: bool,
@@ -242,6 +246,8 @@ pub fn Player(
                                     },
                                     "+10s"
                                 }
+
+                                VolumeControl { volume, on_volume }
 
                                 // Guide Vocal / Original Artist Switcher with Intro Offset Compensation
                                 if has_guide {

@@ -3,6 +3,14 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.36.0] - 2026-09-28
+### Added
+- Volume control: a slider in the player bar (0-100, saved on this device, 85 to start), ↑ / ↓ on the keyboard (5 a press) and a controller's D-pad up / down. It sets both the karaoke and the original-vocal players, stays the same for every next song, and switching Vocal no longer jumps it to full.
+- Phone remote: 🔉 − / 🔊 + buttons (10 a tap) with the booth's volume shown, when the host lets phones control playback.
+
+### Changed
+- ↑ / ↓ no longer scroll the page (they change the volume); Page Up / Page Down and the mouse wheel still scroll the song list.
+
 ## [0.35.1] - 2026-09-28 (`7773e73e`)
 ### Fixed
 - A song that played to its end did not move on to the next one (you had to press Next Song). YouTube only sends "state changed" events to a page that asks for them, and the app never asked, so it never heard that the video ended. The app now asks each karaoke player for them and also reads the end from the player's regular status reports, and one ending moves on exactly one song (a late second report of the same end no longer skips the song after it). Auto-DJ takes over at the end of the queue as before.

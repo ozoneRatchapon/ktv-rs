@@ -233,6 +233,29 @@ test('auto next: when the karaoke video plays to its end, the next song in the q
   assert.equal(await page.eval(now_title), next, 'stays on it: one ending is one next song');
 }));
 
+test('volume: the slider and ↑ / ↓ set both players\' volume, which is saved and kept for the next song', () => with_page({}, async (page) => {
+  const core = `window.KtvSync.debug().volume`;
+  const slider = `document.getElementById('volume')`;
+  await page.wait_for(`typeof window.KtvSync?.debug === 'function' && ${core} === 85`);
+  assert.equal(await page.eval(`${slider}.value`), '85', 'default 85');
+  // Drag the slider (a range input reports each value as it moves)
+  await page.eval(`(() => { const s = ${slider}; s.value = '40'; s.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+  await page.wait_for(`${core} === 40`);
+  assert.equal(await page.eval(`document.querySelector('.volume-value').textContent`), '40');
+  // Keys work with the page focused, not while the slider (or a field) has focus
+  await page.eval(`document.activeElement.blur()`);
+  await page.key('ArrowUp');
+  await page.wait_for(`${core} === 45 && ${slider}.value === '45'`);
+  await page.key('ArrowDown');
+  await page.key('ArrowDown');
+  await page.wait_for(`${core} === 35`);
+  await page.eval(`[...document.querySelectorAll('.player-main-controls-row button')].find((b) => b.textContent === 'Next Song').click()`);
+  await sleep(500);
+  assert.equal(await page.eval(core), 35, 'kept for the next song');
+  await page.reload();
+  await page.wait_for(`typeof window.KtvSync?.debug === 'function' && ${core} === 35 && ${slider}.value === '35'`);
+}));
+
 test('empty queue: Next Song hands over to Auto-DJ with a different song', () => with_page({}, async (page) => {
   const finished = await page.eval(now_title);
   await page.eval(`(async () => {
@@ -413,6 +436,11 @@ test('phone remote: the Keypad QR opens /remote, a phone sees the stage, queues 
     // The host allows playback: Skip on the phone moves the booth on
     await booth.click('#remote_allow_playback');
     await phone.wait_for(`getComputedStyle(document.getElementById('controls')).display === 'grid'`);
+    // Volume from the phone: +10 on the booth, and the phone shows it
+    const booth_volume = Number(await booth.eval(`document.getElementById('volume').value`));
+    await phone.click('#controls button[data-cmd=volume_up]');
+    await booth.wait_for(`document.getElementById('volume').value === '${Math.min(100, booth_volume + 10)}'`);
+    await phone.wait_for(`document.getElementById('volume').textContent === 'Vol ${Math.min(100, booth_volume + 10)}'`);
     await phone.click('#controls button[data-cmd=skip]');
     await booth.wait_for(`${now_title} !== ${JSON.stringify(on_stage)}`);
     const next_up = await booth.eval(now_title);

@@ -1,15 +1,16 @@
 use dioxus::prelude::*;
 
 /// Keyboard and controller shortcuts handled by the global listener in `main.rs` (keep the two in step).
-pub const SHORTCUTS: [(&str, &str); 8] = [
+pub const SHORTCUTS: [(&str, &str); 9] = [
     ("A–Z, 0–9", "Type to search songs, artists or 5-digit codes"),
     ("Enter", "Queue the song whose 5-digit code you typed"),
     ("Backspace", "Delete the last search letter"),
     ("Esc", "Clear the search"),
     ("Space, ⏯", "Pause / play"),
     ("← / →", "Back / forward 5 seconds"),
+    ("↑ / ↓", "Volume up / down"),
     ("?", "Show or hide these shortcuts"),
-    ("Controller, ⏭", "A pause / play, B clear search, D-pad seek 5 s; Start or ⏭ next song"),
+    ("Controller, ⏭", "A pause / play, B clear search, D-pad ← → seek 5 s, ↑ ↓ volume; Start or ⏭ next song"),
 ];
 
 /// Shortcut list shown in the control column, never over the players (YouTube forbids overlays).

@@ -88,6 +88,19 @@ pub struct AppSettings {
     pub duet: bool,
 }
 
+impl AppSettings {
+    /// Booth volume 0-100 (a hand-edited save above 100 counts as 100).
+    pub fn volume(&self) -> u32 {
+        self.volume.min(100)
+    }
+
+    /// Change the volume by `delta` points, kept within 0-100; returns the new volume.
+    pub fn volume_by(&mut self, delta: i32) -> u32 {
+        self.volume = self.volume().saturating_add_signed(delta).min(100);
+        self.volume
+    }
+}
+
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
