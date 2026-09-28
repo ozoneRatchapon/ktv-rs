@@ -722,7 +722,7 @@ test('search: a typo still finds the song, and says it is showing close matches'
   assert.ok(await page.eval(`[...document.querySelectorAll('.song-artist')].some((a) => /bodyslam/i.test(a.textContent))`));
 }));
 
-test('auto-timed vocal: an official-audio song has Vocal at once, and ±0.5 s fixes it on this device', () => with_page({}, async (page) => {
+test('auto-timed vocal: an official-audio song has Vocal at once, ±0.5 s fixes it on this device, Reset timing undoes it', () => with_page({}, async (page) => {
   await page.wait_for(`parseInt(document.querySelector('.catalog-meta-row .count-text')?.textContent.replace(/\\D/g, ''), 10) > 5000`);
   // ผิดตรงไหน - เบิร์ด ธงไชย (GMM Karaoke 34201): official audio StGwcpcGP7E at -18.2 s
   await page.eval(`document.activeElement?.blur()`);
@@ -737,6 +737,12 @@ test('auto-timed vocal: an official-audio song has Vocal at once, and ±0.5 s fi
   await page.eval(`[...document.querySelectorAll('.vocal-nudge button')].find((b) => b.textContent === 'Vocal behind').click()`);
   await page.wait_for(`JSON.parse(localStorage.getItem('ktv.guides.v1') ?? '{}')['yt_4W_T9DPufmQ']?.offset_secs === -17.7`);
   await page.wait_for(`document.querySelector('.vocal-nudge-label')?.textContent === 'Out of step?'`);
+  // Nudged by mistake: Reset timing goes back to the song's own timing and forgets the saved one
+  await page.eval(`[...document.querySelectorAll('.vocal-nudge button')].find((b) => b.textContent === 'Vocal ahead').click()`);
+  await page.eval(`[...document.querySelectorAll('.vocal-nudge button')].find((b) => b.textContent === 'Reset timing').click()`);
+  await page.wait_for(`!('yt_4W_T9DPufmQ' in JSON.parse(localStorage.getItem('ktv.guides.v1') ?? '{}'))`);
+  await page.wait_for(`document.querySelector('.vocal-nudge-label')?.textContent === 'Auto-timed. Out of step?' && Math.abs(window.KtvSync.debug().guide_offset - -18.2) < 0.001`);
+  assert.equal(await page.eval(`[...document.querySelectorAll('.vocal-nudge button')].some((b) => b.textContent === 'Reset timing')`), false, 'nothing saved: no Reset');
 }));
 
 test('favourites and recently sung shelves', () => with_page({}, async (page) => {

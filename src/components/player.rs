@@ -323,6 +323,15 @@ pub fn Player(
                                             onclick: move |_| on_save_guide.call(crate::timing::nudge(&guide, 0.5)),
                                             "Vocal behind"
                                         }
+                                        // A nudge made by mistake: back to the timing the song came with
+                                        if saved_timing == SavedTiming::OverCatalog {
+                                            button {
+                                                class: "ctrl-btn practice-btn",
+                                                title: "Undo the nudges saved on this device: back to the song's own timing",
+                                                onclick: move |_| on_revert_guide.call(()),
+                                                "Reset timing"
+                                            }
+                                        }
                                     }
                                 }
 

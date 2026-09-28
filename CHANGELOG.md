@@ -3,6 +3,10 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.37.1] - 2026-09-29
+### Fixed
+- Pressing "Vocal ahead" / "Vocal behind" by mistake had no simple way back: the original timing could only be restored from the curator's Guide Timing Tools. A **Reset timing** button now sits next to them whenever a nudge is saved on this device; it goes back to the song's own timing at once and forgets the saved one.
+
 ## [0.37.0] - 2026-09-29 (`c9a2b3ca`)
 ### Added
 - Medley: sing parts of several songs back to back as one queue entry (Queue tab → Medley). Add a song by its code and the app guesses its part (after the intro, about a verse and a chorus; nothing listens to the song, so it says "guessed"), then nudge the start and end 5 s at a time. Or, while a song plays, mark A and B in the practice row and press **+ Medley**: that part is used every time the song is added again. Save medleys on this device, play one now or queue it.
