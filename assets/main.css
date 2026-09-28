@@ -2918,3 +2918,33 @@ details.tuning-score {
     min-width: 5ch;
     font-variant-numeric: tabular-nums;
 }
+
+/* Duet: one row per singer inside the mic meter; solo keeps the single flat row */
+.voice-row {
+    display: contents;
+}
+
+.voice-row.duet {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.voice-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--bg-dark, #0b0d13);
+    background: var(--accent-cyan);
+}
+
+.voice-row.duet + .voice-row.duet .voice-tag {
+    background: var(--accent-amber);
+}

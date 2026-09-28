@@ -23,8 +23,8 @@ pub fn clean_name(raw: &str) -> Option<String> {
 }
 
 /// Put `name` on the take that ended at `sung_at_ms` (`None` clears it). False if no such take is kept.
-pub fn name_take(history: &mut [TakeResult], sung_at_ms: f64, name: Option<String>) -> bool {
-    match history.iter_mut().find(|t| t.sung_at_ms == sung_at_ms) {
+pub fn name_take(history: &mut [TakeResult], sung_at_ms: f64, part: Option<u8>, name: Option<String>) -> bool {
+    match history.iter_mut().find(|t| t.sung_at_ms == sung_at_ms && t.part == part) {
         Some(take) => {
             take.singer = name;
             true

@@ -83,6 +83,9 @@ pub struct AppSettings {
     /// Phone remote: guests queue songs from `/remote` (off until the host turns it on in the Keypad tab).
     #[serde(default)]
     pub remote: RemoteConfig,
+    /// Duet: two mics on one stereo receiver (left = singer 1, right = singer 2), each scored on its own.
+    #[serde(default)]
+    pub duet: bool,
 }
 
 impl Default for AppSettings {
@@ -99,6 +102,7 @@ impl Default for AppSettings {
             tip: TipConfig::default(),
             mc_voice: McVoice::Off,
             remote: RemoteConfig::default(),
+            duet: false,
         }
     }
 }

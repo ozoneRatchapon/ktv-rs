@@ -6,7 +6,7 @@ mod unsupported;
 #[cfg(target_arch = "wasm32")]
 mod web;
 
-pub use types::{MicError, FRAME_SIZE, HOP_SIZE};
+pub use types::{MicChannels, MicError, FRAME_SIZE, HOP_SIZE};
 #[cfg(not(target_arch = "wasm32"))]
 pub use unsupported::Mic;
 #[cfg(target_arch = "wasm32")]

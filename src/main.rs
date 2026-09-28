@@ -114,7 +114,8 @@ fn App() -> Element {
     use_effect(move || storage::save(GUIDES_KEY, &*guide_overrides.read()));
     // Finished takes (newest first) and the one just finished, shown until closed
     let mut score_history = use_signal(|| storage::load::<Vec<TakeResult>>(SCORES_KEY).unwrap_or_default());
-    let mut last_result = use_signal(|| None::<TakeResult>);
+    // Result cards of the take that just ended: one, or one per singer in a duet
+    let mut last_results = use_signal(Vec::<TakeResult>::new);
     use_effect(move || storage::save(SCORES_KEY, &*score_history.read()));
     // Favourites and recently sung songs on this device
     let mut picks = use_signal(|| storage::load::<Picks>(PICKS_KEY).unwrap_or_default());
@@ -493,6 +494,7 @@ fn App() -> Element {
                         saved_timing,
                         on_save_guide: handle_save_guide,
                         on_revert_guide: handle_revert_guide,
+                        duet: settings().duet,
                         auto_timed: current_song().is_some_and(|c| {
                             !guide_overrides.read().contains_key(&c.song.id) && library::auto_timed(&c.song.youtube_id)
                         }),
@@ -502,7 +504,12 @@ fn App() -> Element {
                                 mc::announce(&event, settings.peek().mc_voice, mc::seed_of(&result.song_id));
                             }
                             score::record(&mut score_history.write(), result.clone());
-                            last_result.set(Some(result));
+                            // Parts of one duet take end together; a new take replaces the cards
+                            let mut cards = last_results.write();
+                            if cards.first().is_some_and(|c| c.sung_at_ms != result.sung_at_ms) {
+                                cards.clear();
+                            }
+                            cards.push(result);
                         },
                     }
                     if let Some(item) = current_song() {
@@ -531,17 +538,20 @@ fn App() -> Element {
 
                 // Right / Tabbed Controller Panel
                 section { class: "stage-control-side",
-                    if let Some(result) = last_result() {
+                    for (i, result) in last_results().into_iter().enumerate() {
                         ScoreCard {
+                            key: "{result.sung_at_ms}-{result.part.unwrap_or(0)}",
                             result,
                             singers: score::recent_singers(&score_history.read(), 6),
                             on_name: move |name: Option<String>| {
-                                let Some(mut result) = last_result() else { return };
+                                let mut cards = last_results.write();
+                                let Some(result) = cards.get_mut(i) else { return };
                                 result.singer = name.as_deref().and_then(score::clean_name);
-                                score::name_take(&mut score_history.write(), result.sung_at_ms, result.singer.clone());
-                                last_result.set(Some(result));
+                                score::name_take(&mut score_history.write(), result.sung_at_ms, result.part, result.singer.clone());
                             },
-                            on_close: move |_| last_result.set(None),
+                            on_close: move |_| {
+                                last_results.write().remove(i);
+                            },
                         }
                     }
                     if show_help() {

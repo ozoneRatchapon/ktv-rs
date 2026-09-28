@@ -65,10 +65,23 @@ fn test_ties_go_to_more_notes_then_the_earlier_take() {
 #[test]
 fn test_naming_a_take_and_recent_names() {
     let mut history = vec![take(None, 9.0, 10, NOW), take(Some("Nok"), 9.0, 10, NOW - 1.0), take(Some("nok"), 9.0, 10, NOW - 2.0)];
-    assert!(name_take(&mut history, NOW, Some("Pim".to_string())));
-    assert!(!name_take(&mut history, NOW + 5.0, Some("x".to_string())), "take no longer kept");
+    assert!(name_take(&mut history, NOW, None, Some("Pim".to_string())));
+    assert!(!name_take(&mut history, NOW + 5.0, None, Some("x".to_string())), "take no longer kept");
     assert_eq!(recent_singers(&history, 6), ["Pim", "Nok"]);
     assert_eq!(recent_singers(&history, 1), ["Pim"]);
-    assert!(name_take(&mut history, NOW, None));
+    assert!(name_take(&mut history, NOW, None, None));
     assert_eq!(history[0].singer, None);
+}
+
+#[test]
+fn test_duet_parts_of_one_take_are_named_apart() {
+    let summary = TuningSummary { notes: 5, mean_abs_cents: Some(10.0) };
+    let take = |part| TakeResult::new("cat_1", "t", "a", summary, NOW).unwrap().with_part(Some(part));
+    let mut history = vec![take(2), take(1)];
+    assert!(name_take(&mut history, NOW, Some(1), Some("Pim".to_string())));
+    assert!(name_take(&mut history, NOW, Some(2), Some("Ton".to_string())));
+    assert_eq!(history[0].singer.as_deref(), Some("Ton"));
+    assert_eq!(history[1].singer.as_deref(), Some("Pim"));
+    assert!(!name_take(&mut history, NOW, None, Some("x".to_string())), "a duet take has a part");
+    assert_eq!(leaderboard(&history, NOW).len(), 2, "both singers rank");
 }

@@ -95,6 +95,25 @@ pub fn Settings(
                     }
                 }
 
+                // Duet: two mics on one stereo receiver, scored on their own
+                div { class: "setting-row",
+                    div { class: "setting-desc",
+                        div { class: "setting-title", "Duet (two mics)" }
+                        div { class: "setting-sub", "For a two-mic wireless receiver plugged in as one stereo device: left mic = singer 1, right = singer 2, each with its own pitch, lane and scores. Echo cancellation is off in duet mode (browsers merge it to one channel), so keep speakers away from the mics. Turn the mic on again after changing this." }
+                    }
+                    button {
+                        id: "duet_toggle",
+                        class: if current_settings.duet { "toggle-btn active" } else { "toggle-btn" },
+                        aria_pressed: "{current_settings.duet}",
+                        onclick: move |_| {
+                            let mut s = settings();
+                            s.duet = !s.duet;
+                            settings.set(s);
+                        },
+                        if current_settings.duet { "ON" } else { "OFF" }
+                    }
+                }
+
                 // Tip wallet (plan 003): Solana Pay QR under the player
                 div { class: "setting-row",
                     div { class: "setting-desc",
