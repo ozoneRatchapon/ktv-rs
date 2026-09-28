@@ -96,13 +96,15 @@ def parse_smallroom(title):
     return song, artist, alias
 
 
-LIT_TRAILER = re.compile(r"\s*\|?\s*official karaoke\s*$", re.I)
+# "| OFFICIAL KARAOKE", "OFFICIAL KARAOKE" or "(Official Karaoke)" at the end
+LIT_TRAILER = re.compile(r"\s*(\|\s*|\(\s*)?official karaoke\s*\)?\s*$", re.I)
 PIANO_VERSION = re.compile(r"\s*(visualizer\s+)?piano\s+ver\.?\s*$", re.I)
 ENGLISH_PAREN = re.compile(r"\s*\(([A-Za-z0-9' .,&!?-]+)\)\s*$")
 
 
 def parse_lit(title):
-    """LIT Entertainment / PiXXiE: `[member] PiXXiE - ชื่อเพลง (English) | OFFICIAL KARAOKE`. The English title
+    """LIT Entertainment / PiXXiE: `[member] PiXXiE - ชื่อเพลง (English) | OFFICIAL KARAOKE` (Scrubb's channel:
+    `Scrubb - ชื่อเพลง (English) (Official Karaoke)`). The English title
     in brackets becomes the alias; a piano version keeps "(Piano Ver.)" in the title so it is not taken for
     the original."""
     text = LIT_TRAILER.sub("", title).strip()
@@ -118,6 +120,42 @@ def parse_lit(title):
     if piano:
         song += " (Piano Ver.)"
     return song, artist, alias
+
+
+# Artist names a label spells differently from the artist's own channel
+ARTIST_SPELLING = {"scrubb": "Scrubb"}
+TERO_TRAILER = re.compile(r"\s*\|\s*คาราโอเกะ\s*「[^」]*」\s*$")
+
+
+def parse_tero(title):
+    """TERO MUSIC: `ศิลปิน - ชื่อเพลง | คาราโอเกะ「Hits Karaoke」`."""
+    text = TERO_TRAILER.sub("", title).strip()
+    if text == title.strip() or " - " not in text:
+        return None
+    artist, song = split_dash(text)
+    return song, ARTIST_SPELLING.get(artist.lower(), artist), ""
+
+
+ONE31_TAG = re.compile(r"\s*【\s*(OFFICIAL\s+)?KARAOKE\s*】\s*$", re.I)
+ONE31_DRAMA = re.compile(r"\s*\[(?:เพลงจากละคร\s*|OPV\s+)([^\]]+)\]\s*")
+
+
+def parse_one31(title):
+    """one31 (drama songs): `ชื่อเพลง [เพลงจากละคร…] - ศิลปิน【OFFICIAL KARAOKE】`, or
+    `oneMV l ชื่อเพลง - ศิลปิน [OPV ละคร] #tag | one31【KARAOKE】`. The drama's name becomes the alias."""
+    if not ONE31_TAG.search(title):
+        return None
+    text = ONE31_TAG.sub("", title)
+    text = re.sub(r"^oneMV\s+l\s+", "", text)
+    text = re.sub(r"\s*\|\s*one31\s*$", "", text)
+    text = re.sub(r"\s*#\S+", "", text)
+    drama = ONE31_DRAMA.search(text)
+    alias = drama.group(1).strip() if drama else ""
+    text = ONE31_DRAMA.sub(" ", text).strip()
+    if " - " not in text:
+        return None
+    song, artist = split_dash(text)
+    return song.strip("“”\"' "), artist, alias
 
 
 def split_dash(text):
@@ -141,11 +179,22 @@ CHANNELS = [
     # PiXXiE official karaoke playlist the owner picked (2026-09-28): the group's and LIT Entertainment's uploads
     {"name": "LIT Entertainment", "url": "https://www.youtube.com/playlist?list=PLd-f4_Wj4rjzRRrCkogQKcj7sUAOzSLo9",
      "codes": (70001, 70999), "intro_skip_secs": 0, "parse": parse_lit, "genre": "Pop"},
+    # Picked by the owner (2026-09-28) as single videos: pinned ids, not a search, so a video YouTube's search stops
+    # returning is never retired. one31's are every karaoke upload its search and playlists had that day.
+    {"name": "one31", "videos": ["0m9Dh59KgCI", "6XA0eTaHeUk", "Sis5qd-VWP8", "KmJTYS0iqes", "6e2XIykEzmg"],
+     "codes": (71001, 71999), "intro_skip_secs": 0, "parse": parse_one31},
+    {"name": "SCRUBB MUSIC TUBE", "videos": ["xHQTC-gdOlI", "k3vYtyp6q-w", "Ma0rnk6NSC4", "FQPT54991Mk", "4QkOUvLcNuk",
+                                             "wXjQVvAg4oE", "bL1rzmNPjaA"],
+     "codes": (72001, 72999), "intro_skip_secs": 0, "parse": parse_lit, "genre": "Indie"},
+    {"name": "TERO MUSIC", "videos": ["f1Oo6r7396Q"], "codes": (73001, 73999), "intro_skip_secs": 0, "parse": parse_tero,
+     "genre": "Indie"},
 ]
 
 
-def list_videos(url):
-    out = subprocess.run(["yt-dlp", "--flat-playlist", "--print", "%(id)s\t%(duration)s\t%(title)s", url],
+def list_videos(channel):
+    """A channel's uploads or playlist (`url`), or pinned single videos (`videos`)."""
+    urls = [channel["url"]] if "url" in channel else [f"https://www.youtube.com/watch?v={vid}" for vid in channel["videos"]]
+    out = subprocess.run(["yt-dlp", "--flat-playlist", "--print", "%(id)s\t%(duration)s\t%(title)s", *urls],
                          capture_output=True, text=True, check=True).stdout
     rows = [line.split("\t", 2) for line in out.splitlines() if line.count("\t") >= 2]
     return [(vid, int(float(secs)), title) for vid, secs, title in rows if secs not in ("NA", "None")]
@@ -157,7 +206,7 @@ def song_key(title, artist):
 
 def harvest(channel, curated_ids, old_codes, check_embed):
     songs, seen, skipped = [], set(), 0
-    for vid, secs, raw in list_videos(channel["url"]):
+    for vid, secs, raw in list_videos(channel):
         parsed = None if SKIP_WORDS.search(raw) or not MIN_SECS <= secs <= MAX_SECS else channel["parse"](raw)
         if vid in curated_ids or parsed is None or not parsed[0] or not parsed[1]:
             skipped += 1

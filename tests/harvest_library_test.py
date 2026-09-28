@@ -8,8 +8,8 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tools"))
 from harvest_library import (  # noqa: E402
-    assign_codes, parse_artist_first, parse_gmm, parse_lit, parse_smallroom, parse_title_colon, parse_title_first,
-    retire_codes)
+    assign_codes, parse_artist_first, parse_gmm, parse_lit, parse_one31, parse_smallroom, parse_tero, parse_title_colon,
+    parse_title_first, retire_codes)
 
 
 class ParseGmm(unittest.TestCase):
@@ -71,6 +71,26 @@ class ParseOtherLabels(unittest.TestCase):
         for title, want in cases.items():
             self.assertEqual(parse_lit(title), want, title)
         self.assertIsNone(parse_lit("PiXXiE TOXIQUE Official MV"))
+        # Scrubb's own channel uses the same shape with the tag in brackets
+        self.assertEqual(parse_lit("Scrubb - ทุกอย่าง (Official Karaoke)"), ("ทุกอย่าง", "Scrubb", ""))
+        self.assertEqual(parse_lit("Scrubb - คู่กัน (Soulmate) (Official Karaoke)"), ("คู่กัน", "Scrubb", "Soulmate"))
+
+    def test_tero_hits_karaoke(self):
+        self.assertEqual(parse_tero("scrubb - รอยยิ้ม | คาราโอเกะ「Hits Karaoke」"), ("รอยยิ้ม", "Scrubb", ""))
+        self.assertIsNone(parse_tero("scrubb - รอยยิ้ม | Official MV"))
+
+    def test_one31_drama_songs(self):
+        # `ชื่อเพลง [เพลงจากละคร…] - ศิลปิน【OFFICIAL KARAOKE】`: the drama's name becomes the search alias
+        cases = {
+            "สองใจ [เพลงจากละครวันทอง] - ดา เอ็นโดรฟิน【OFFICIAL KARAOKE】": ("สองใจ", "ดา เอ็นโดรฟิน", "วันทอง"),
+            "“พิง” [เพลงจากละครกระเช้าสีดา] - นนท์ ธนนท์【OFFICIAL KARAOKE】": ("พิง", "นนท์ ธนนท์", "กระเช้าสีดา"),
+            "รักแท้ [เพลงจากละครคุณชาย] - NuNew【OFFICIAL KARAOKE】": ("รักแท้", "NuNew", "คุณชาย"),
+            "oneMV l ฉันมันเป็นคนแบบนี้ - บูม สหรัฐ [OPV ขอเกิดใหม่ใกล้ๆ เธอ] #ต่อแอฟ | one31【KARAOKE】":
+                ("ฉันมันเป็นคนแบบนี้", "บูม สหรัฐ", "ขอเกิดใหม่ใกล้ๆ เธอ"),
+        }
+        for title, want in cases.items():
+            self.assertEqual(parse_one31(title), want, title)
+        self.assertIsNone(parse_one31("สองใจ [เพลงจากละครวันทอง] - ดา เอ็นโดรฟิน【OFFICIAL MV】"))
 
     def test_smallroom(self):
         self.assertEqual(parse_smallroom("MOOR - แต่งงาน | Will you marry me? [Karaoke]"), ("แต่งงาน", "MOOR", "Will you marry me?"))

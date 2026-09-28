@@ -84,7 +84,7 @@ $$\text{bottleneck\_penalty} = \begin{cases} -\infty & \text{if dwell} \le 20s \
 * **Curated catalog** (`assets/catalog.json`, `src/catalog.rs`): ~40 hand-checked songs with genres and guide
   timings, compiled into the wasm (`include_str!`), so the booth works on first paint.
 * **Full library** (`assets/library.json`, `src/library/`): every official karaoke upload of each label
-  (GMM Karaoke, Whattheduck, Muzik Move Karaoke, RS Music, Smallroom Karaoke, LIT Entertainment; ~8,500 songs), written by `tools/harvest_library.py` from
+  (GMM Karaoke, Whattheduck, Muzik Move Karaoke, RS Music, Smallroom Karaoke, LIT Entertainment, one31, SCRUBB MUSIC TUBE, TERO MUSIC; ~8,500 songs), written by `tools/harvest_library.py` from
   channel metadata (no media downloaded; every video oEmbed-checked as embeddable). It is ~900 KB raw / ~300 KB
   gzip, so it is a content-hashed asset (`asset!`, cached `immutable`) fetched after the first paint
   (`browser::fetch_text`) and set once (`library::install`, a `OnceLock`). Until it lands, only the curated songs list.
@@ -98,5 +98,5 @@ $$\text{bottleneck\_penalty} = \begin{cases} -\infty & \text{if dwell} \le 20s \
   search over the whole songbook takes ~0.2 ms per keystroke instead of ~20 ms (release build, M-series host).
 * **Rendering**: `CatalogView` renders 60 cards and adds 60 per **Show more**; the count shows the full total.
 * **Ids and codes**: library ids are `yt_<video id>`; codes are 5 digits in per-channel ranges (GMM 30001+,
-  Whattheduck 50001+, Muzik Move 55001+, RS 60001+, Smallroom 65001+, LIT 70001+), kept stable across re-harvests. `catalog::find_song` looks up the booth's
+  Whattheduck 50001+, Muzik Move 55001+, RS 60001+, Smallroom 65001+, LIT 70001+, one31 71001+, Scrubb 72001+, TERO 73001+), kept stable across re-harvests. `catalog::find_song` looks up the booth's
   catalog first, then the library (keypad, Remote). Queued library songs are saved in the session as full songs.
