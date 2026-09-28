@@ -3,7 +3,7 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.37.0] - 2026-09-29
+## [0.37.0] - 2026-09-29 (`c9a2b3ca`)
 ### Added
 - Medley: sing parts of several songs back to back as one queue entry (Queue tab → Medley). Add a song by its code and the app guesses its part (after the intro, about a verse and a chorus; nothing listens to the song, so it says "guessed"), then nudge the start and end 5 s at a time. Or, while a song plays, mark A and B in the practice row and press **+ Medley**: that part is used every time the song is added again. Save medleys on this device, play one now or queue it.
 - Each part fades in from silence, fades out over its last 2.5 s and moves straight on to the next part. The player shows "Medley 2/4 · title" with the part's times, the queue marks each part, each part gets its own score, and the spoken MC talks only before the first part.
