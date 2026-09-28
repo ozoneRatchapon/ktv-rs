@@ -708,6 +708,43 @@ test('medley share: Share gives a link that opens the medley in another builder 
   assert.equal(await page.eval(`!!document.querySelector('.medley-shared')`), false);
 }));
 
+test('medley key hint: with chord charts on this device, each join says same / near / far key, and Order by key makes the joins smoother', () => with_page({}, async (page) => {
+  const open_queue = `[...document.querySelectorAll('.nav-btn')].find((b) => b.textContent.startsWith('Queue')).click()`;
+  const button = (scope, label) => `[...document.querySelectorAll(${JSON.stringify(scope)})].find((b) => b.textContent === ${JSON.stringify(label)})`;
+  const set_input = (id, value) => page.eval(`(() => { const i = document.getElementById(${JSON.stringify(id)}); i.value = ${JSON.stringify(value)}; i.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+  const codes = `JSON.stringify([...document.querySelectorAll('.medley-part .item-code')].map((c) => c.textContent))`;
+  const keys = `JSON.stringify([...document.querySelectorAll('.medley-part')].map((p) => p.querySelector('.medley-key')?.textContent ?? null))`;
+
+  await page.eval(open_queue);
+  await page.wait_for(`!!document.getElementById('medley_code')`);
+  for (const code of ['10001', '10002', '10003']) {
+    await set_input('medley_code', code);
+    await page.eval(`${button('.medley-add button', 'Add')}.click()`);
+  }
+  await page.wait_for(`document.querySelectorAll('.medley-part').length === 3`);
+  assert.equal(await page.eval(keys), '[null,null,null]', 'no chord charts: no key hint');
+  assert.equal(await page.eval(`!!document.querySelector('.medley-key-order')`), false);
+
+  // Charts for the three songs, a chord every 4 s over the whole song: C major, D major, G major
+  await page.eval(`(() => {
+    const ids = JSON.parse(localStorage.getItem('ktv.medleys.v1')).draft.parts.map((p) => p.song_id);
+    const chart = (chords) => Array.from({ length: 80 }, (_, i) => ({ at_secs: i * 4, chord: chords[i % chords.length] }));
+    const charts = { [ids[0]]: chart(['C', 'F', 'G', 'C']), [ids[1]]: chart(['D', 'G', 'A', 'D']), [ids[2]]: chart(['G', 'C', 'D', 'G']) };
+    localStorage.setItem('ktv.chords.v1', JSON.stringify(charts));
+  })()`);
+  await page.reload();
+  await page.eval(open_queue);
+  await page.wait_for(`document.querySelectorAll('.medley-part .medley-key').length === 3`);
+  assert.equal(await page.eval(keys), JSON.stringify(['key C', 'C → D · far key', 'D → G · near key']));
+  assert.equal(await page.eval(`document.querySelector('.medley-part .medley-key.far') !== null`), true);
+
+  // C, G, D is one step at each join; the opener stays first
+  await page.eval(`${button('.medley-key-order button', 'Order by key')}.click()`);
+  await page.wait_for(`!document.querySelector('.medley-key-order')`);
+  assert.equal(await page.eval(codes), JSON.stringify(['#10001', '#10003', '#10002']));
+  assert.equal(await page.eval(keys), JSON.stringify(['key C', 'C → G · near key', 'G → D · near key']));
+}));
+
 test('medley score: each part gets its own card, and after the last part the card shows the whole medley\'s total', () => with_page({ fake_mic: true }, async (page) => {
   const button = (scope, label) => `[...document.querySelectorAll(${JSON.stringify(scope)})].find((b) => b.textContent === ${JSON.stringify(label)})`;
   const set_input = (id, value) => page.eval(`(() => { const i = document.getElementById(${JSON.stringify(id)}); i.value = ${JSON.stringify(value)}; i.dispatchEvent(new Event('input', { bubbles: true })); })()`);

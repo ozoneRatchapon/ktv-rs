@@ -20,6 +20,12 @@ fn shown(name: &str, shift: i32) -> String {
     name.parse::<Chord>().map_or_else(|_| name.to_string(), |c| c.transposed(shift).to_string())
 }
 
+/// The chord charts saved on this device, cleaned (empty charts dropped).
+pub fn load_charts() -> ChordCharts {
+    let stored = storage::load::<ChordCharts>(CHORDS_KEY).unwrap_or_default();
+    stored.into_iter().map(|(id, chart)| (id, chart.sanitized())).filter(|(_, c)| !c.is_empty()).collect()
+}
+
 /// Chords by ear: a musician taps chord changes while the song plays; the lane then shows the chord sounding now
 /// and the next one. Saved on this device per song (`ktv.chords.v1`); nothing is looked up or analysed.
 #[component]
@@ -28,10 +34,7 @@ pub fn ChordLane(
     /// Current karaoke second, used when the sync core cannot give a finer one.
     fallback_sec: u64,
 ) -> Element {
-    let mut charts = use_signal(|| {
-        let stored = storage::load::<ChordCharts>(CHORDS_KEY).unwrap_or_default();
-        stored.into_iter().map(|(id, chart)| (id, chart.sanitized())).filter(|(_, c)| !c.is_empty()).collect::<ChordCharts>()
-    });
+    let mut charts = use_signal(load_charts);
     use_effect(move || storage::save(CHORDS_KEY, &*charts.read()));
     let mut editing = use_signal(|| false);
     let mut shift = use_signal(|| 0i32);

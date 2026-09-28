@@ -63,8 +63,17 @@ fades in, then decks swap. The guide MV is off during an M2 crossfade: a third i
 - [ ] M3. On the beat: if both songs have a `BeatGrid`, snap `end` and the next `start` to bar lines and start the
   next part so its first downbeat lands one bar after the last one; count-in clicks can bridge the join.
   Optional tempo match by rate when the BPMs are within ~6 %.
-- [ ] M4. Key hint: when chord charts exist, show "same key / near key / far key" between neighbouring parts and
-  suggest an order (circle of fifths). A hint only; nothing is transposed.
+- [x] M4. Key hint: when chord charts exist, show "same key / near key / far key" between neighbouring parts and
+  suggest an order (circle of fifths). A hint only; nothing is transposed. Done 2026-09-29 (v0.41.0, Worker `WORKER_ID`).
+  `chords::key` (pure): `ChordChart::key_between(start, end)` weights the chord tones sounding inside the part by
+  how long each sounds (root and bass double) and takes the best Krumhansl–Kessler major / minor fit; fewer than 3
+  chords sounding in the part → no key. `Key::step` = same / near (relative or one fifth) / far; `smoothest_order` is
+  exact (Held–Karp, ≤ 16 keys), fifths ×2 + mode change, and of a path's two directions keeps the opener first.
+  `medley::{part_keys, key_order}`: an order is offered only when every part's key is known and it lowers the total;
+  `MedleyBook::reorder` ignores anything but a full permutation. Panel: "key C" on the first part, "C → D · far key"
+  on later ones, "Order by key" under the list. Charts are read when the Queue tab opens (the tab remounts), shared
+  loader `components::chords::load_charts`. Only songs with a chord chart on this device get a hint, so its reach is
+  small until charts are common. Tests: `medley_key_test` (6), e2e "medley key hint".
 - [ ] M5. Room features: score per part + medley total on the result card; build / queue a medley from the phone
   remote; share a medley by link; a few ready-made medleys the host curates.
   - [x] M5a. Share by link. Done 2026-09-29 (v0.38.0, Worker `548e92f9`). `src/medley/share.rs` (pure): `share_fragment` writes
@@ -85,7 +94,7 @@ fades in, then decks swap. The guide MV is off during an M2 crossfade: a third i
     part x"; earlier parts' cards say "Medley i/m · title". The MC says the total after the last part (still quiet
     between parts). Plain mean, not note-weighted: easy to explain to a room. Tests: `medley_score_test` (5), e2e
     "medley score" (fake mic, two parts).
-  - [x] M5c. Phone remote: queue one of the booth's saved medleys. Done 2026-09-29 (v0.40.0). `BoothState.medleys`
+  - [x] M5c. Phone remote: queue one of the booth's saved medleys. Done 2026-09-29 (v0.40.0, Worker `d1fca604`). `BoothState.medleys`
     (`with_medleys`: first `STATE_MEDLEYS` = 12 saved, title + part count, omitted when empty; a full list of 60-char
     Thai titles keeps the state under 4 K characters, cap 8 K). Phone → `{t:"queue_medley", title}`; the Worker
     (`parse_phone`) takes a trimmed, non-blank title of at most `MAX_MEDLEY_TITLE` = 60 characters and drops other

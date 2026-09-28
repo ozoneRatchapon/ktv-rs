@@ -1,9 +1,11 @@
 //! Medley (plan 004): parts of several songs, marked by the host or guessed, sung back to back as one queue entry.
 
+mod keys;
 mod plan;
 mod share;
 mod types;
 
+pub use keys::{key_order, part_keys};
 pub use plan::{
     display_title, guess_span, nudge_span, shown_title, slots, GUESS_INTRO_SECS, GUESS_LEN_SECS, MAX_PARTS, MAX_SAVED, MAX_TITLE_CHARS,
     MIN_PARTS, MIN_PART_SECS,

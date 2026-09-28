@@ -154,6 +154,16 @@ impl MedleyBook {
         }
     }
 
+    /// Put the draft's parts in this order (indexes of the current parts); anything but a full reordering is ignored.
+    pub fn reorder(&mut self, order: &[usize]) {
+        let n = self.draft.parts.len();
+        let mut seen = vec![false; n];
+        if order.len() != n || !order.iter().all(|&i| i < n && !std::mem::replace(&mut seen[i], true)) {
+            return;
+        }
+        self.draft.parts = order.iter().map(|&i| self.draft.parts[i].clone()).collect();
+    }
+
     pub fn remove_part(&mut self, index: usize) {
         if index < self.draft.parts.len() {
             self.draft.parts.remove(index);
