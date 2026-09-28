@@ -3,7 +3,7 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.33.1] - 2026-09-28
+## [0.33.1] - 2026-09-28 (`8eea12f8`)
 ### Changed
 - With the spoken MC on, the mic ignores the moments the MC is talking, so its voice is never read or scored as singing (some systems play speech past the browser's echo cancellation).
 
