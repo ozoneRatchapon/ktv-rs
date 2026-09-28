@@ -4,7 +4,7 @@ use app::timing::GuideOverrides;
 use app::types::{AppSettings, GuideTrack, QueueItem, Song};
 
 fn item(queue_id: u64, song: &Song) -> QueueItem {
-    QueueItem { queue_id, song: song.clone(), requester: "Test".to_string() }
+    QueueItem { queue_id, song: song.clone(), requester: "Test".to_string(), part: None }
 }
 
 fn custom_song() -> Song {

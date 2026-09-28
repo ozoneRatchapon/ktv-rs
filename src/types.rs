@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::mc::McVoice;
+use crate::medley::MedleySlot;
 use crate::room::RemoteConfig;
 use crate::tip::TipConfig;
 
@@ -47,6 +48,24 @@ pub struct QueueItem {
     pub queue_id: u64,
     pub song: Song,
     pub requester: String,
+    /// One part of a medley: played from its start to its end, then the next part follows (plan 004).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub part: Option<MedleySlot>,
+}
+
+impl QueueItem {
+    /// Karaoke second this entry plays from: a medley part's start, else the song's (with or without its intro).
+    pub fn start_at(&self, skip_intro: bool) -> f64 {
+        match &self.part {
+            Some(slot) => slot.span.start,
+            None => self.song.start_sec(skip_intro) as f64,
+        }
+    }
+
+    /// A later part of a medley, which follows the one before straight on.
+    pub fn is_medley_join(&self) -> bool {
+        self.part.as_ref().is_some_and(MedleySlot::is_join)
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

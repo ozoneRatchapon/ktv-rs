@@ -33,6 +33,8 @@ pub enum SyncCommand {
     ClearLoop,
     /// Booth volume 0-100 for both players.
     SetVolume(u32),
+    /// The song just loaded is a medley part: fade in, fade out before karaoke second `end`, then end there.
+    SetPart { end: f64 },
 }
 
 /// The installed core (`window.KtvSync`) and its loader (`window.KtvSyncCore`).
@@ -57,6 +59,7 @@ impl SyncCommand {
             Self::SetMonitor(both) => ("set_monitor", vec![JsArg::Bool(both)]),
             Self::SetLoop { start, end } => ("set_loop", vec![num(start), num(end)]),
             Self::ClearLoop => ("set_loop", vec![num(-1.0), num(-1.0)]),
+            Self::SetPart { end } => ("set_part", vec![num(end)]),
             Self::SetVolume(volume) => ("set_volume", vec![num(f64::from(volume))]),
         }
     }

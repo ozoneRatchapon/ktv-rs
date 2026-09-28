@@ -31,6 +31,10 @@
     // Autoplay with sound is blocked until the visitor interacts with the page; a karaoke player still unstarted
     // this long after mounting is shown as paused, so Play (or Space) starts it
     const AUTOPLAY_WAIT_MS = 2500;
+    // Medley part (plan 004): it rises from silence once its player plays, and falls to silence over the last
+    // seconds before its end, where it ends like a video ending
+    const PART_FADE_IN_MS = 1000;
+    const PART_FADE_OUT_SECS = 2.5;
 
     // Speed nudge by error (YouTube only allows 0.05 steps). Between 0.03 and 0.08 the current rate is kept (hysteresis).
     function next_rate(err, rate_now) {
@@ -110,6 +114,10 @@
             loop: null,
             // Booth volume 0-100, applied to both players (a muted one stays muted)
             volume: 100,
+            // Medley part on stage: { end (karaoke s), play_at (ms it began playing, or null), done }, or null
+            part: null,
+            // Volume last sent to the players, so fades send only changes
+            sent_volume: null,
             leads: {},
         };
         for (const kind of Object.keys(LEAD)) {
@@ -179,9 +187,42 @@
             env.storage.set(LEAD[kind].key, String(next));
         }
 
+        // 0-1 on top of the booth volume: 1 unless a medley part is fading in or out
+        function part_gain() {
+            const part = st.part;
+            if (!part) return 1;
+            const rise = part.play_at === null ? 0 : (env.now() - part.play_at) / PART_FADE_IN_MS;
+            const fall = (part.end - karaoke_time()) / PART_FADE_OUT_SECS;
+            return Math.min(1, Math.max(0, Math.min(rise, fall)));
+        }
+
+        function out_volume() {
+            return Math.round(st.volume * part_gain());
+        }
+
+        function apply_volume(force) {
+            const v = out_volume();
+            if (!force && v === st.sent_volume) return;
+            st.sent_volume = v;
+            command(FRAME.KARAOKE, 'setVolume', [v]);
+            command(FRAME.GUIDE, 'setVolume', [v]);
+        }
+
+        // Medley part step: start its fade-in when it first plays, follow the fades, end it once at its end
+        function part_step() {
+            const part = st.part;
+            if (!part || part.done) return;
+            if (part.play_at === null && !karaoke_stalled() && !st.paused) part.play_at = env.now();
+            apply_volume(false);
+            if (st.paused || !st.karaoke_started || karaoke_time() < part.end) return;
+            part.done = true;
+            st.send('ended');
+        }
+
         // Closed-loop sync step (every CONTROL_MS)
         function tick() {
             if (st.loop && !st.paused && karaoke_time() >= st.loop[1]) seek_all(st.loop[0]);
+            part_step();
             const unstarted = st.karaoke_state === YT_STATE.UNSTARTED || st.karaoke_state === YT_STATE.CUED;
             if (!st.paused && unstarted && env.now() - st.mount_at > AUTOPLAY_WAIT_MS) apply_paused(true, false);
             const action = decide_guide({
@@ -264,7 +305,7 @@
             // Guide player messages must not drive karaoke time or end-of-song
             if (from_guide) {
                 // A new guide player starts at YouTube's own volume
-                if (data && data.event === 'initialDelivery') command(FRAME.GUIDE, 'setVolume', [st.volume]);
+                if (data && data.event === 'initialDelivery') command(FRAME.GUIDE, 'setVolume', [out_volume()]);
                 // Any guide error (removed, private, embedding disabled) means no vocal: fall back to karaoke audio
                 if (data && data.event === 'onError') {
                     if (st.original) switch_vocal(false);
@@ -289,12 +330,14 @@
             // A new player: YouTube sends state changes only to a page that asks, and starts at its own volume
             if (data && data.event === 'initialDelivery') {
                 command(FRAME.KARAOKE, 'addEventListener', ['onStateChange']);
-                command(FRAME.KARAOKE, 'setVolume', [st.volume]);
+                command(FRAME.KARAOKE, 'setVolume', [out_volume()]);
             }
             if (typeof state !== 'number') return;
             // The end can come in infoDelivery, onStateChange or both: one ending is one next song. Only a player
             // that has played since this song loaded can end it (a late message from the last song's must not)
-            if (state === YT_STATE.ENDED && st.karaoke_started && st.karaoke_state !== YT_STATE.ENDED) st.send('ended');
+            // (a medley part that already ended at its own end has said so)
+            const part_done = st.part !== null && st.part.done;
+            if (state === YT_STATE.ENDED && st.karaoke_started && st.karaoke_state !== YT_STATE.ENDED && !part_done) st.send('ended');
             if (state === YT_STATE.PLAYING && st.karaoke_state !== YT_STATE.PLAYING) {
                 // Started (or resumed after buffering): extrapolate from now, not from when it stalled
                 st.video_at = env.now();
@@ -330,10 +373,19 @@
             st.karaoke_state = undefined;
             st.karaoke_started = false;
             st.loop = null;
+            st.part = null;
+            apply_volume(true);
             if (st.paused) {
                 st.paused = false;
                 st.send('PAUSE_STATE:0');
             }
+        }
+
+        // The song just loaded is a medley part ending at karaoke second `end`; anything else plays it whole
+        function set_part(end) {
+            const v = Number(end);
+            st.part = Number.isFinite(v) && v > 0 ? { end: v, play_at: null, done: false } : null;
+            apply_volume(true);
         }
 
         // Same song, new timing (timing mode nudge or saved override): re-aim a running guide at once
@@ -435,7 +487,7 @@
                 // Mute karaoke backing audio (video and lyrics stay visible), unmute and sync the guide
                 if (!st.monitor) command(FRAME.KARAOKE, 'mute');
                 command(FRAME.GUIDE, 'unMute');
-                command(FRAME.GUIDE, 'setVolume', [st.volume]);
+                command(FRAME.GUIDE, 'setVolume', [out_volume()]);
                 if (st.paused) {
                     seek_guide(guide_target(karaoke_time()), 'PAIR', false);
                 } else {
@@ -445,7 +497,7 @@
                 command(FRAME.GUIDE, 'mute');
                 command(FRAME.GUIDE, 'pauseVideo');
                 command(FRAME.KARAOKE, 'unMute');
-                command(FRAME.KARAOKE, 'setVolume', [st.volume]);
+                command(FRAME.KARAOKE, 'setVolume', [out_volume()]);
             }
         }
 
@@ -454,8 +506,7 @@
             const v = Number(volume);
             if (!Number.isFinite(v)) return;
             st.volume = Math.round(Math.min(100, Math.max(0, v)));
-            command(FRAME.KARAOKE, 'setVolume', [st.volume]);
-            command(FRAME.GUIDE, 'setVolume', [st.volume]);
+            apply_volume(true);
         }
 
         function bind(send) {
@@ -474,6 +525,8 @@
                 guide_rate_now: st.guide_rate_now,
                 loop: st.loop,
                 volume: st.volume,
+                out_volume: out_volume(),
+                part: st.part && Object.assign({}, st.part),
                 original: st.original,
                 monitor: st.monitor,
                 paused: st.paused,
@@ -484,7 +537,7 @@
         }
 
         return {
-            bind, load_song, set_mapping, set_monitor, set_start, seek_all, seek_by, set_loop, restart, set_paused, toggle_playback, switch_vocal,
+            bind, load_song, set_part, set_mapping, set_monitor, set_start, seek_all, seek_by, set_loop, restart, set_paused, toggle_playback, switch_vocal,
             set_volume,
             tick, progress, on_message, debug,
             // Called per mic frame (~47/s): the karaoke clock alone, without building the debug snapshot
@@ -533,7 +586,7 @@
     }
 
     const api = Object.freeze({
-        FRAME, YT_STATE, LEAD, ACTION, LOST_RESEEKS, next_rate, learn_lead, is_warm, parse_lead, decide_guide, create_sync, install,
+        FRAME, YT_STATE, LEAD, ACTION, LOST_RESEEKS, PART_FADE_IN_MS, PART_FADE_OUT_SECS, next_rate, learn_lead, is_warm, parse_lead, decide_guide, create_sync, install,
     });
     if (typeof module === 'object' && module.exports) module.exports = api;
     root.KtvSyncCore = api;

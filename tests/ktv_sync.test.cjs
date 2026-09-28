@@ -723,3 +723,88 @@ test('guide lost: switching the vocal or a new song clears it', () => {
     sync.load_song(0, 1);
     assert.equal(sync.debug().guide_lost, false);
 });
+
+// Medley part (plan 004): a new part loads at 30 s and ends at 60 s
+function part_setup(volume = 80) {
+    const env = fake_env();
+    const sync = core.create_sync(env);
+    sync.set_volume(volume);
+    sync.load_song(0, 1);
+    sync.set_start(30);
+    sync.set_part(60);
+    env.clear();
+    return { env, sync };
+}
+
+const last_volume = (env, frame) => env.commands(frame, 'setVolume').map((p) => p.msg.args[0]).at(-1);
+
+test('medley part: silent until it plays, rises over PART_FADE_IN_MS, a new player starts silent too', () => {
+    const { env, sync } = part_setup();
+    assert.equal(sync.debug().out_volume, 0, 'loaded, not playing: silent');
+    sync.on_message(false, { event: 'initialDelivery', info: {} });
+    assert.equal(last_volume(env, FRAME.KARAOKE), 0, 'the new player gets the faded volume, not the booth one');
+    env.advance(3000);
+    sync.tick();
+    assert.equal(sync.debug().out_volume, 0, 'still not playing (autoplay blocked or loading): no fade-in yet');
+    report(sync, 30);
+    sync.tick();
+    env.advance(core.PART_FADE_IN_MS / 2);
+    sync.tick();
+    assert.equal(last_volume(env, FRAME.KARAOKE), 40, 'half way up');
+    assert.equal(last_volume(env, FRAME.GUIDE), 40, 'the guide follows the same fade');
+    env.advance(core.PART_FADE_IN_MS);
+    sync.tick();
+    assert.equal(last_volume(env, FRAME.KARAOKE), 80, 'full booth volume');
+    const sent = env.commands(FRAME.KARAOKE, 'setVolume').length;
+    env.advance(250);
+    sync.tick();
+    assert.equal(env.commands(FRAME.KARAOKE, 'setVolume').length, sent, 'no change, nothing sent');
+});
+
+test('medley part: fades out before its end, then says ended once; the video\'s own end is not a second one', () => {
+    const { env, sync } = part_setup();
+    report(sync, 30);
+    sync.tick();
+    env.advance(30000 - core.PART_FADE_OUT_SECS * 1000 / 2);
+    sync.tick();
+    assert.equal(last_volume(env, FRAME.KARAOKE), 40, 'half way down');
+    assert.deepEqual(env.sent.filter((m) => m === 'ended'), []);
+    env.advance(core.PART_FADE_OUT_SECS * 1000);
+    sync.tick();
+    assert.equal(last_volume(env, FRAME.KARAOKE), 0);
+    assert.deepEqual(env.sent.filter((m) => m === 'ended'), ['ended']);
+    env.advance(1000);
+    sync.tick();
+    sync.on_message(false, { event: 'onStateChange', info: YT_STATE.ENDED });
+    assert.deepEqual(env.sent.filter((m) => m === 'ended'), ['ended'], 'one part end is one next song');
+});
+
+test('medley part: paused holds the fade and the end; a seek back restores the volume; a booth change applies at once', () => {
+    const { env, sync } = part_setup();
+    report(sync, 57);
+    sync.tick();
+    env.advance(core.PART_FADE_IN_MS);
+    sync.tick();
+    sync.set_paused(true);
+    env.advance(20000);
+    sync.tick();
+    assert.deepEqual(env.sent.filter((m) => m === 'ended'), [], 'paused: never ends');
+    assert.equal(sync.debug().out_volume, 64, 'held 2 s before the end: 80 * 2 / 2.5');
+    sync.set_paused(false);
+    sync.seek_all(40);
+    sync.tick();
+    assert.equal(last_volume(env, FRAME.KARAOKE), 80, 'back before the fade: full volume');
+    sync.set_volume(50);
+    assert.equal(last_volume(env, FRAME.KARAOKE), 50);
+});
+
+test('medley part: a new song plays whole at booth volume; set_part ignores a bad end', () => {
+    const { env, sync } = part_setup();
+    sync.load_song(0, 1);
+    assert.equal(sync.debug().part, null);
+    assert.equal(last_volume(env, FRAME.KARAOKE), 80, 'a song after a medley part is not left silent');
+    for (const end of [0, -5, NaN, 'x', null]) {
+        sync.set_part(end);
+        assert.equal(sync.debug().part, null, String(end));
+    }
+});

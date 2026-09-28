@@ -25,6 +25,8 @@ pub const ROOM_KEY: &str = "ktv.room.v1";
 pub const MELODIES_KEY: &str = "ktv.melodies.v1";
 /// [`crate::tempo::BeatGrids`]: beat grids tapped in for the count-in, by song id.
 pub const TEMPO_KEY: &str = "ktv.tempo.v1";
+/// [`crate::medley::MedleyBook`]: the medley being built, saved medleys, and parts marked per song.
+pub const MEDLEYS_KEY: &str = "ktv.medleys.v1";
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Session {

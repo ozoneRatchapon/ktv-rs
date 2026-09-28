@@ -3,13 +3,15 @@ use dioxus::prelude::*;
 use crate::components::chords::ChordLane;
 use crate::components::tempo::TempoTools;
 use crate::links::chords_search_url;
+use crate::medley::MedleyBook;
 use crate::sync::{self, SyncCommand};
 use crate::types::Song;
 
 /// A loop shorter than this is a slip of the finger, not a section.
 const MIN_LOOP_SECS: f64 = 1.0;
 
-fn format_mark(secs: f64) -> String {
+/// `mm:ss` of a karaoke second.
+pub fn format_mark(secs: f64) -> String {
     let whole = secs.max(0.0) as u64;
     format!("{:02}:{:02}", whole / 60, whole % 60)
 }
@@ -26,18 +28,23 @@ pub fn Practice(
 ) -> Element {
     let mut start = use_signal(|| None::<f64>);
     let mut end = use_signal(|| None::<f64>);
+    // The medley book (plan 004): a marked loop can become a medley part
+    let medleys = try_use_context::<Signal<MedleyBook>>();
+    let mut medley_note = use_signal(|| None::<String>);
     use_effect(use_reactive!(|queue_id| {
         let _ = queue_id;
         start.set(None);
         end.set(None);
+        medley_note.set(None);
     }));
     let now = move || sync::karaoke_time().unwrap_or(fallback_sec as f64);
 
-    let label = match (start(), end()) {
+    let loop_label = match (start(), end()) {
         (Some(a), Some(b)) => format!("Looping {} – {}", format_mark(a), format_mark(b)),
         (Some(a), None) => format!("From {}: press B at the end of the part", format_mark(a)),
         _ => "Loop a part: A at its start, B at its end".to_string(),
     };
+    let label = medley_note().unwrap_or(loop_label);
 
     rsx! {
         div { class: "practice-row",
@@ -45,6 +52,7 @@ pub fn Practice(
                 class: "ctrl-btn practice-btn",
                 title: "Loop start: here",
                 onclick: move |_| {
+                    medley_note.set(None);
                     start.set(Some(now()));
                     end.set(None);
                     SyncCommand::ClearLoop.run();
@@ -62,6 +70,7 @@ pub fn Practice(
                         return;
                     }
                     end.set(Some(b));
+                    medley_note.set(None);
                     SyncCommand::SetLoop { start: a, end: b }.run();
                     SyncCommand::SeekTo(a).run();
                 },
@@ -75,9 +84,28 @@ pub fn Practice(
                     onclick: move |_| {
                         start.set(None);
                         end.set(None);
+                        medley_note.set(None);
                         SyncCommand::ClearLoop.run();
                     },
                     "✕"
+                }
+            }
+            if let (Some(mut book), Some(a), Some(b)) = (medleys, start(), end()) {
+                button {
+                    class: "ctrl-btn practice-btn",
+                    title: "Add this part to the medley being built (Queue tab → Medley); it is used whenever this song is added",
+                    onclick: {
+                        let song = song.clone();
+                        move |_| {
+                            let added = book.write().add_marked(&song, a, b);
+                            let note = match added {
+                                Ok(()) => format!("Added to the medley ({} parts)", book.peek().draft.parts.len()),
+                                Err(e) => e.message(),
+                            };
+                            medley_note.set(Some(note));
+                        }
+                    },
+                    "+ Medley"
                 }
             }
             span { class: "practice-label", role: "status", "{label}" }
