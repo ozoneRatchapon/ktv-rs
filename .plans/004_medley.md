@@ -37,7 +37,7 @@ N+1 waits cued on the other at its `start`. At `end − fade` the playing deck f
 fades in, then decks swap. The guide MV is off during an M2 crossfade: a third iframe is too heavy for TV sticks.
 
 ## Phases
-- [x] M1. Medley builder + hard join. Done 2026-09-29 (v0.37.0). `src/medley/` (pure): `Span` (validated, ≥ 5 s,
+- [x] M1. Medley builder + hard join. Done 2026-09-29 (v0.37.0, Worker `c9a2b3ca`). `src/medley/` (pure): `Span` (validated, ≥ 5 s,
   inside the song), `guess_span` (B: after the intro skip or 15 s, 75 s long, capped at the song's end; labelled
   "guessed"), `MedleyBook { draft, saved, marked }` in `ktv.medleys.v1` (A: A/B + **+ Medley** in the practice row, or
   any nudge, is remembered per song and wins over the guess next time), 12 parts / 50 saved max, sanitized on load,
@@ -53,7 +53,8 @@ fades in, then decks swap. The guide MV is off during an M2 crossfade: a third i
   Found on the way: the same video from the same second (queued twice, or a medley repeating a part) reused the
   finished player (Dioxus honours `key` only in lists; only a changed `src` reloaded it). The karaoke iframe is now
   a keyed list of one per queue entry; e2e "same song twice" failed before and passes after.
-  Known and accepted: a gap of about 1-2 s at each join while the next video loads, longer if YouTube plays an ad.
+  Join gap: measured ~0.5 s on prod (desktop Chrome, real YouTube: part 1 at 0 volume at its end → part 2 playing
+  0.3 s after it loaded); expect more on a TV stick, and more again if YouTube plays an ad before part 2.
 - [ ] M2. Two decks, gapless join: cue the next part early on the second karaoke iframe, overlap the fades.
   Needs a measure of TV-stick load (two decoding iframes) on a real device. Policy limit (YouTube RMF, as the guide
   pane already follows): a player may only play while visible (≥ 200×200), so deck B may wait loaded and paused
