@@ -3,6 +3,10 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
+## [0.33.1] - 2026-09-28
+### Changed
+- With the spoken MC on, the mic ignores the moments the MC is talking, so its voice is never read or scored as singing (some systems play speech past the browser's echo cancellation).
+
 ## [0.33.0] - 2026-09-28 (`a793a873`)
 ### Added
 - Duet (Settings → Duet): with a two-mic wireless receiver plugged in as one stereo device, the left mic is singer 1 and the right is singer 2. Each gets its own pitch readout, note lane, phrase and Tuning score (and Melody, where a song has melody data), its own result card and its own name for the party leaderboard. Echo cancellation is off in duet mode, because browsers merge it to one channel, so keep speakers away from the mics. Turn the mic on again after switching.

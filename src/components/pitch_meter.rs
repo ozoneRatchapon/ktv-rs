@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use dioxus::prelude::*;
 
+use crate::browser;
 use crate::mic::{Mic, MicChannels, MicError, HOP_SIZE};
 use crate::pitch::{rms, Mpm, MpmConfig, NoiseGate, NoteReading};
 use crate::score::{
@@ -96,8 +97,9 @@ impl Voice {
 
     /// Analyse one frame heard at song time `t`. Re-renders only when the shown note changes, a held note is judged,
     /// a phrase ends, or (with a melody) the targets have scrolled a little.
-    fn frame(&mut self, frame: &[f32], t: f64, melody: Option<&Melody>, mut view: VoiceView) {
-        let singing = self.gate.pass(rms(frame));
+    /// `mc_speaking`: the spoken MC is talking, so the frame counts as silence.
+    fn frame(&mut self, frame: &[f32], t: f64, melody: Option<&Melody>, mc_speaking: bool, mut view: VoiceView) {
+        let singing = self.gate.pass(rms(frame)) && !mc_speaking;
         if *view.room_check.peek() != self.gate.is_checking() {
             view.room_check.set(self.gate.is_checking());
         }
@@ -131,11 +133,12 @@ impl Voice {
 }
 
 /// Live pitch of the singer's mic (note name + cents), note lane and scores for the current take; with `duet`,
-/// one row per singer on a stereo receiver (left = 1, right = 2). `take` changes on every song start or replay,
+/// one row per singer on a stereo receiver (left = 1, right = 2). With `mc_on`, moments the spoken MC talks are not
+/// scored. `take` changes on every song start or replay,
 /// which restarts the scores and reports each voice's finished take through `on_take_end` (a voice that judged
 /// no held note reports nothing).
 #[component]
-pub fn PitchMeter(take: f64, song: Song, duet: bool, on_take_end: EventHandler<TakeResult>) -> Element {
+pub fn PitchMeter(take: f64, song: Song, duet: bool, mc_on: bool, on_take_end: EventHandler<TakeResult>) -> Element {
     // Owns the device; dropping the session (toggle off or unmount) releases the mic
     let mut session = use_signal(|| None::<Mic>);
     let mut state = use_signal(|| MicState::Off);
@@ -143,6 +146,9 @@ pub fn PitchMeter(take: f64, song: Song, duet: bool, on_take_end: EventHandler<T
     let mut active = use_signal(MicChannels::default);
     let views: [VoiceView; MAX_VOICES] = [VoiceView::use_new(), VoiceView::use_new()];
     let mut current_take = use_signal(|| take);
+    // Read by the mic callback, which outlives this render: follows the MC setting while the mic stays on
+    let mut mc_talks = use_signal(|| mc_on);
+    use_effect(use_reactive!(|mc_on| mc_talks.set(mc_on)));
     // The song's melody, if this device has one (none ship; see plan 002 item 7): enables the melody score
     let song_id = song.id.clone();
     let melody = use_memo(use_reactive((&song_id,), |(id,)| {
@@ -199,6 +205,7 @@ pub fn PitchMeter(take: f64, song: Song, duet: bool, on_take_end: EventHandler<T
                 // Without a video clock (never in the app, but a stalled bridge must not stop the lane), frames count time
                 let mut frame_clock = 0.0f64;
                 let mut t = 0.0f64;
+                let mut mc_speaking = false;
                 let mut scored_take = *current_take.peek();
                 move |channel: usize, frame: &[f32]| {
                     // Channel 0 arrives first in each message: read the clock and check for a new take once per frame
@@ -209,10 +216,11 @@ pub fn PitchMeter(take: f64, song: Song, duet: bool, on_take_end: EventHandler<T
                         }
                         frame_clock += frame_secs;
                         t = sync::karaoke_time().unwrap_or(frame_clock);
+                        mc_speaking = *mc_talks.peek() && browser::is_speaking();
                     }
                     let (Some(voice), Some(&view)) = (voices.get_mut(channel), views.get(channel)) else { return };
                     let melody = melody.peek();
-                    voice.frame(frame, t, melody.as_deref(), view);
+                    voice.frame(frame, t, melody.as_deref(), mc_speaking, view);
                 }
             })
             .await;

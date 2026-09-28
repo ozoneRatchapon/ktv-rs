@@ -883,6 +883,23 @@ test('tip request: the room QR opens the phone page; a paid request plays next a
   assert.equal(await page.eval(`document.querySelectorAll('#results li').length`), 0, 'results close on pick');
 }));
 
+test('MC voice + mic: while the MC talks the mic scores nothing (its voice is not singing), then listens again', () => with_page({ fake_mic: true }, async (page) => {
+  await page.wait_for(`!!localStorage.getItem('ktv.settings.v1')`);
+  await page.eval(`(() => { const s = JSON.parse(localStorage.getItem('ktv.settings.v1')); s.mc_voice = 'english'; localStorage.setItem('ktv.settings.v1', JSON.stringify(s)); })()`);
+  await page.reload();
+  // The MC "talks" while window.__talking is set (headless Chrome has no voices)
+  await page.eval(`(() => { window.__talking = true; Object.defineProperty(speechSynthesis, 'speaking', { get: () => window.__talking }); })()`);
+  await page.eval(`[...document.querySelectorAll('.pitch-meter button')].find((b) => b.textContent.startsWith('Mic')).click()`);
+  await page.wait_for(`!!window.__mic_gain`);
+  await page.wait_for(`document.querySelector('.pitch-note')?.textContent === 'Room check…'`);
+  await page.wait_for(`document.querySelector('.pitch-note')?.textContent !== 'Room check…'`, 6000);
+  await page.eval(`window.__mic_gain.gain.value = 0.3`);
+  await sleep(800);
+  assert.equal(await page.eval(`document.querySelector('.pitch-note').textContent`), '—', 'not read while the MC talks');
+  await page.eval(`window.__talking = false`);
+  await page.wait_for(`document.querySelector('.pitch-note')?.textContent === 'A3'`, 3000);
+}));
+
 test('MC voice: off by default; when on, each new song is announced once in the chosen language', () => with_page({}, async (page) => {
   // Record instead of speaking; headless Chrome has no voices, so the test supplies them (network-only at first)
   await page.eval(`(() => {

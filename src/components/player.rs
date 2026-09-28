@@ -28,6 +28,9 @@ pub fn Player(
     /// Two singers on one stereo mic receiver (Settings → Duet).
     #[props(default)]
     duet: bool,
+    /// The spoken MC is on: the mic does not score while it talks.
+    #[props(default)]
+    mc_on: bool,
     /// The current song's guide was timed automatically (official audio), not by ear: say so next to the nudges.
     #[props(default)]
     auto_timed: bool,
@@ -297,7 +300,7 @@ pub fn Player(
                                     }
                                 }
 
-                                PitchMeter { take: take_started_at, song: song.clone(), duet, on_take_end }
+                                PitchMeter { take: take_started_at, song: song.clone(), duet, mc_on, on_take_end }
 
                                 // Play / Pause Toggle Button
                                 button {

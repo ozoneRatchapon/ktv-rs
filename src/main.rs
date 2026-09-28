@@ -495,6 +495,7 @@ fn App() -> Element {
                         on_save_guide: handle_save_guide,
                         on_revert_guide: handle_revert_guide,
                         duet: settings().duet,
+                        mc_on: settings().mc_voice != app::mc::McVoice::Off,
                         auto_timed: current_song().is_some_and(|c| {
                             !guide_overrides.read().contains_key(&c.song.id) && library::auto_timed(&c.song.youtube_id)
                         }),
