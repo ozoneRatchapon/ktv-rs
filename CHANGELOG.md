@@ -3,7 +3,11 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.35.0] - 2026-09-28
+## [0.35.1] - 2026-09-28
+### Fixed
+- A song that played to its end did not move on to the next one (you had to press Next Song). YouTube only sends "state changed" events to a page that asks for them, and the app never asked, so it never heard that the video ended. The app now asks each karaoke player for them and also reads the end from the player's regular status reports, and one ending moves on exactly one song (a late second report of the same end no longer skips the song after it). Auto-DJ takes over at the end of the queue as before.
+
+## [0.35.0] - 2026-09-28 (`ecfa7929`)
 ### Added
 - Scrubb's official karaoke (8 songs: 72001-72007 from the band's channel, รอยยิ้ม 73001 from TERO MUSIC), under Indie. "Soulmate" finds คู่กัน.
 - one31's drama songs with official karaoke (5 songs, 71001-71005: สองใจ, พิง, กลางหัวใจ, รักแท้, ฉันมันเป็นคนแบบนี้). The drama's name works as a search word ("วันทอง" finds สองใจ). These were every karaoke upload on one31's channel (its search and all 3,624 playlists); its other results are MVs and show clips.
