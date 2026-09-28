@@ -3,7 +3,7 @@
 User-visible changes per release. Live at https://ktv-rs.solana-thailand.workers.dev (Cloudflare Worker version in brackets).
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/) (0.x: anything may change).
 
-## [0.37.1] - 2026-09-29
+## [0.37.1] - 2026-09-29 (`b4867817`)
 ### Fixed
 - Pressing "Vocal ahead" / "Vocal behind" by mistake had no simple way back: the original timing could only be restored from the curator's Guide Timing Tools. A **Reset timing** button now sits next to them whenever a nudge is saved on this device; it goes back to the song's own timing at once and forgets the saved one.
 
