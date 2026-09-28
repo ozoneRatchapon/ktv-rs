@@ -2,12 +2,14 @@
 
 mod history;
 mod lane;
+mod medley;
 mod melody;
 mod party;
 mod tuning;
 mod types;
 
-pub use history::{record, TakeResult, MAX_RESULTS};
+pub use history::{record, MedleyTake, TakeResult, MAX_RESULTS};
+pub use medley::{medley_total, MedleyTotal};
 pub use lane::{LaneWindow, NoteLane, LANE_NOTES, PHRASE_GAP_FRAMES};
 pub use melody::{
     octave_cents, stored_melody, Melody, MelodyScorer, StoredMelodies, EDGE_SECS, FULL_COVERAGE, HIT_CENTS, MIN_TARGET_FRAMES,

@@ -569,11 +569,13 @@ fn App() -> Element {
                         on_take_end: move |result: TakeResult| {
                             // Between medley parts the MC stays quiet (the next part is already playing)
                             let joined = current_song().is_some_and(|c| c.is_medley_join());
-                            if let (Some(score), false) = (result.score(), joined) {
+                            score::record(&mut score_history.write(), result.clone());
+                            // After a medley's last part the MC gives the medley's total, not the last part's
+                            let total = score::medley_total(&score_history.peek(), &result).map(|t| t.score);
+                            if let (Some(score), false) = (total.or(result.score()), joined) {
                                 let event = McEvent::TakeEnded { score, singer: result.singer.clone() };
                                 mc::announce(&event, settings.peek().mc_voice, mc::seed_of(&result.song_id));
                             }
-                            score::record(&mut score_history.write(), result.clone());
                             // Parts of one duet take end together; a new take replaces the cards
                             let mut cards = last_results.write();
                             if cards.first().is_some_and(|c| c.sung_at_ms != result.sung_at_ms) {
@@ -611,6 +613,7 @@ fn App() -> Element {
                     for (i, result) in last_results().into_iter().enumerate() {
                         ScoreCard {
                             key: "{result.sung_at_ms}-{result.part.unwrap_or(0)}",
+                            medley_total: score::medley_total(&score_history.read(), &result),
                             result,
                             singers: score::recent_singers(&score_history.read(), 6),
                             on_name: move |name: Option<String>| {

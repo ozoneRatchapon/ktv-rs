@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use crate::score::{LeaderRow, TakeResult, MAX_NAME_CHARS};
+use crate::score::{LeaderRow, MedleyTotal, TakeResult, MAX_NAME_CHARS};
 
 /// Recent takes listed under the leaderboard (the device keeps more for the party).
 const SHOWN_RECENT: usize = 20;
@@ -14,6 +14,8 @@ fn score_text(result: &TakeResult) -> String {
 #[component]
 pub fn ScoreCard(
     result: TakeResult,
+    /// After a medley's last part: the whole medley's score, shown as the card's big number.
+    medley_total: Option<MedleyTotal>,
     /// Names used before, newest first: one tap instead of typing.
     singers: Vec<String>,
     on_name: EventHandler<Option<String>>,
@@ -25,7 +27,8 @@ pub fn ScoreCard(
         Some(part) if part > 1 => format!("singer_name_{part}"),
         _ => "singer_name".to_string(),
     };
-    let verdict = match result.score() {
+    let shown = medley_total.as_ref().map_or(result.score(), |t| Some(t.score));
+    let verdict = match shown {
         Some(90..) => "Spot on!",
         Some(70..=89) => "Nicely in tune",
         Some(40..=69) => "Getting there",
@@ -40,10 +43,20 @@ pub fn ScoreCard(
     };
     rsx! {
         section { class: "score-card", role: "status", aria_label: "Last song result",
-            div { class: "score-card-value", "{score_text(&result)}" }
+            div { class: "score-card-value", {shown.map_or("—".to_string(), |s| s.to_string())} }
             div { class: "score-card-body",
                 div { class: "score-card-verdict", "{verdict}" }
-                div { class: "score-card-song", lang: "th", "{result.title} · {result.artist}" }
+                if let Some(total) = &medley_total {
+                    div { class: "score-card-song score-card-medley", lang: "th", "Medley · {total.title}" }
+                    div { class: "score-card-detail",
+                        "Mean of {total.scored} of {total.count} parts · last part {score_text(&result)}: {result.title}"
+                    }
+                } else {
+                    div { class: "score-card-song", lang: "th", "{result.title} · {result.artist}" }
+                    if let Some(m) = &result.medley {
+                        div { class: "score-card-detail", "Medley {m.index + 1}/{m.count} · {m.title}" }
+                    }
+                }
                 if let Some(part) = result.part {
                     div { class: "score-card-detail score-card-part", if part == 1 { "Duet · singer 1 (left mic)" } else { "Duet · singer 2 (right mic)" } }
                 }

@@ -29,6 +29,20 @@ pub struct TakeResult {
     /// Duet on a stereo receiver: which singer (1 = left mic, 2 = right); `None` for a solo take.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub part: Option<u8>,
+    /// A medley part's take: which medley and where in it; `None` for a whole song.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub medley: Option<MedleyTake>,
+}
+
+/// Where a take sits in a medley (plan 004 M5b).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MedleyTake {
+    /// Queue id of the medley's first part: the same for every part of one queued medley.
+    pub id: u64,
+    /// 0-based position in the medley.
+    pub index: u32,
+    pub count: u32,
+    pub title: String,
 }
 
 impl TakeResult {
@@ -45,11 +59,16 @@ impl TakeResult {
             sung_at_ms,
             melody_score: None,
             part: None,
+            medley: None,
         })
     }
 
     pub fn with_part(self, part: Option<u8>) -> Self {
         Self { part, ..self }
+    }
+
+    pub fn with_medley(self, medley: Option<MedleyTake>) -> Self {
+        Self { medley, ..self }
     }
 
     pub fn with_melody_score(self, melody_score: Option<u8>) -> Self {

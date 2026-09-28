@@ -67,7 +67,7 @@ fades in, then decks swap. The guide MV is off during an M2 crossfade: a third i
   suggest an order (circle of fifths). A hint only; nothing is transposed.
 - [ ] M5. Room features: score per part + medley total on the result card; build / queue a medley from the phone
   remote; share a medley by link; a few ready-made medleys the host curates.
-  - [x] M5a. Share by link. Done 2026-09-29 (v0.38.0). `src/medley/share.rs` (pure): `share_fragment` writes
+  - [x] M5a. Share by link. Done 2026-09-29 (v0.38.0, Worker `548e92f9`). `src/medley/share.rs` (pure): `share_fragment` writes
     `#medley=<title>&parts=<code>:<start>-<end>[g],…` (percent-encoded, times to 0.1 s, `g` = guessed, so the
     builder keeps saying "guessed"); `parse_fragment` drops unreadable parts and holds the builder's limits;
     `SharedMedley::open` looks codes up in the opener's songbook and skips (and counts) songs it lacks or times that
@@ -77,7 +77,14 @@ fades in, then decks swap. The guide MV is off during an M2 crossfade: a third i
     copying by hand. `browser::copy_text` is now async and says whether the browser allowed the copy (it rejected
     silently before, as an unhandled promise, and three buttons claimed "Copied"). Tests: `medley_share_test` (6),
     e2e "medley share". Custom songs (Add URL) are skipped for the opener: their codes exist on one device only.
-  - [ ] M5b. Result card: the medley's total (mean of its parts' scores) after its last part.
+  - [x] M5b. Result card: the medley's total after its last part. Done 2026-09-29 (v0.39.0). `TakeResult.medley:
+    Option<MedleyTake { id, index, count, title }>` (id = queue id of part 1: a medley's parts get consecutive ids),
+    set by `PitchMeter` from `QueueItem::medley_take()` with the take's song. `score::medley_total` (pure): only on
+    the last part's take; mean of the scored parts of that medley and voice (duet singers each get their own), a
+    replayed part counts once with its latest take. The card's big number is the total, "Mean of n of m parts · last
+    part x"; earlier parts' cards say "Medley i/m · title". The MC says the total after the last part (still quiet
+    between parts). Plain mean, not note-weighted: easy to explain to a room. Tests: `medley_score_test` (5), e2e
+    "medley score" (fake mic, two parts).
   - [ ] M5c. Phone remote: queue one of the booth's saved medleys (protocol: `PhoneCommand::QueueMedley`; the
     phone needs the list, so the booth publishes titles only).
   - [ ] M5d. Ready-made medleys the host curates (needs the owner's picks: owner-gated content).
